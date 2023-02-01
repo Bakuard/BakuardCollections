@@ -405,7 +405,7 @@ public final class Bits implements Comparable<Bits> {
      * {@link #getSize()} - 1 метод {@link #get(int)} возвращает false.
      * @return true - если Bits не содержит ни одной единицы, false - в противном случае.
      */
-    public boolean areAllBitsZero() {
+    public boolean isClean() {
         for(int i = 0; i < words.length; i++) {
             if(words[i] != 0L) return false;
         }

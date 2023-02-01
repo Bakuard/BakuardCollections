@@ -64,7 +64,7 @@ class BitsTest {
     void Bits_numberBits4() {
         Bits actual = new Bits(10000);
 
-        Assertions.assertThat(actual.areAllBitsZero()).isTrue();
+        Assertions.assertThat(actual.isClean()).isTrue();
     }
 
     @Test
@@ -258,7 +258,7 @@ class BitsTest {
 
         actual.setRange(1200, 1200);
 
-        Assertions.assertThat(actual.areAllBitsZero()).isTrue();
+        Assertions.assertThat(actual.isClean()).isTrue();
     }
 
     @Test
@@ -673,7 +673,7 @@ class BitsTest {
 
         actual.clearAll();
 
-        Assertions.assertThat(actual.areAllBitsZero()).isTrue();
+        Assertions.assertThat(actual.isClean()).isTrue();
     }
 
     @Test
@@ -2601,46 +2601,46 @@ class BitsTest {
     }
 
     @Test
-    @DisplayName("areAllBitsZero(): bits is empty, size == 0 => return true")
-    void areAllBitsZero1() {
+    @DisplayName("isClean(): bits is empty, size == 0 => return true")
+    void isClean1() {
         Bits empty = new Bits();
 
-        Assertions.assertThat(empty.areAllBitsZero()).isTrue();
+        Assertions.assertThat(empty.isClean()).isTrue();
     }
 
     @Test
-    @DisplayName("areAllBitsZero(): bits is empty, size > 0 => return true")
-    void areAllBitsZero2() {
+    @DisplayName("isClean(): bits is empty, size > 0 => return true")
+    void isClean2() {
         Bits empty = new Bits(500);
 
-        Assertions.assertThat(empty.areAllBitsZero()).isTrue();
+        Assertions.assertThat(empty.isClean()).isTrue();
     }
 
     @Test
-    @DisplayName("areAllBitsZero(): one bit is set, first bit is set => return false")
-    void areAllBitsZero3() {
+    @DisplayName("isClean(): one bit is set, first bit is set => return false")
+    void isClean3() {
         Bits actual = new Bits(500);
         actual.set(0);
 
-        Assertions.assertThat(actual.areAllBitsZero()).isFalse();
+        Assertions.assertThat(actual.isClean()).isFalse();
     }
 
     @Test
-    @DisplayName("areAllBitsZero(): one bit is set, unit bit in middle => return false")
-    void areAllBitsZero4() {
+    @DisplayName("isClean(): one bit is set, unit bit in middle => return false")
+    void isClean4() {
         Bits actual = new Bits(500);
         actual.set(300);
 
-        Assertions.assertThat(actual.areAllBitsZero()).isFalse();
+        Assertions.assertThat(actual.isClean()).isFalse();
     }
 
     @Test
-    @DisplayName("areAllBitsZero(): one bit is set, high bit is set => return false")
-    void areAllBitsZero5() {
+    @DisplayName("isClean(): one bit is set, high bit is set => return false")
+    void isClean5() {
         Bits actual = new Bits(500);
         actual.set(499);
 
-        Assertions.assertThat(actual.areAllBitsZero()).isFalse();
+        Assertions.assertThat(actual.isClean()).isFalse();
     }
 
     @Test
@@ -3823,6 +3823,25 @@ class BitsTest {
 
         Assertions.assertThat(actual).
                 isEqualTo("1110110010001100110110010011011010011111000010000000110111011000111000110111010010001010111101");
+    }
+
+    @Test
+    @DisplayName("""
+            toBinaryString():
+             size > 64,
+             leading bits are zeros
+             => return correct result
+            """)
+    void toBinaryString7() {
+        Bits bits = new Bits(96);
+        bits.setAll(0, 2, 3, 4, 5, 7, 9, 13, 16, 18,
+                19, 20, 22, 23, 27, 28, 29, 33, 34, 36,
+                37, 38, 40, 41, 49, 54, 55, 56, 57, 58);
+
+        String actual = bits.toBinaryString();
+
+        Assertions.assertThat(actual).
+                isEqualTo("000000000000000000000000000000000000011111000010000000110111011000111000110111010010001010111101");
     }
 
 }
