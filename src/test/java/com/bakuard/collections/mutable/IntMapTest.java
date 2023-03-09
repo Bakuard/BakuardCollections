@@ -316,14 +316,14 @@ class IntMapTest {
     @Test
     public void getValues() {
         IntMap<Integer> emptyMap = new IntMap<>();
-        Array<Integer> values = emptyMap.getValues(Integer.class);
+        Array<Integer> values = emptyMap.getValues();
         Assertions.assertEquals(0, values.getLength(),
                 "Метод getValues() для пустого объекта IntMap должен возвращать " +
                         "пустой объект Array.");
 
         IntMap<Integer> map = new IntMap<>();
         map.put(1, 10);
-        Array<Integer> values1 = map.getValues(Integer.class);
+        Array<Integer> values1 = map.getValues();
         Assertions.assertEquals(map.getSize(), values1.getLength(),
                 "Объект Array возвращаемый методом getValues() должен содержать кол-во элементов " +
                         "равное кол-ву элементов объекта IntMap, у которого вызывался метод. Данное правило " +
@@ -338,7 +338,7 @@ class IntMapTest {
         map2.put(2, 20);
         map2.put(3, 30);
         map2.put(4, 40);
-        Array<Integer> values2 = map2.getValues(Integer.class);
+        Array<Integer> values2 = map2.getValues();
         Assertions.assertEquals(map2.getSize(), values2.getLength(),
                 "Объект Array возвращаемый методом getValues() должен содержать кол-во элементов " +
                         "равное кол-ву элементов объекта IntMap, у которого вызывался метод.");
