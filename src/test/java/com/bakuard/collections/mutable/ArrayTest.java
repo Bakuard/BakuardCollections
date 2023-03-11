@@ -1,10 +1,12 @@
 package com.bakuard.collections.mutable;
 
-import org.junit.jupiter.api.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 class ArrayTest {
 
@@ -13,7 +15,7 @@ class ArrayTest {
     public void Array_empty1() {
         Array<String> emptyArray = new Array<>();
 
-        Assertions.assertEquals(0, emptyArray.getLength());
+        Assertions.assertThat(emptyArray.getLength()).isZero();
     }
 
     @Test
@@ -21,7 +23,8 @@ class ArrayTest {
     public void Array_empty2() {
         Array<String> emptyArray = new Array<>();
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> emptyArray.get(0));
+        Assertions.assertThatIndexOutOfBoundsException().
+                isThrownBy(() -> emptyArray.get(0));
     }
 
     @Test
@@ -29,9 +32,7 @@ class ArrayTest {
     public void Array_length1() {
         Array<String> array = new Array<>(100);
 
-        for(int i = 0; i < array.getLength(); i++) {
-            Assertions.assertNull(array.get(i));
-        }
+        Assertions.assertThat(array).containsOnlyNulls();
     }
 
     @Test
@@ -39,15 +40,14 @@ class ArrayTest {
     public void Array_length2() {
         Array<String> array = new Array<>(100);
 
-        Assertions.assertEquals(100, array.getLength());
+        Assertions.assertThat(array.getLength()).isEqualTo(100);
     }
 
     @Test
     @DisplayName("Array(type, length): negative length => exception")
     public void Array_length3() {
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new Array<>(-1)
-        );
+        Assertions.assertThatIllegalArgumentException().
+                isThrownBy(() -> new Array<>(-1));
     }
 
     @Test
@@ -55,7 +55,7 @@ class ArrayTest {
     public void Array_length4() {
         Array<String> emptyArray = new Array<>(0);
 
-        Assertions.assertEquals(0, emptyArray.getLength());
+        Assertions.assertThat(emptyArray.getLength()).isZero();
     }
 
     @Test
@@ -63,17 +63,16 @@ class ArrayTest {
     public void Array_length5() {
         Array<String> emptyArray = new Array<>(0);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> emptyArray.get(0));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> emptyArray.get(0));
     }
 
     @Test
     @DisplayName("Array(other): not empty Array -> copy is equivalent to original")
     public void Array_copy1() {
-        Array<Integer> original = new Array<>();
-        original.addAll(100000,220000,300000,470000,560000);
+        Array<Integer> original = Array.of(100000,220000,300000,470000,560000);
         Array<Integer> copy = new Array<>(original);
 
-        Assertions.assertEquals(original, copy);
+        Assertions.assertThat(copy).isEqualTo(original);
     }
 
     @Test
@@ -82,34 +81,34 @@ class ArrayTest {
         Array<Integer> original = new Array<>();
         Array<Integer> copy = new Array<>(original);
 
-        Assertions.assertEquals(original, copy);
+        Assertions.assertThat(copy).isEqualTo(original);
     }
 
     @Test
     @DisplayName("Array(other): not empty Array -> copy contains the same objects")
     public void Array_copy3() {
         Array<Object> original = new Array<>();
-        original.addAll(new Object(), new Object(), new Object());
+        original.appendAll(new Object(), new Object(), new Object());
         Array<Object> copy = new Array<>(original);
 
-        Assertions.assertSame(original.get(0), copy.get(0));
-        Assertions.assertSame(original.get(1), copy.get(1));
-        Assertions.assertSame(original.get(2), copy.get(2));
+        Assertions.assertThat(copy.get(0)).isSameAs(original.get(0));
+        Assertions.assertThat(copy.get(1)).isSameAs(original.get(1));
+        Assertions.assertThat(copy.get(2)).isSameAs(original.get(2));
     }
 
     @Test
     @DisplayName("Array(other): changes to the original must not affect the copy")
     public void Array_copy4() {
         Array<Integer> original = new Array<>();
-        original.addAll(1,2,3);
+        original.appendAll(1,2,3);
         Array<Integer> copy = new Array<>(original);
         Array<Integer> expected = new Array<>();
-        expected.addAll(1,2,3);
+        expected.appendAll(1,2,3);
 
-        original.addAll(4,5,6);
+        original.appendAll(4,5,6);
         original.quickRemove(0);
 
-        Assertions.assertEquals(expected, copy);
+        Assertions.assertThat(copy).isEqualTo(expected);
     }
 
     @Test
@@ -117,7 +116,7 @@ class ArrayTest {
     public void of1() {
         Integer[] data = null;
 
-        Assertions.assertThrows(NullPointerException.class, () -> Array.of(data));
+        Assertions.assertThatNullPointerException().isThrownBy(() -> Array.of(data));
     }
 
     @Test
@@ -125,32 +124,34 @@ class ArrayTest {
     public void of2() {
         Array<Integer> array = Array.of(new Integer[]{});
 
-        Assertions.assertEquals(0, array.getLength());
+        Assertions.assertThat(array.getLength()).isEqualTo(0);
     }
 
     @Test
     @DisplayName("Array.of(...data): data[] contains several item => create array with these items.")
     public void of3() {
-        Array<Integer> actual = Array.of(10, null, 30, 30);
         Array<Integer> expected = new Array<>(4);
         expected.set(0, 10);
         expected.set(1, null);
         expected.set(2, 30);
         expected.set(3, 30);
 
-        Assertions.assertEquals(expected, actual);
+        Array<Integer> actual = Array.of(10, null, 30, 30);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("Array.of(...data): change array data[] after creating IntArray => new object IntArray don't change")
+    @DisplayName("Array.of(...data): change array data[] after creating Array => new object Array don't change")
     public void of4() {
+        Array<Integer> expected = new Array<>();
+        expected.appendAll(10, 20, 30, 40, 50, 60);
+
         Integer[] data = {10, 20, 30, 40, 50, 60};
         Array<Integer> actual = Array.of(data);
-        Array<Integer> expected = Array.of(10, 20, 30, 40, 50, 60);
-
         data[0] = 1000;
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -161,7 +162,7 @@ class ArrayTest {
         array.set(1, 20);
         array.set(2, 30);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.get(-1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(-1));
     }
 
     @Test
@@ -172,7 +173,7 @@ class ArrayTest {
         array.set(1, 20);
         array.set(2, 30);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.get(3));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(3));
     }
 
     @Test
@@ -183,7 +184,7 @@ class ArrayTest {
         array.set(1, 20);
         array.set(2, 30);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.get(4));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(4));
     }
 
     @Test
@@ -191,7 +192,7 @@ class ArrayTest {
     public void set1() {
         Array<Integer> array = Array.of(1, 120, 12);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.set(-1, 100));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.set(-1, 100));
     }
 
     @Test
@@ -199,15 +200,15 @@ class ArrayTest {
     public void set2() {
         Array<Integer> array = Array.of(0,0,1,12);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.set(4, 100));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.set(4, 100));
     }
 
     @Test
-    @DisplayName("set(index, value): index >= array length => exception")
+    @DisplayName("set(index, value): index > array length => exception")
     public void set3() {
         Array<Integer> array = Array.of(0,0,1,12);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.set(5, 100));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.set(5, 100));
     }
 
     @Test
@@ -215,7 +216,9 @@ class ArrayTest {
     public void set4() {
         Array<Integer> array = Array.of(10, 20, null, 40);
 
-        Assertions.assertNull(array.get(2));
+        Integer actual = array.set(2, 100);
+
+        Assertions.assertThat(actual).isNull();
     }
 
     @Test
@@ -223,7 +226,9 @@ class ArrayTest {
     public void set5() {
         Array<Integer> array = Array.of(10, 20, null, 40);
 
-        Assertions.assertEquals(10, array.get(0));
+        int actual = array.set(1, 100);
+
+        Assertions.assertThat(actual).isEqualTo(20);
     }
 
     @Test
@@ -233,7 +238,7 @@ class ArrayTest {
 
         array.set(1, null);
 
-        Assertions.assertNull(array.get(1));
+        Assertions.assertThat(array.get(1)).isNull();
     }
 
     @Test
@@ -243,7 +248,7 @@ class ArrayTest {
 
         array.set(1, 1000);
 
-        Assertions.assertEquals(1000, array.get(1));
+        Assertions.assertThat(array.get(1)).isEqualTo(1000);
     }
 
     @Test
@@ -251,7 +256,8 @@ class ArrayTest {
     public void setAndExpend1() {
         Array<Integer> array = Array.of(0, 10, 100);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, ()-> array.setAndExpand(-1, 20));
+        Assertions.assertThatIndexOutOfBoundsException().
+                isThrownBy(()-> array.setAndExpand(-1, 20));
     }
 
     @Test
@@ -261,7 +267,7 @@ class ArrayTest {
 
         array.setAndExpand(4, 100);
 
-        Assertions.assertEquals(100, array.get(4));
+        Assertions.assertThat(array.get(4)).isEqualTo(100);
     }
 
     @Test
@@ -269,29 +275,29 @@ class ArrayTest {
     public void setAndExpand3() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 67);
 
-        array.setAndExpand(5, 1000);
+        array.setAndExpand(4, 1000);
 
-        Assertions.assertEquals(6, array.getLength());
+        Assertions.assertThat(array.getLength()).isEqualTo(5);
     }
 
     @Test
-    @DisplayName("setAdnExpand(index, value): index > length => add new item")
+    @DisplayName("setAdnExpand(index, value): index > length + 1 => add new item")
     public void setAndExpand4() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 68);
 
         array.setAndExpand(10, 100);
 
-        Assertions.assertEquals(100, array.get(10));
+        Assertions.assertThat(array.get(10)).isEqualTo(100);
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > length => length == index + 1")
+    @DisplayName("setAndExpand(index, value): index > length + 1 => length == index + 1")
     public void setAndExpand5() {
         Array<Integer> array = Array.of(1, 1, 20, 90, 900);
 
         array.setAndExpand(10, 1000);
 
-        Assertions.assertEquals(11, array.getLength());
+        Assertions.assertThat(array.getLength()).isEqualTo(11);
     }
 
     @Test
@@ -299,7 +305,9 @@ class ArrayTest {
     public void setAndExpand6() {
         Array<Integer> array = Array.of(0, 10, null, 45);
 
-        Assertions.assertNull(array.setAndExpand(2, 1000));
+        Integer actual = array.setAndExpand(2, 1000);
+
+        Assertions.assertThat(actual).isNull();
     }
 
     @Test
@@ -307,7 +315,9 @@ class ArrayTest {
     public void setAndExpand7() {
         Array<Integer> array = Array.of(0, 100, 120);
 
-        Assertions.assertEquals(120, array.setAndExpand(2, 1000));
+        int actual = array.setAndExpand(2, 1000);
+
+        Assertions.assertThat(actual).isEqualTo(120);
     }
 
     @Test
@@ -315,15 +325,19 @@ class ArrayTest {
     public void setAndExpand8() {
         Array<Integer> array = Array.of(0, 120, 111);
 
-        Assertions.assertNull(array.setAndExpand(3, 1000));
+        Integer actual = array.setAndExpand(3, 1000);
+
+        Assertions.assertThat(actual).isNull();
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > length => return null")
+    @DisplayName("setAndExpand(index, value): index > length + 1 => return null")
     public void setAndExpand9() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 67);
 
-        Assertions.assertNull(array.setAndExpand(10, 1000));
+        Integer actual = array.setAndExpand(10, 1000);
+
+        Assertions.assertThat(actual).isNull();
     }
 
     @Test
@@ -333,7 +347,7 @@ class ArrayTest {
 
         array.setAndExpand(1, null);
 
-        Assertions.assertNull(array.get(1));
+        Assertions.assertThat(array.get(1)).isNull();
     }
 
     @Test
@@ -343,21 +357,21 @@ class ArrayTest {
 
         array.setAndExpand(3, 250);
 
-        Assertions.assertEquals(0, array.get(0));
-        Assertions.assertEquals(100, array.get(1));
-        Assertions.assertEquals(200, array.get(2));
+        Assertions.assertThat(array).
+                elements(0, 1, 2).
+                containsExactly(0, 100, 200);
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > length => old values are preserved")
+    @DisplayName("setAndExpand(index, value): index > length + 1 => old values are preserved")
     public void setAndExpand12() {
         Array<Integer> array = Array.of(0, 100, 200);
 
         array.setAndExpand(6, 250);
 
-        Assertions.assertEquals(0, array.get(0));
-        Assertions.assertEquals(100, array.get(1));
-        Assertions.assertEquals(200, array.get(2));
+        Assertions.assertThat(array).
+                elements(0, 1, 2).
+                containsExactly(0, 100, 200);
     }
 
     @Test
@@ -367,152 +381,152 @@ class ArrayTest {
 
         array.setAndExpand(10, 1000);
 
-        for(int i = 4; i < 10; i++) {
-            Assertions.assertNull(array.get(i));
-        }
+        Assertions.assertThat(array).
+                elements(4, 5, 6, 7, 8, 9).
+                containsOnlyNulls();
     }
 
     @Test
-    @DisplayName("add(value): => add value and increase length")
-    public void add1() {
+    @DisplayName("append(value): => add value and increase length")
+    public void append1() {
         Array<Integer> actual = Array.of(0, 10, 120);
         Array<Integer> expected = Array.of(0, 10, 120, 1000);
 
-        actual.add(1000);
+        actual.append(1000);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(T... data): data is empty => array don't change")
-    public void addAll_varargs1() {
+    @DisplayName("appendAll(...data): data is empty => array don't change")
+    public void appendAll1() {
         Array<Integer> actual = Array.of(0, 12, 45);
         Array<Integer> expected = new Array<>(actual);
 
-        actual.addAll();
+        actual.appendAll();
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(T... data): array is empty, add several items => add all values in same order")
-    public void addAll_varargs2() {
+    @DisplayName("appendAll(...data): array is empty, add several items => add all values in same order")
+    public void appendAll2() {
         Array<Integer> actual = new Array<>();
         Array<Integer> expected = Array.of(0, 120, 200);
 
-        actual.addAll(0, 120, 200);
+        actual.appendAll(0, 120, 200);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(T... data): array is empty, add one item => add item")
-    public void addAll_varargs3() {
+    @DisplayName("appendAll(...data): array is empty, add one item => add item")
+    public void appendAll3() {
         Array<Integer> actual = new Array<>();
         Array<Integer> expected = Array.of(1000);
 
-        actual.addAll(1000);
+        actual.appendAll(1000);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(T... data): array is not empty, add several item => add values in same order")
-    public void addAll_varargs4() {
+    @DisplayName("appendAll(...data): array is not empty, add several item => add values in same order")
+    public void appendAll4() {
         Array<Integer> actual = Array.of(0, 120, 34);
         Array<Integer> expected = Array.of(0, 120, 34, 56, 0, 10);
 
-        actual.addAll(56, 0, 10);
+        actual.appendAll(56, 0, 10);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(T... data): array is not empty, add one item => add item to the end")
-    public void addAll_varargs5() {
+    @DisplayName("appendAll(...data): array is not empty, add one item => add item to the end")
+    public void appendAll5() {
         Array<Integer> actual = Array.of(0, 10 ,120);
         Array<Integer> expected = Array.of(0, 10, 120, 120);
 
-        actual.addAll(120);
+        actual.appendAll(120);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(T... data): data contains null => add all values in same order include null")
-    public void addAll_vararg6() {
+    @DisplayName("appendAll(...data): data contains null => add all values in same order include null")
+    public void appendAll6() {
         Array<Integer> actual = Array.of(0, 0, 10);
         Array<Integer> expected = Array.of(0, 0, 10, 100, null, 100, null, null);
 
-        actual.addAll(100, null, 100, null, null);
+        actual.appendAll(100, null, 100, null, null);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(Array<T> data): data is empty => array don't change")
-    public void addAll_Array1() {
+    @DisplayName("concat(array): data is empty => array don't change")
+    public void concat1() {
         Array<Integer> actual = Array.of(0, 10, 100);
         Array<Integer> expected = new Array<>(actual);
 
-        actual.addAll(new Array<>());
+        actual.concat(new Array<>());
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(Array<T> data): array is empty, data contains several items => add all values in same order")
-    public void addAll_Array2() {
+    @DisplayName("concat(array): array is empty, data contains several items => add all values in same order")
+    public void concat2() {
         Array<Integer> actual = new Array<>();
         Array<Integer> expected = Array.of(0, 10, 90);
 
-        actual.addAll(Array.of(0, 10, 90));
+        actual.concat(Array.of(0, 10, 90));
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(Array<T> data): array is empty, data contains one item => add item")
-    public void addAll_array3() {
+    @DisplayName("concat(array): array is empty, data contains one item => add item")
+    public void concat3() {
         Array<Integer> actual = new Array<>();
         Array<Integer> expected = new Array<>(1000);
 
-        actual.addAll(new Array<>(1000));
+        actual.concat(new Array<>(1000));
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(Array<T> data): array is not empty, data contains several items => add all values in same order")
-    public void addAll_Array4() {
+    @DisplayName("concat(array): array is not empty, data contains several items => add all values in same order")
+    public void concat4() {
         Array<Integer> actual = Array.of(10, 10, 20);
         Array<Integer> expected = Array.of(10, 10, 20, 30, 0, 10);
 
-        actual.addAll(Array.of(30, 0, 10));
+        actual.concat(Array.of(30, 0, 10));
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(Array<T> data): array is not empty, data contains one item => add item")
-    public void addAll_Array5() {
+    @DisplayName("concat(array): array is not empty, data contains one item => add item")
+    public void concat5() {
         Array<Integer> actual = Array.of(10, 10, 100);
         Array<Integer> expected = Array.of(10, 10, 100, 0);
 
-        actual.addAll(Array.of(0));
+        actual.concat(Array.of(0));
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("addAll(Array<T> data): data contains null => add all item in same order include null")
-    public void addAll_Array6() {
+    @DisplayName("concat(array): data contains null => add all item in same order include null")
+    public void concat6() {
         Array<Integer> actual = Array.of(10, 20, 25);
         Array<Integer> expected = Array.of(10, 20, 25, null, 1000, null, null);
 
-        actual.addAll(Array.of(null, 1000, null, null));
+        actual.concat(Array.of(null, 1000, null, null));
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -520,7 +534,8 @@ class ArrayTest {
     public void insert1() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.insert(-1, 0));
+        Assertions.assertThatIndexOutOfBoundsException().
+                isThrownBy(() -> array.insert(-1, 0));
     }
 
     @Test
@@ -528,7 +543,8 @@ class ArrayTest {
     public void insert2() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> array.insert(5, 100));
+        Assertions.assertThatIndexOutOfBoundsException().
+                isThrownBy(() -> array.insert(5, 100));
     }
 
     @Test
@@ -539,7 +555,7 @@ class ArrayTest {
 
         actual.insert(0, 1000);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -550,7 +566,7 @@ class ArrayTest {
 
         actual.insert(0, 0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -561,7 +577,7 @@ class ArrayTest {
 
         actual.insert(1, 0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -572,7 +588,7 @@ class ArrayTest {
 
         actual.insert(0, 0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -590,7 +606,7 @@ class ArrayTest {
 
         actual.insert(3, 35);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -601,7 +617,7 @@ class ArrayTest {
 
         actual.insert(5, 60);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -612,7 +628,7 @@ class ArrayTest {
 
         actual.insert(2, null);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -623,8 +639,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(1000, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(0, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isZero();
     }
 
     @Test
@@ -641,8 +657,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(10, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(0, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isZero();
     }
 
     @Test
@@ -659,8 +675,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(110, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(1, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isOne();
     }
 
     @Test
@@ -677,8 +693,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(100, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 0 && index <= 1);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(0, 1);
     }
 
     @Test
@@ -696,8 +712,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(0, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(0, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isZero();
     }
 
     @Test
@@ -715,8 +731,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(80, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(2, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isEqualTo(2);
     }
 
     @Test
@@ -734,8 +750,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(25, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(1, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isOne();
     }
 
     @Test
@@ -752,8 +768,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(10, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 0 && index <= 1);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(0, 1);
     }
 
     @Test
@@ -770,8 +786,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(20, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 1 && index <= 2);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(1, 2);
     }
 
     @Test
@@ -789,8 +805,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(10, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 0 && index <= 2);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(0, 2);
     }
 
     @Test
@@ -809,8 +825,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(0, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(0, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isZero();
     }
 
     @Test
@@ -829,8 +845,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(110, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(10, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isEqualTo(10);
     }
 
     @Test
@@ -849,8 +865,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(55, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(5, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isEqualTo(5);
     }
 
     @Test
@@ -868,8 +884,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(10, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 0 && index <= 3);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(0, 3);
     }
 
     @Test
@@ -887,8 +903,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(100, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 7 && index <= 10);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(7, 10);
     }
 
     @Test
@@ -906,8 +922,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(50, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 3 && index <= 7);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(3, 7);
     }
 
     @Test
@@ -926,8 +942,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(67, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 0 && index <= 10);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(0, 10);
     }
 
     @Test
@@ -946,8 +962,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(0, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(0, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isZero();
     }
 
     @Test
@@ -966,8 +982,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(120, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(11, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isEqualTo(11);
     }
 
     @Test
@@ -986,8 +1002,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(55, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertEquals(5, index);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isEqualTo(5);
     }
 
     @Test
@@ -1005,8 +1021,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(10, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 0 && index <= 3);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(0, 3);
     }
 
     @Test
@@ -1024,8 +1040,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(110, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 8 && index <= 11);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(8, 11);
     }
 
     @Test
@@ -1043,8 +1059,8 @@ class ArrayTest {
 
         int index = actual.binaryInsert(50, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 3 && index <= 7);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(3, 7);
     }
 
     @Test
@@ -1063,32 +1079,42 @@ class ArrayTest {
 
         int index = actual.binaryInsert(67, Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertTrue(index >= 0 && index <= 11);
+        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(index).isBetween(0, 11);
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             firstIndex < 0
+             => exception
+            """)
+    public void swap1() {
+
     }
 
     @Test
     @DisplayName("quickRemove(index): index < 0 => exception")
     public void quickRemove1() {
-        Array<Integer> actual = Array.of(0, 10, 20);
+        Array<Integer> array = Array.of(0, 10, 20);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> actual.quickRemove(-1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.quickRemove(-1));
     }
 
     @Test
     @DisplayName("quickRemove(index): index == array.getLength() => exception")
     public void quickRemove2() {
-        Array<Integer> actual = Array.of(0, 10, 20);
+        Array<Integer> array = Array.of(0, 10, 20);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> actual.quickRemove(3));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.quickRemove(3));
     }
 
     @Test
     @DisplayName("quickRemove(index): index > array.getLength() => exception")
     public void quickRemove3() {
-        Array<Integer> actual = Array.of(10, 20, 30);
+        Array<Integer> array = Array.of(10, 20, 30);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> actual.quickRemove(4));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.quickRemove(4));
     }
 
     @Test
@@ -1099,7 +1125,7 @@ class ArrayTest {
 
         actual.quickRemove(0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1110,7 +1136,7 @@ class ArrayTest {
 
         actual.quickRemove(1);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1121,57 +1147,61 @@ class ArrayTest {
 
         actual.quickRemove(4);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("quickRemove(index): array contains one item, index == 0 => empty array")
     public void quickRemove7() {
-        Array<Integer> actual = new Array<>(1);
         Array<Integer> expected = new Array<>();
 
+        Array<Integer> actual = new Array<>(1);
         actual.quickRemove(0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("quickRemove(index): index of last item => set null for the last item")
     public void quickRemove8() {
-        Array<Integer> actual = Array.of(10, 20, 30);
+        Array<Integer> array = Array.of(10, 20, 30);
 
-        actual.quickRemove(2);
-        actual.expandTo(5);
+        array.quickRemove(2);
+        array.expandTo(5);
 
-        Assertions.assertNull(actual.get(2));
-        Assertions.assertNull(actual.get(3));
-        Assertions.assertNull(actual.get(4));
+        Assertions.assertThat(array).
+                elements(2, 3, 4).
+                containsOnlyNulls();
     }
 
     @Test
     @DisplayName("quickRemove(index): index in the middle => set last item to this index")
     public void quickRemove9() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40);
+        Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        actual.quickRemove(1);
+        array.quickRemove(1);
 
-        Assertions.assertEquals(40, actual.get(1));
+        Assertions.assertThat(array.get(1)).isEqualTo(40);
     }
 
     @Test
     @DisplayName("quickRemove(index): index is the middle => return removed value")
     public void quickRemove10() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40);
+        Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        Assertions.assertEquals(30, actual.quickRemove(2));
+        int actual = array.quickRemove(2);
+
+        Assertions.assertThat(actual).isEqualTo(30);
     }
 
     @Test
     @DisplayName("quickRemove(index): index of last item => return removed value")
     public void quickRemove11() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50);
 
-        Assertions.assertEquals(50, actual.quickRemove(4));
+        int actual = array.quickRemove(4);
+
+        Assertions.assertThat(actual).isEqualTo(50);
     }
 
     @Test
@@ -1182,31 +1212,31 @@ class ArrayTest {
 
         while(actual.getLength() != 0) actual.quickRemove(0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("orderedRemove(index): index < 0 => exception")
     public void orderedRemove1() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40);
+        Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> actual.orderedRemove(-1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.orderedRemove(-1));
     }
 
     @Test
     @DisplayName("orderedRemove(index): index == array length => exception")
     public void orderedRemove2() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> actual.orderedRemove(5));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.orderedRemove(5));
     }
 
     @Test
     @DisplayName("orderedRemove(index): index > array length => exception")
     public void orderedRemove3() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50);
 
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> actual.orderedRemove(6));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.orderedRemove(6));
     }
 
     @Test
@@ -1217,7 +1247,7 @@ class ArrayTest {
 
         actual.orderedRemove(0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1228,7 +1258,7 @@ class ArrayTest {
 
         actual.orderedRemove(2);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1239,7 +1269,7 @@ class ArrayTest {
 
         actual.orderedRemove(4);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1250,36 +1280,40 @@ class ArrayTest {
 
         actual.orderedRemove(0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("orderedRemove(index): index of last item => set null for the last item")
     public void orderedRemove8() {
-        Array<Integer> actual = Array.of(10, 20, 30);
+        Array<Integer> array = Array.of(10, 20, 30);
 
-        actual.orderedRemove(2);
-        actual.expandTo(5);
+        array.orderedRemove(2);
+        array.expandTo(5);
 
-        Assertions.assertNull(actual.get(2));
-        Assertions.assertNull(actual.get(3));
-        Assertions.assertNull(actual.get(4));
+        Assertions.assertThat(array).
+                elements(2, 3, 4).
+                containsOnlyNulls();
     }
 
     @Test
     @DisplayName("orderedRemove(index): index in the middle => return removed value")
     public void orderedRemove9() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60);
 
-        Assertions.assertEquals(40, actual.orderedRemove(3));
+        int actual = array.orderedRemove(3);
+
+        Assertions.assertThat(actual).isEqualTo(40);
     }
 
     @Test
     @DisplayName("orderedRemove(index): index of last item => return removed value")
     public void orderedRemove10() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60);
 
-        Assertions.assertEquals(60, actual.orderedRemove(5));
+        int actual = array.orderedRemove(5);
+
+        Assertions.assertThat(actual).isEqualTo(60);
     }
 
     @Test
@@ -1290,7 +1324,7 @@ class ArrayTest {
 
         while(actual.getLength() != 0) actual.orderedRemove(0);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1301,7 +1335,7 @@ class ArrayTest {
 
         actual.clear();
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1312,40 +1346,40 @@ class ArrayTest {
 
         actual.clear();
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("clear(): array contains items => set null for each item")
     public void clear3() {
-        Array<Integer> actual = Array.of(10,20,30,40,50,60,70,80,90,100);
+        Array<Integer> array = Array.of(10,20,30,40,50,60,70,80,90,100);
 
-        actual.clear();
-        actual.expandTo(10);
+        array.clear();
+        array.expandTo(10);
 
-        for(int i = 0; i < 10; i++) Assertions.assertNull(actual.get(i));
+        Assertions.assertThat(array).containsOnlyNulls();
     }
 
     @Test
     @DisplayName("sort(comparator): array is empty => do nothing")
     public void sort1() {
-        Array<Integer> actual = new Array<>();
+        Array<Integer> array = new Array<>();
         Array<Integer> expected = new Array<>();
 
-        actual.sort(Integer::compareTo);
+        array.sort(Integer::compareTo);
 
-        Assertions.assertEquals(actual, expected);
+        Assertions.assertThat(array).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("sort(comparator): array contains one item => do nothing")
     public void sort2() {
-        Array<Integer> actual = Array.of(512);
+        Array<Integer> array = Array.of(512);
         Array<Integer> expected = Array.of(512);
 
-        actual.sort(Integer::compareTo);
+        array.sort(Integer::compareTo);
 
-        Assertions.assertEquals(actual, expected);
+        Assertions.assertThat(array).isEqualTo(expected);
     }
 
     @Test
@@ -1356,7 +1390,7 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1367,7 +1401,7 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1378,7 +1412,7 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1389,7 +1423,7 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1400,7 +1434,7 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1411,7 +1445,7 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1422,7 +1456,7 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1433,31 +1467,37 @@ class ArrayTest {
 
         actual.sort(Integer::compareTo);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("linearSearch(T value): array empty => return -1")
     public void linearSearch1() {
-        Array<Integer> actual = new Array<>();
+        Array<Integer> array = new Array<>();
 
-        Assertions.assertEquals(-1, actual.linearSearch(100));
+        Integer actual = array.linearSearch(100);
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
     @DisplayName("linearSearch(T value): array contains null item => return index first null value")
     public void linearSearch2() {
-        Array<Integer> actual = Array.of(10, 20, null, null, 30, null);
+        Array<Integer> array = Array.of(10, 20, null, null, 30, null);
 
-        Assertions.assertEquals(2, actual.linearSearch(null));
+        int actual = array.linearSearch((Integer)null);
+
+        Assertions.assertThat(actual).isEqualTo(2);
     }
 
     @Test
     @DisplayName("linearSearch(T value): array contains several equal items => return index first item equal value")
     public void linearSearch3() {
-        Array<Integer> actual = Array.of(20, 10, 0, 40, null, null, 50, 50, 40);
+        Array<Integer> array = Array.of(20, 10, 0, 40, null, null, 50, 50, 40);
 
-        Assertions.assertEquals(3, actual.linearSearch(40));
+        int actual = array.linearSearch(40);
+
+        Assertions.assertThat(actual).isEqualTo(3);
     }
 
     @Test
@@ -1465,55 +1505,99 @@ class ArrayTest {
     public void linearSearch4() {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50, 90);
 
-        Assertions.assertEquals(-1, array.linearSearch(45));
+        int actual = array.linearSearch(45);
+
+        Assertions.assertThat(actual).isEqualTo(-1);
+    }
+
+    @Test
+    @DisplayName("linearSearch(predicate): array empty => return -1")
+    public void linearSearchByPredicate1() {
+        Array<Integer> array = new Array<>();
+
+        int actual = array.linearSearch(item -> item == 100);
+
+        Assertions.assertThat(actual).isEqualTo(-1);
+    }
+
+    @Test
+    @DisplayName("linearSearch(predicate): array contains several items for predicate => return index first item by predicate")
+    public void linearSearchByPredicate2() {
+        Array<Integer> array = Array.of(10, 20, null, null, 30, null, 40, null, 50);
+
+        int actual = array.linearSearch(item -> item != null && item > 20);
+
+        Assertions.assertThat(actual).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("linearSearch(predicate): array is not empty, array don't contain item for predicate => return -1")
+    public void linearSearchByPredicate3() {
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 90);
+
+        int actual = array.linearSearch(item -> item == 45);
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
     @DisplayName("binarySearch(comparator): array is empty => return -1")
     public void binarySearch1() {
-        Array<Integer> actual = new Array<>();
+        Array<Integer> array = new Array<>();
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(100)));
+        int actual = array.binarySearch(i -> -i.compareTo(100));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
     @DisplayName("binarySearch(comparator): array contains one item, item equal value => return 0")
     public void binarySearch2() {
-        Array<Integer> actual = Array.of(10);
+        Array<Integer> array = Array.of(10);
 
-        Assertions.assertEquals(0, actual.binarySearch(i -> -i.compareTo(10)));
+        int actual = array.binarySearch(i -> -i.compareTo(10));
+
+        Assertions.assertThat(actual).isZero();
     }
 
     @Test
     @DisplayName("binarySearch(comparator): array contains one item, value less than the smallest item => return -1")
     public void binarySearch3() {
-        Array<Integer> actual = Array.of(1);
+        Array<Integer> array = Array.of(1);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(0)));
+        int actual = array.binarySearch(i -> -i.compareTo(0));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
     @DisplayName("binarySearch(comparator): array contains one item, value greater than the biggest item => return -1")
     public void binarySearch4() {
-        Array<Integer> actual = Array.of(10);
+        Array<Integer> array = Array.of(10);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(20)));
+        int actual = array.binarySearch(i -> -i.compareTo(20));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
     @DisplayName("binarySearch(comparator): array contains two items, value less than the smallest item => return -1")
     public void binarySearch5() {
-        Array<Integer> actual = Array.of(10, 20);
+        Array<Integer> array = Array.of(10, 20);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(0)));
+        int actual = array.binarySearch(i -> -i.compareTo(0));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
     @DisplayName("binarySearch(comparator): array contains two items, value greater than the biggest item => return -1")
     public void binarySearch6() {
-        Array<Integer> actual = Array.of(10, 20);
+        Array<Integer> array = Array.of(10, 20);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(30)));
+        int actual = array.binarySearch(i -> -i.compareTo(30));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
@@ -1525,9 +1609,11 @@ class ArrayTest {
              => return -1
             """)
     public void binarySearch7() {
-        Array<Integer> actual = Array.of(10, 20);
+        Array<Integer> array = Array.of(10, 20);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(15)));
+        int actual = array.binarySearch(i -> -i.compareTo(15));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
@@ -1538,9 +1624,11 @@ class ArrayTest {
              => return 0
             """)
     public void binarySearch8() {
-        Array<Integer> actual = Array.of(10, 20);
+        Array<Integer> array = Array.of(10, 20);
 
-        Assertions.assertEquals(0, actual.binarySearch(i -> -i.compareTo(10)));
+        int actual = array.binarySearch(i -> -i.compareTo(10));
+
+        Assertions.assertThat(actual).isZero();
     }
 
     @Test
@@ -1551,9 +1639,11 @@ class ArrayTest {
              => return 1
             """)
     public void binarySearch9() {
-        Array<Integer> actual = Array.of(10, 20);
+        Array<Integer> array = Array.of(10, 20);
 
-        Assertions.assertEquals(1, actual.binarySearch(i -> -i.compareTo(20)));
+        int actual = array.binarySearch(i -> -i.compareTo(20));
+
+        Assertions.assertThat(actual).isEqualTo(1);
     }
 
     @Test
@@ -1569,7 +1659,7 @@ class ArrayTest {
 
         int index = actual.binarySearch(i -> -i.compareTo(10));
 
-        Assertions.assertTrue(index >= 0 && index <= 1);
+        Assertions.assertThat(index).isBetween(0, 1);
     }
 
     @Test
@@ -1581,9 +1671,11 @@ class ArrayTest {
              => return -1
             """)
     public void binarySearch11() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(0)));
+        int actual = array.binarySearch(i -> -i.compareTo(0));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
@@ -1595,9 +1687,11 @@ class ArrayTest {
              = return -1
             """)
     public void binarySearch12() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(110)));
+        int actual = array.binarySearch(i -> -i.compareTo(110));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
@@ -1610,9 +1704,11 @@ class ArrayTest {
              => return -1
             """)
     public void binarySearch13() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(55)));
+        int actual = array.binarySearch(i -> -i.compareTo(55));
+
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
@@ -1625,9 +1721,11 @@ class ArrayTest {
              => return 0
             """)
     public void binarySearch14() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
 
-        Assertions.assertEquals(0, actual.binarySearch(i -> -i.compareTo(10)));
+        int actual = array.binarySearch(i -> -i.compareTo(10));
+
+        Assertions.assertThat(actual).isZero();
     }
 
     @Test
@@ -1641,9 +1739,11 @@ class ArrayTest {
              => return index of item equal value
             """)
     public void binarySearch15() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
 
-        Assertions.assertEquals(4, actual.binarySearch(i -> -i.compareTo(50)));
+        int actual = array.binarySearch(i -> -i.compareTo(50));
+
+        Assertions.assertThat(actual).isEqualTo(4);
     }
 
     @Test
@@ -1656,9 +1756,11 @@ class ArrayTest {
              => return index the greater item
             """)
     public void binarySearch16() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
 
-        Assertions.assertEquals(9, actual.binarySearch(i -> -i.compareTo(100)));
+        int actual = array.binarySearch(i -> -i.compareTo(100));
+
+        Assertions.assertThat(actual).isEqualTo(9);
     }
 
     @Test
@@ -1675,7 +1777,7 @@ class ArrayTest {
 
         int index = actual.binarySearch(i -> -i.compareTo(20));
 
-        Assertions.assertTrue(index >= 0 && index <= 2);
+        Assertions.assertThat(index).isBetween(0, 2);
     }
 
     @Test
@@ -1688,11 +1790,11 @@ class ArrayTest {
              => return value must belong [first middle item, last middle item]
             """)
     public void binarySearch18() {
-        Array<Integer> actual = Array.of(10, 20, 30, 50, 50, 50, 70, 80, 90, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 50, 50, 50, 70, 80, 90, 100);
 
-        int index = actual.binarySearch(i -> -i.compareTo(50));
-
-        Assertions.assertTrue(index >= 3 && index <= 5);
+        int index = array.binarySearch(i -> -i.compareTo(50));
+        
+        Assertions.assertThat(index).isBetween(3, 5);
     }
 
     @Test
@@ -1705,11 +1807,11 @@ class ArrayTest {
              => return value must belong [first the biggest item index, last the biggest item index]
             """)
     public void binarySearch19() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 100, 100, 100);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 100, 100, 100);
 
-        int index = actual.binarySearch(i -> -i.compareTo(100));
+        int index = array.binarySearch(i -> -i.compareTo(100));
 
-        Assertions.assertTrue(index >= 7 && index <= 9);
+        Assertions.assertThat(index).isBetween(7, 9);
     }
 
     @Test
@@ -1721,9 +1823,11 @@ class ArrayTest {
              => return -1
             """)
     public void binarySearch20() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(0)));
+        int index = array.binarySearch(i -> -i.compareTo(0));
+        
+        Assertions.assertThat(index).isEqualTo(-1);
     }
 
     @Test
@@ -1735,9 +1839,11 @@ class ArrayTest {
              = return -1
             """)
     public void binarySearch21() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(120)));
+        int actual = array.binarySearch(i -> -i.compareTo(120));
+        
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
@@ -1750,9 +1856,11 @@ class ArrayTest {
              => return -1
             """)
     public void binarySearch22() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
 
-        Assertions.assertEquals(-1, actual.binarySearch(i -> -i.compareTo(55)));
+        int actual = array.binarySearch(i -> -i.compareTo(55));
+        
+        Assertions.assertThat(actual).isEqualTo(-1);
     }
 
     @Test
@@ -1765,9 +1873,11 @@ class ArrayTest {
              => return 0
             """)
     public void binarySearch23() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
 
-        Assertions.assertEquals(0, actual.binarySearch(i -> -i.compareTo(10)));
+        int actual = array.binarySearch(i -> -i.compareTo(10));
+        
+        Assertions.assertThat(actual).isZero();
     }
 
     @Test
@@ -1781,9 +1891,11 @@ class ArrayTest {
              => return index value of item equal value
             """)
     public void binarySearch24() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
 
-        Assertions.assertEquals(4, actual.binarySearch(i -> -i.compareTo(50)));
+        int actual = array.binarySearch(i -> -i.compareTo(50));
+        
+        Assertions.assertThat(actual).isEqualTo(4);
     }
 
     @Test
@@ -1796,9 +1908,11 @@ class ArrayTest {
              => return index the greater item
             """)
     public void binarySearch25() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110);
 
-        Assertions.assertEquals(10, actual.binarySearch(i -> -i.compareTo(110)));
+        int actual = array.binarySearch(i -> -i.compareTo(110));
+        
+        Assertions.assertThat(actual).isEqualTo(10);
     }
 
     @Test
@@ -1814,8 +1928,8 @@ class ArrayTest {
         Array<Integer> actual = Array.of(20, 20, 20, 40, 50, 60, 70, 80, 90, 100, 110);
 
         int index = actual.binarySearch(i -> -i.compareTo(20));
-
-        Assertions.assertTrue(index >= 0 && index <= 2);
+        
+        Assertions.assertThat(index).isBetween(0, 2);
     }
 
     @Test
@@ -1832,7 +1946,7 @@ class ArrayTest {
 
         int index = actual.binarySearch(i -> -i.compareTo(50));
 
-        Assertions.assertTrue(index >= 3 && index <= 5);
+        Assertions.assertThat(index).isBetween(3, 5);
     }
 
     @Test
@@ -1849,31 +1963,37 @@ class ArrayTest {
 
         int index = actual.binarySearch(i -> -i.compareTo(110));
 
-        Assertions.assertTrue(index >= 8 && index <= 10);
+        Assertions.assertThat(index).isBetween(8, 10);
     }
 
     @Test
     @DisplayName("expandTo(newLength): newLength < length => return false")
     public void expandTo1() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40);
+        Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        Assertions.assertFalse(actual.expandTo(3));
+        boolean actual = array.expandTo(3);
+        
+        Assertions.assertThat(actual).isFalse();
     }
 
     @Test
     @DisplayName("expandTo(newLength): newLength == length => return false")
     public void expandTo2() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40);
+        Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        Assertions.assertFalse(actual.expandTo(4));
+        boolean actual = array.expandTo(4);
+        
+        Assertions.assertThat(actual).isFalse();
     }
 
     @Test
     @DisplayName("expandTo(newLength): newLength > length => return true")
     public void expandTo3() {
-        Array<Integer> actual = Array.of(10, 20, 30, 40);
+        Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        Assertions.assertTrue(actual.expandTo(5));
+        boolean actual = array.expandTo(5);
+        
+        Assertions.assertThat(actual).isTrue();
     }
 
     @Test
@@ -1884,7 +2004,7 @@ class ArrayTest {
 
         actual.expandTo(3);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1895,7 +2015,7 @@ class ArrayTest {
 
         actual.expandTo(4);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1906,7 +2026,7 @@ class ArrayTest {
 
         actual.expandTo(12);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1914,7 +2034,7 @@ class ArrayTest {
     public void iterator1() {
         Array<Integer> array = new Array<>();
 
-        Assertions.assertFalse(array.iterator().hasNext());
+        Assertions.assertThat(array.iterator().hasNext()).isFalse();
     }
 
     @Test
@@ -1924,10 +2044,10 @@ class ArrayTest {
         Array<Boolean> actual = new Array<>();
         Array<Boolean> expected = Array.of(true, true, true, true, true, false);
 
-        for(Integer integer : array)  actual.add(true);
-        actual.add(false);
+        for(Integer integer : array)  actual.append(true);
+        actual.append(false);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1935,7 +2055,8 @@ class ArrayTest {
     public void iterator3() {
         Array<Integer> array = new Array<>();
 
-        Assertions.assertThrows(NoSuchElementException.class, () -> array.iterator().next());
+        Assertions.assertThatExceptionOfType(NoSuchElementException.class).
+                isThrownBy(() -> array.iterator().next());
     }
 
     @Test
@@ -1945,9 +2066,9 @@ class ArrayTest {
         Array<Integer> actual = new Array<>();
         Array<Integer> expected = new Array<>(array);
 
-        for(Integer integer : array) actual.add(integer);
+        for(Integer integer : array) actual.append(integer);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1958,7 +2079,8 @@ class ArrayTest {
 
         while(iterator.hasNext()) iterator.next();
 
-        Assertions.assertThrows(NoSuchElementException.class, () -> iterator.next());
+        Assertions.assertThatExceptionOfType(NoSuchElementException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -1969,7 +2091,8 @@ class ArrayTest {
 
         array.set(0, 10);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -1980,7 +2103,8 @@ class ArrayTest {
 
         array.setAndExpand(100, 10);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -1989,9 +2113,10 @@ class ArrayTest {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Iterator<Integer> iterator = array.iterator();
 
-        array.add(10);
+        array.append(10);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2000,9 +2125,10 @@ class ArrayTest {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Iterator<Integer> iterator = array.iterator();
 
-        array.addAll(0, 10);
+        array.appendAll(0, 10);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2011,9 +2137,10 @@ class ArrayTest {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Iterator<Integer> iterator = array.iterator();
 
-        array.addAll(Array.of(10, 20, 30));
+        array.concat(Array.of(10, 20, 30));
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2024,7 +2151,8 @@ class ArrayTest {
 
         array.insert(1, 10);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2035,7 +2163,8 @@ class ArrayTest {
 
         array.binaryInsert(55, Integer::compareTo);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2046,7 +2175,8 @@ class ArrayTest {
 
         array.quickRemove(1);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2057,7 +2187,8 @@ class ArrayTest {
 
         array.orderedRemove(2);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2068,7 +2199,8 @@ class ArrayTest {
 
         array.clear();
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2079,7 +2211,8 @@ class ArrayTest {
 
         array.sort(Integer::compareTo);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2090,7 +2223,8 @@ class ArrayTest {
 
         array.expandTo(100);
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2101,7 +2235,8 @@ class ArrayTest {
 
         array.trimToLength();
 
-        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
+        Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
+                isThrownBy(iterator::next);
     }
 
     @Test
@@ -2111,9 +2246,9 @@ class ArrayTest {
         Array<Integer> actual = new Array<>();
         Array<Integer> expected = new Array<>();
 
-        array.forEach(actual::add);
+        array.forEach(actual::append);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -2123,9 +2258,9 @@ class ArrayTest {
         Array<Integer> actual = new Array<>();
         Array<Integer> expected = new Array<>(array);
 
-        array.forEach(actual::add);
+        array.forEach(actual::append);
 
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -2134,7 +2269,7 @@ class ArrayTest {
         Array<Integer> firstOperand = Array.of(10, 20, 30, 40, 50);
         Array<Integer> secondOperand = Array.of(10, 20, null, 50, 40);
 
-        Assertions.assertNotEquals(firstOperand, secondOperand);
+        Assertions.assertThat(firstOperand).isNotEqualTo(secondOperand);
     }
 
     @Test
@@ -2143,7 +2278,7 @@ class ArrayTest {
         Array<Integer> firstOperand = Array.of(10, 20, 30, 40, 50);
         Array<Integer> secondOperand = Array.of(10, 20, 30, 40, 50);
 
-        Assertions.assertEquals(firstOperand, secondOperand);
+        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
     }
 
     @Test
@@ -2153,9 +2288,9 @@ class ArrayTest {
         Array<Integer> secondOperand = Array.of(10, 20, 30, 40, 50);
 
         for(int i = 0; i < 1000; i++) firstOperand.quickRemove(0);
-        firstOperand.addAll(10, 20, 30, 40, 50);
+        firstOperand.appendAll(10, 20, 30, 40, 50);
 
-        Assertions.assertEquals(firstOperand, secondOperand);
+        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
     }
 
     @Test
@@ -2163,7 +2298,7 @@ class ArrayTest {
     public void equals4() {
         Array<Integer> firstOperand = Array.of(10, 20, 30, 40, 50);
 
-        Assertions.assertEquals(firstOperand, firstOperand);
+        Assertions.assertThat(firstOperand).isEqualTo(firstOperand);
     }
 
     @Test
@@ -2172,8 +2307,8 @@ class ArrayTest {
         Array<Integer> firstOperand = Array.of(10, 20, 30, 40, 50);
         Array<Integer> secondOperand = Array.of(10, 20, 30, 40, 50);
 
-        Assertions.assertEquals(firstOperand, secondOperand);
-        Assertions.assertEquals(secondOperand, firstOperand);
+        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
+        Assertions.assertThat(secondOperand).isEqualTo(firstOperand);
     }
 
     @Test
@@ -2183,9 +2318,9 @@ class ArrayTest {
         Array<Integer> secondOperand = Array.of(10, 20, 30, 40, 50);
         Array<Integer> thirdOperand = Array.of(10, 20, 30, 40, 50);
 
-        Assertions.assertEquals(firstOperand, secondOperand);
-        Assertions.assertEquals(secondOperand, thirdOperand);
-        Assertions.assertEquals(firstOperand, thirdOperand);
+        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
+        Assertions.assertThat(secondOperand).isEqualTo(thirdOperand);
+        Assertions.assertThat(firstOperand).isEqualTo(thirdOperand);
     }
 
 }

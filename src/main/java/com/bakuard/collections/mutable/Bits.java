@@ -50,7 +50,7 @@ public final class Bits implements Comparable<Bits> {
      * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #getSize()}
      */
     public boolean get(int index) throws IndexOutOfBoundsException {
-        checkIndex(index);
+        assertInHalfOpenInterval(index);
         return (words[index >>> 6] & (1L << index)) != 0L;
     }
 
@@ -60,7 +60,7 @@ public final class Bits implements Comparable<Bits> {
      * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #getSize()}
      */
     public void set(int index) throws IndexOutOfBoundsException {
-        checkIndex(index);
+        assertInHalfOpenInterval(index);
         words[index >>> 6] |= 1L << index;
     }
 
@@ -74,7 +74,7 @@ public final class Bits implements Comparable<Bits> {
      *                                   условие index >= 0 && index < {@link #getSize()}.
      */
     public void setAll(int... indexes) throws IndexOutOfBoundsException {
-        for(int i = 0; i < indexes.length; i++) checkIndex(indexes[i]);
+        for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
         for(int i = 0; i < indexes.length; i++) {
             int index = indexes[i];
             words[index >>> 6] |= 1L << index;
@@ -116,7 +116,7 @@ public final class Bits implements Comparable<Bits> {
      * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #getSize()}.
      */
     public void clear(int index) throws IndexOutOfBoundsException {
-        checkIndex(index);
+        assertInHalfOpenInterval(index);
         words[index >>> 6] &= ~(1L << index);
     }
 
@@ -130,7 +130,7 @@ public final class Bits implements Comparable<Bits> {
      *                                   условие index >= 0 && index < {@link #getSize()}.
      */
     public void clearAll(int... indexes) throws IndexOutOfBoundsException {
-        for(int i = 0; i < indexes.length; i++) checkIndex(indexes[i]);
+        for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
         for(int i = 0; i < indexes.length; i++) {
             int index = indexes[i];
             words[index >>> 6] &= ~(1L << index);
@@ -635,7 +635,7 @@ public final class Bits implements Comparable<Bits> {
     }
 
 
-    private void checkIndex(int index) {
+    private void assertInHalfOpenInterval(int index) {
         if(index < 0 || index >= size)
             throw new IndexOutOfBoundsException("expected: index >= 0 && index < size; actual: index=" + size);
     }
