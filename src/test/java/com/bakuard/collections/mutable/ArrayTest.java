@@ -1090,7 +1090,99 @@ class ArrayTest {
              => exception
             """)
     public void swap1() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.swap(-1, 0));
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             secondIndex < 0
+             => exception
+            """)
+    public void swap2() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.swap(0, -1));
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             firstIndex == array.length
+             => exception
+            """)
+    public void swap3() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.swap(10, 0));
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             secondIndex == array.length
+             => exception
+            """)
+    public void swap4() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.swap(0, 10));
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             firstIndex > array.length
+             => exception
+            """)
+    public void swap5() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.swap(11, 0));
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             secondIndex > array.length
+             => exception
+            """)
+    public void swap6() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.swap(0, 11));
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             firstIndex == secondIndex
+             => don't change array
+            """)
+    public void swap7() {
+        Array<Integer> expected = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Array<Integer> actual = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        actual.swap(3, 3);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("""
+            swap(firstIndex, secondIndex):
+             firstIndex != secondIndex
+             => swap items
+            """)
+    public void swap8() {
+        Array<Integer> expected = Array.of(0, 1, 2, 9, 4, 5, 6, 7, 8, 3);
+
+        Array<Integer> actual = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        actual.swap(3, 9);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -1964,6 +2056,48 @@ class ArrayTest {
         int index = actual.binarySearch(i -> -i.compareTo(110));
 
         Assertions.assertThat(index).isBetween(8, 10);
+    }
+
+    @Test
+    @DisplayName("""
+            frequency(predicate):
+             array not contains items for predicate
+             => return 0
+            """)
+    public void frequency1() {
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 110, 110, 110);
+
+        int actual = array.frequency(i -> i < 0);
+
+        Assertions.assertThat(actual).isZero();
+    }
+
+    @Test
+    @DisplayName("""
+            frequency(predicate):
+             array is empty
+             => return 0
+            """)
+    public void frequency2() {
+        Array<Integer> array = new Array<>();
+
+        int actual = array.frequency(i -> i > 0);
+
+        Assertions.assertThat(actual).isZero();
+    }
+
+    @Test
+    @DisplayName("""
+            frequency(predicate):
+             array contains items for predicate
+             => return correct result
+            """)
+    public void frequency3() {
+        Array<Integer> array = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 110, 110, 110);
+
+        int actual = array.frequency(i -> i % 20 == 0);
+
+        Assertions.assertThat(actual).isEqualTo(4);
     }
 
     @Test
