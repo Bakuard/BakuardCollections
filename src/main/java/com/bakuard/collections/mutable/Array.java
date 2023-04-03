@@ -7,19 +7,19 @@ import java.util.function.ToIntFunction;
 
 /**
  * Реализация динамического массива с объектами произвольного типа.
- * @param <T> тип объектов хранимых в массиве.
  */
 public final class Array<T> implements Iterable<T> {
 
     /**
-     * Создает массив содержащий указанные элементы. Итоговый объект Array будет содержать копию передаваемого
-     * массива, а не сам массив. Длина создаваемого объекта ({@link #getLength()}) будет равна кол-ву передаваемых
-     * элементов. Если передаваемый массив не содержит ни одного элемента - создает пустой объект Array.
+     * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект Array
+     * будет содержать копию передаваемого массива, а не сам массив. Длина создаваемого объекта
+     * ({@link #getLength()}) будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит
+     * ни одного элемента - создает пустой объект Array.
      * @param data элементы включаемые в создаваемый объект.
      * @throws NullPointerException если передаваемый массив элементов равен null.
      */
     public static <T> Array<T> of(T... data) {
-        if(data == null) throw new NullPointerException("data[] ca not be null.");
+        if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Array<T> result = new Array<>();
         result.appendAll(data);
@@ -119,9 +119,9 @@ public final class Array<T> implements Iterable<T> {
     public void append(T value) {
         ++actualModCount;
 
-        int index = length;
+        int lastIndex = length;
         expandTo(length + 1);
-        values[index] = value;
+        values[lastIndex] = value;
     }
 
     /**
@@ -205,6 +205,8 @@ public final class Array<T> implements Iterable<T> {
     public void swap(int firstIndex, int secondIndex) {
         assertInHalfOpenInterval(firstIndex);
         assertInHalfOpenInterval(secondIndex);
+
+        ++actualModCount;
 
         T first = values[firstIndex];
         values[firstIndex] = values[secondIndex];
@@ -402,9 +404,10 @@ public final class Array<T> implements Iterable<T> {
     }
 
     /**
-     * Выполняет переданную операцию реализованную объектом типа Consumer для каждого элемента
+     * Выполняет переданную операцию, реализованную объектом типа Consumer, для каждого элемента
      * хранящегося в массиве. Порядок перебора элементов соответствует порядку их следования в массиве.
      * @param action действие выполняемое для каждого элемента хранящегося в данном массиве.
+     * @throws ConcurrentModificationException если массив изменяется в момент выполнения этого метода.
      */
     @Override
     public void forEach(Consumer<? super T> action) {
@@ -457,11 +460,11 @@ public final class Array<T> implements Iterable<T> {
         if (o == null || getClass() != o.getClass()) return false;
         Array<?> array = (Array<?>) o;
 
-        if(array.length != length) return false;
-        for(int i = 0; i < length; i++) {
-            if(!Objects.equals(array.values[i], values[i])) return false;
+        boolean result = array.length == length;
+        for(int i = 0; i < length && result; i++) {
+            result = Objects.equals(array.values[i], values[i]);
         }
-        return true;
+        return result;
     }
 
     @Override
