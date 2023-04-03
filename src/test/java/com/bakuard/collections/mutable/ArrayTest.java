@@ -1,12 +1,15 @@
 package com.bakuard.collections.mutable;
 
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.assertj.core.api.IntegerAssert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.stream.IntStream;
 
 class ArrayTest {
 
@@ -130,15 +133,9 @@ class ArrayTest {
     @Test
     @DisplayName("Array.of(...data): data[] contains several item => create array with these items.")
     public void of3() {
-        Array<Integer> expected = new Array<>(4);
-        expected.set(0, 10);
-        expected.set(1, null);
-        expected.set(2, 30);
-        expected.set(3, 30);
+        Array<Integer> array = Array.of(10, null, 30, 30);
 
-        Array<Integer> actual = Array.of(10, null, 30, 30);
-
-        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(array).containsExactly(10, null, 30, 30);
     }
 
     @Test
@@ -387,7 +384,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("append(value): => add value and increase length")
+    @DisplayName("append(value): => add value")
     public void append1() {
         Array<Integer> actual = Array.of(0, 10, 120);
         Array<Integer> expected = Array.of(0, 10, 120, 1000);
@@ -395,6 +392,33 @@ class ArrayTest {
         actual.append(1000);
 
         Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("""
+            append(value): => increase length
+            """)
+    public void append2() {
+        Array<Integer> actual = Array.of(0, 10, 120);
+
+        actual.append(1000);
+
+        Assertions.assertThat(actual.getLength()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("""
+            append(value):
+             add several items
+            """)
+    public void append3() {
+        Array<Integer> actual = Array.of(0, 1, 2, 3);
+
+        for(int i = 4; i < 1000; i++) actual.append(i);
+
+        Assertions.assertThat(actual).
+                hasSameElementsAs(IntStream.range(0, 1000).boxed().toList());
+        Assertions.assertThat(actual.getLength()).isEqualTo(1000);
     }
 
     @Test
@@ -2174,14 +2198,17 @@ class ArrayTest {
     @Test
     @DisplayName("iterator(), Iterator#hasNext(): array contains several items => return correct result")
     public void iterator2() {
-        Array<Integer> array = Array.of(10, 20, 30, 40, 50);
+        Array<Integer> array = Array.of(1, 2, 3, 4, 5);
+
+        Iterator<Integer> iterator = array.iterator();
         Array<Boolean> actual = new Array<>();
-        Array<Boolean> expected = Array.of(true, true, true, true, true, false);
+        for(int i = 0; i < 10; i++) {
+            actual.append(iterator.hasNext());
+            if(iterator.hasNext()) iterator.next();
+        }
 
-        for(Integer integer : array)  actual.append(true);
-        actual.append(false);
-
-        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(actual).
+                containsExactly(true, true, true, true, true, false, false, false, false, false);
     }
 
     @Test
@@ -2194,7 +2221,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("iterator(), Iterator#next(): array contains several item => return correct result")
+    @DisplayName("iterator(), Iterator#next(): array contains several item => return all items in correct order")
     public void iterator4() {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Array<Integer> actual = new Array<>();
@@ -2386,7 +2413,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("forEach(): empty contains several item => get each item in correct order")
+    @DisplayName("forEach(): array contains several item => get each item in correct order")
     public void forEach2() {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Array<Integer> actual = new Array<>();
