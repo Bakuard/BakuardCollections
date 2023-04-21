@@ -1,8 +1,6 @@
 package com.bakuard.collections.mutable;
 
 import org.assertj.core.api.Assertions;
-import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.api.IntegerAssert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +16,7 @@ class ArrayTest {
     public void Array_empty1() {
         Array<String> emptyArray = new Array<>();
 
-        Assertions.assertThat(emptyArray.getLength()).isZero();
+        Assertions.assertThat(emptyArray.size()).isZero();
     }
 
     @Test
@@ -43,7 +41,7 @@ class ArrayTest {
     public void Array_length2() {
         Array<String> array = new Array<>(100);
 
-        Assertions.assertThat(array.getLength()).isEqualTo(100);
+        Assertions.assertThat(array.size()).isEqualTo(100);
     }
 
     @Test
@@ -58,7 +56,7 @@ class ArrayTest {
     public void Array_length4() {
         Array<String> emptyArray = new Array<>(0);
 
-        Assertions.assertThat(emptyArray.getLength()).isZero();
+        Assertions.assertThat(emptyArray.size()).isZero();
     }
 
     @Test
@@ -127,7 +125,7 @@ class ArrayTest {
     public void of2() {
         Array<Integer> array = Array.of(new Integer[]{});
 
-        Assertions.assertThat(array.getLength()).isEqualTo(0);
+        Assertions.assertThat(array.size()).isEqualTo(0);
     }
 
     @Test
@@ -274,7 +272,7 @@ class ArrayTest {
 
         array.setAndExpand(4, 1000);
 
-        Assertions.assertThat(array.getLength()).isEqualTo(5);
+        Assertions.assertThat(array.size()).isEqualTo(5);
     }
 
     @Test
@@ -294,7 +292,7 @@ class ArrayTest {
 
         array.setAndExpand(10, 1000);
 
-        Assertions.assertThat(array.getLength()).isEqualTo(11);
+        Assertions.assertThat(array.size()).isEqualTo(11);
     }
 
     @Test
@@ -403,7 +401,7 @@ class ArrayTest {
 
         actual.append(1000);
 
-        Assertions.assertThat(actual.getLength()).isEqualTo(4);
+        Assertions.assertThat(actual.size()).isEqualTo(4);
     }
 
     @Test
@@ -418,7 +416,7 @@ class ArrayTest {
 
         Assertions.assertThat(actual).
                 hasSameElementsAs(IntStream.range(0, 1000).boxed().toList());
-        Assertions.assertThat(actual.getLength()).isEqualTo(1000);
+        Assertions.assertThat(actual.size()).isEqualTo(1000);
     }
 
     @Test
@@ -1218,7 +1216,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("quickRemove(index): index == array.getLength() => exception")
+    @DisplayName("quickRemove(index): index == array.size() => exception")
     public void quickRemove2() {
         Array<Integer> array = Array.of(0, 10, 20);
 
@@ -1226,7 +1224,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("quickRemove(index): index > array.getLength() => exception")
+    @DisplayName("quickRemove(index): index > array.size() => exception")
     public void quickRemove3() {
         Array<Integer> array = Array.of(10, 20, 30);
 
@@ -1326,7 +1324,7 @@ class ArrayTest {
         Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60);
         Array<Integer> expected = new Array<>();
 
-        while(actual.getLength() != 0) actual.quickRemove(0);
+        while(actual.size() != 0) actual.quickRemove(0);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
@@ -1438,7 +1436,7 @@ class ArrayTest {
         Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60);
         Array<Integer> expected = new Array<>();
 
-        while(actual.getLength() != 0) actual.orderedRemove(0);
+        while(actual.size() != 0) actual.orderedRemove(0);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }

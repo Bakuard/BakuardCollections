@@ -11,7 +11,7 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Создает и возвращает стек содержащий указанные элементы в указанном порядке. Итоговый стек будет содержать
-     * копию передаваемого массива, а не сам массив. Длина создаваемого объекта ({@link #getLength()})
+     * копию передаваемого массива, а не сам массив. Длина создаваемого объекта ({@link #size()})
      * будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит ни одного элемента -
      * создает пустой стек.
      * @param data элементы включаемые в создаваемый стек.
@@ -21,7 +21,7 @@ public class Stack<T> implements Iterable<T> {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Stack<T> result = new Stack<>();
-        result.putAllOnTop(data);
+        result.putAllOnLast(data);
         return result;
     }
 
@@ -50,11 +50,11 @@ public class Stack<T> implements Iterable<T> {
     }
 
     /**
-     * Добавляет элемент на вершину стека увеличивая его длину ({@link #getLength()}) на единицу.
+     * Добавляет элемент на вершину стека увеличивая его длину ({@link #size()}) на единицу.
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
      */
-    public void putTop(T value) {
+    public void putLast(T value) {
         ++actualModCount;
 
         int lastIndex = length;
@@ -63,31 +63,12 @@ public class Stack<T> implements Iterable<T> {
     }
 
     /**
-     * Добавляет все элементы из указанного стека на вершину текущего. Элементы добавляются в порядке
-     * их следования в указанном стеке.
-     * @param stack стек, все элементы которого добавляются в текущий.
+     * Добавляет все элементы из указанной перебираемой структуры данных на вершину стека. Элементы
+     * добавляются в порядке из возвращения итератором.
+     * @param iterable структура данных, все элементы которой добавляются на вершину текущего стека.
      */
-    public void putAllOnTop(Stack<T> stack) {
-        ++actualModCount;
-
-        int lastIndex = length;
-        grow(length + stack.getLength());
-        System.arraycopy(stack.values, 0, this.values, lastIndex, stack.getLength());
-    }
-
-    /**
-     * Добавляет все элементы из указанного динамического массива на вершину стека. Элементы добавляются
-     * в порядке их следования в указанном массиве.
-     * @param array массив, все элементы которого добавляются в текущий.
-     */
-    public void putAllOnTop(Array<T> array) {
-        ++actualModCount;
-
-        int lastIndex = length;
-        grow(length + array.getLength());
-        for(int i = 0; i < array.getLength(); i++) {
-            values[lastIndex + i] = array.get(i);
-        }
+    public void putAllOnLast(Iterable<T> iterable) {
+        for(T value : iterable) putLast(value);
     }
 
     /**
@@ -95,7 +76,7 @@ public class Stack<T> implements Iterable<T> {
      * в порядке их следования в указанном массиве.
      * @param data массив, все элементы которого добавляются в текущий.
      */
-    public void putAllOnTop(T... data) {
+    public void putAllOnLast(T... data) {
         if(data.length > 0) {
             ++actualModCount;
 
@@ -109,9 +90,9 @@ public class Stack<T> implements Iterable<T> {
      * Удаляет элемент с вершины стека и возвращает его. Если стек пуст - возвращает null. <br/>
      * <b>ВАЖНО!</b> Т.к. стек допускает хранение null элементов, то возвращение данным методом
      * null в качестве результата не гарантирует, что стек пуст. Для проверки наличия элементов
-     * в стеке используйте методы {@link #getLength()} или {@link #isEmpty()}.
+     * в стеке используйте методы {@link #size()} или {@link #isEmpty()}.
      */
-    public T removeTop() {
+    public T removeLast() {
         ++actualModCount;
         return length > 0 ? values[--length] : null;
     }
@@ -120,12 +101,12 @@ public class Stack<T> implements Iterable<T> {
      * Удаляет элемент с вершины стека и возвращает его. Если стек пуст, выбрасывает исключение.
      * @throws NoSuchElementException если стек пуст.
      */
-    public T tryRemoveTop() {
+    public T tryRemoveLast() {
         if(length == 0) {
             throw new NoSuchElementException("Fail to remove top: stack is empty.");
         }
 
-        return removeTop();
+        return removeLast();
     }
 
     /**
@@ -141,11 +122,11 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
-     * длинной объекта ({@link #getLength()}), то уменьшает емкость внутреннего массива, иначе - не вносит
+     * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
      * памяти занимаемый объектом Stack.
      * @return true - если размер внутреннего массива больше его минимально допустимого значения в соответствии
-     *                с текущей длинной объекта ({@link #getLength()}), и как следствие объем внутреннего массива
+     *                с текущей длинной объекта ({@link #size()}), и как следствие объем внутреннего массива
      *                был уменьшен, иначе - false.
      */
     public boolean trimToLength() {
@@ -162,20 +143,20 @@ public class Stack<T> implements Iterable<T> {
     /**
      * Возвращает вершину стека не удаляя её. Если стек пуст - возвращает null.
      */
-    public T getTop() {
+    public T getLast() {
         return length > 0 ? values[length - 1] : null;
     }
 
     /**
      * Возвращает любой элемент этого стека по его индексу, не удаляя его. Элементу с индексом [0]
-     * соответствует вершина стека, а элементу с индексом [{@link #getLength()} - 1] - самый нижний
+     * соответствует вершина стека, а элементу с индексом [{@link #size()} - 1] - самый нижний
      * элемент стека. <br/>
      * Метод также допускает отрицательные индексы. Элементу с индексом [-1] соответствует самый
-     * нижний элемент стека, а элементу с индексом [-({@link #getLength()})] - вершина стека.
+     * нижний элемент стека, а элементу с индексом [-({@link #size()})] - вершина стека.
      * @param index индекс искомого элемента.
-     * @throws IndexOutOfBoundsException если index < [-({@link #getLength()})] или index >= [{@link #getLength()}]
+     * @throws IndexOutOfBoundsException если index < [-({@link #size()})] или index >= [{@link #size()}]
      */
-    public T getAny(int index) {
+    public T get(int index) {
         assertInHalfOpenInterval(index);
 
         if(index < 0) return values[Math.abs(index) - 1];
@@ -185,7 +166,7 @@ public class Stack<T> implements Iterable<T> {
     /**
      * Возвращает кол-во элементов в стеке.
      */
-    public int getLength() {
+    public int size() {
         return length;
     }
 
@@ -197,25 +178,25 @@ public class Stack<T> implements Iterable<T> {
     }
 
     /**
-     * Находит и возвращает индекс первого элемента равного заданному. Поиск начинается с вершины
-     * стека. Элементу с индексом [0] соответствует вершина стека. Выполняет линейный поиск.
+     * Находит и возвращает индекс первого элемента равного заданному. Выполняет линейный поиск
+     * начиная с самого нижнего элемента стека в направлении вершины стека. Выполняет линейный поиск.
      * @param value искомый элемент
      */
     public int linearSearch(T value) {
         int index = 0;
-        while(index < length && !Objects.equals(values[length - 1 - index], value)) ++index;
+        while(index < length && !Objects.equals(values[index], value)) ++index;
         return index >= length ? -1 : index;
     }
 
     /**
      * Возвращает индекс первого встретившегося элемента соответствующего заданному предикату.
-     * Если такого элемента нет - возвращает -1. Поиск начинается с вершины стека.
-     * Элементу с индексом [0] соответствует вершина стека. Выполняет линейный поиск.
+     * Если такого элемента нет - возвращает -1. Выполняет линейный поиск начиная с самого нижнего
+     * элемента стека в направлении вершины стека. Выполняет линейный поиск.
      * @param predicate условие, которому должен соответствовать искомый элемент.
      */
     public int linearSearch(Predicate<T> predicate) {
         int index = 0;
-        while(index < length && !predicate.test(values[length - 1 - index])) ++index;
+        while(index < length && !predicate.test(values[index])) ++index;
         return index >= length ? -1 : index;
     }
 
@@ -232,7 +213,7 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Возвращает итератор для одностороннего перебора элементов данного стека. Элементы перебираются
-     * начиная с вершины стека.
+     * начиная с нижнего элемента стека в направлении его вершины.
      * @return итератор для одностороннего перебора элементов данного стека.
      */
     @Override
@@ -240,21 +221,21 @@ public class Stack<T> implements Iterable<T> {
         return new Iterator<T>() {
 
             private final int EXPECTED_COUNT_MOD = actualModCount;
-            private int currentIndex = length - 1;
+            private int currentIndex = 0;
 
             @Override
             public boolean hasNext() {
-                return currentIndex >= 0;
+                return currentIndex < length;
             }
 
             @Override
             public T next() {
                 if(EXPECTED_COUNT_MOD != actualModCount) {
                     throw new ConcurrentModificationException();
-                } else if(currentIndex < 0) {
+                } else if(currentIndex >= length) {
                     throw new NoSuchElementException();
                 } else {
-                    return values[currentIndex--];
+                    return values[currentIndex++];
                 }
             }
         };
@@ -262,7 +243,8 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Выполняет переданную операцию, реализованную объектом типа Consumer, для каждого элемента
-     * хранящегося в стеке. Элементы перебираются начиная с вершины стека.
+     * хранящегося в стеке. Элементы перебираются начиная с нижнего элемента стека в направлении его
+     * вершины.
      * @param action действие выполняемое для каждого элемента хранящегося в данном стеке.
      * @throws ConcurrentModificationException если стек изменяется в момент выполнения этого метода.
      */
@@ -270,7 +252,7 @@ public class Stack<T> implements Iterable<T> {
     public void forEach(Consumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
-        for(int i = length - 1; i >= 0; --i) {
+        for(int i = 0; i < length; ++i) {
             action.accept(values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();

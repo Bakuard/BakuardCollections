@@ -13,7 +13,7 @@ public final class Array<T> implements Iterable<T> {
     /**
      * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект Array
      * будет содержать копию передаваемого массива, а не сам массив. Длина создаваемого объекта
-     * ({@link #getLength()}) будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит
+     * ({@link #size()}) будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит
      * ни одного элемента - создает пустой объект Array.
      * @param data элементы включаемые в создаваемый объект.
      * @throws NullPointerException если передаваемый массив элементов равен null.
@@ -219,12 +219,12 @@ public final class Array<T> implements Iterable<T> {
      * @param array добавляемые элементы.
      */
     public void concat(Array<T> array) {
-        if(array.getLength() > 0) {
+        if(array.size() > 0) {
             ++actualModCount;
 
             int lastIndex = length;
-            expandTo(length + array.getLength());
-            System.arraycopy(array.values, 0, this.values, lastIndex, array.getLength());
+            expandTo(length + array.size());
+            System.arraycopy(array.values, 0, this.values, lastIndex, array.size());
         }
     }
 
@@ -299,7 +299,7 @@ public final class Array<T> implements Iterable<T> {
      * в них значений из старых.
      * @return длина массива.
      */
-    public int getLength() {
+    public int size() {
         return length;
     }
 
@@ -361,12 +361,12 @@ public final class Array<T> implements Iterable<T> {
     }
 
     /**
-     * Если newLength больше длины массива ({@link #getLength()}), то увеличивает внутреннюю емкость массива
+     * Если newLength больше длины массива ({@link #size()}), то увеличивает внутреннюю емкость массива
      * таким образом, чтобы вмещать кол-во элементов как минимум равное newLength, а длинна массива станет
      * равна newLength. Если значение newLength меньше или равно длине массива - метод не вносит никаких
      * изменений.
      * @param newLength новая длина массива.
-     * @return true - передаваемый аргумент больше длины массива {@link #getLength()}, иначе - false.
+     * @return true - передаваемый аргумент больше длины массива {@link #size()}, иначе - false.
      */
     public boolean expandTo(int newLength) {
         boolean isExpand = newLength > length;
@@ -385,11 +385,11 @@ public final class Array<T> implements Iterable<T> {
 
     /**
      * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
-     * длинной объекта ({@link #getLength()}), то уменьшает емкость внутреннего массива, иначе - не вносит
+     * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
      * памяти занимаемый объектом Array.
      * @return true - если размер внутреннего массива больше его минимально допустимого значения в соответствии
-     *                с текущей длинной объекта ({@link #getLength()}), и как следствие объем внутреннего массива
+     *                с текущей длинной объекта ({@link #size()}), и как следствие объем внутреннего массива
      *                был уменьшен, иначе - false.
      */
     public boolean trimToLength() {

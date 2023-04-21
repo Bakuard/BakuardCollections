@@ -48,7 +48,7 @@ class BitsTest {
     void Bits_numberBits2() {
         Bits actual = new Bits(10000);
 
-        Assertions.assertThat(actual.getSize()).isEqualTo(10000);
+        Assertions.assertThat(actual.size()).isEqualTo(10000);
     }
 
     @Test
@@ -128,7 +128,7 @@ class BitsTest {
         actual.set(512);
         actual.set(52170);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i != 10 && i != 512 && i != 52170) Assertions.assertThat(actual.get(i)).isFalse();
         }
     }
@@ -178,7 +178,7 @@ class BitsTest {
 
         actual.setAll(0, 500, 2001);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i != 0 && i != 500 && i != 2001) Assertions.assertThat(actual.get(i)).isFalse();
         }
     }
@@ -246,7 +246,7 @@ class BitsTest {
 
         actual.setRange(647, 6399);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 647 || i >= 6399) Assertions.assertThat(actual.get(i)).isFalse();
         }
     }
@@ -270,7 +270,7 @@ class BitsTest {
     }
 
     @Test
-    @DisplayName("setRange(fromIndex, toIndex): toIndex > bits.getSize() => exception")
+    @DisplayName("setRange(fromIndex, toIndex): toIndex > bits.size() => exception")
     void setRange5() {
         Bits actual = new Bits(100);
 
@@ -304,7 +304,7 @@ class BitsTest {
 
         actual.setRange(12, 50);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 12 || i >= 50) Assertions.assertThat(actual.get(i)).isFalse();
         }
     }
@@ -328,7 +328,7 @@ class BitsTest {
 
         actual.setRange(12, 96);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 12 || i >= 96) Assertions.assertThat(actual.get(i)).isFalse();
         }
     }
@@ -352,7 +352,7 @@ class BitsTest {
 
         actual.setRange(12, 128);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 12 || i >= 128) Assertions.assertThat(actual.get(i)).isFalse();
         }
     }
@@ -364,20 +364,20 @@ class BitsTest {
 
         actual.setAll();
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             Assertions.assertThat(actual.get(i)).isTrue();
         }
     }
 
     @Test
-    @DisplayName("setAll(): call expandTo() after setAll() => bits greater or equal old value of getSize() is zero")
+    @DisplayName("setAll(): call expandTo() after setAll() => bits greater or equal old value of size() is zero")
     void setAllWithoutArguments2() {
         Bits actual = new Bits(140);
 
         actual.setAll();
         actual.expandTo(1000);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i >= 140) Assertions.assertThat(actual.get(i)).isFalse();
         }
     }
@@ -423,7 +423,7 @@ class BitsTest {
         bits.clear(13);
         bits.clear(4014);
 
-        for(int i = 0; i < bits.getSize(); i++) {
+        for(int i = 0; i < bits.size(); i++) {
             if(i != 12 && i != 13 && i != 4014) Assertions.assertThat(bits.get(i)).isTrue();
         }
     }
@@ -544,7 +544,7 @@ class BitsTest {
 
         actual.clearRange(637, 6405);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 637 || i >= 6405) Assertions.assertThat(actual.get(i)).isTrue();
         }
     }
@@ -557,7 +557,7 @@ class BitsTest {
 
         actual.clearRange(1000, 1000);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             Assertions.assertThat(actual.get(i)).isTrue();
         }
     }
@@ -571,7 +571,7 @@ class BitsTest {
     }
 
     @Test
-    @DisplayName("clearRange(fromIndex, toIndex): toIndex > bits.getSize() => exception")
+    @DisplayName("clearRange(fromIndex, toIndex): toIndex > bits.size() => exception")
     void clearRange5() {
         Bits actual = new Bits(10000);
 
@@ -607,7 +607,7 @@ class BitsTest {
 
         actual.clearRange(12, 50);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 12 || i >= 50) Assertions.assertThat(actual.get(i)).isTrue();
         }
     }
@@ -633,7 +633,7 @@ class BitsTest {
 
         actual.clearRange(12, 96);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 12 || i >= 96) Assertions.assertThat(actual.get(i)).isTrue();
         }
     }
@@ -659,7 +659,7 @@ class BitsTest {
 
         actual.clearRange(12, 128);
 
-        for(int i = 0; i < actual.getSize(); i++) {
+        for(int i = 0; i < actual.size(); i++) {
             if(i < 12 || i >= 128) Assertions.assertThat(actual.get(i)).isTrue();
         }
     }
@@ -933,7 +933,7 @@ class BitsTest {
 
         firstOperand.or(secondOperand);
 
-        Assertions.assertThat(firstOperand.getSize()).isEqualTo(10000);
+        Assertions.assertThat(firstOperand.size()).isEqualTo(10000);
     }
 
     @Test
@@ -1091,7 +1091,7 @@ class BitsTest {
 
         firstOperand.xor(secondOperand);
 
-        Assertions.assertThat(firstOperand.getSize()).isEqualTo(10000);
+        Assertions.assertThat(firstOperand.size()).isEqualTo(10000);
     }
 
     @Test
@@ -1556,7 +1556,7 @@ class BitsTest {
     }
 
     @Test
-    @DisplayName("copyRange(src, srcPos, length, destPos): srcPos == src.getSize() => exception")
+    @DisplayName("copyRange(src, srcPos, length, destPos): srcPos == src.size() => exception")
     void copyRange3() {
         Bits actual = new Bits(500);
         Bits src = new Bits(500);
@@ -1576,7 +1576,7 @@ class BitsTest {
     }
 
     @Test
-    @DisplayName("copyRange(src, srcPos, length, destPos): destPos == dest.getSize() => exception")
+    @DisplayName("copyRange(src, srcPos, length, destPos): destPos == dest.size() => exception")
     void copyRange5() {
         Bits actual = new Bits(500);
         Bits src = new Bits(500);
