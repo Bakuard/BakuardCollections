@@ -141,7 +141,7 @@ class StackTest {
     @Test
     @DisplayName("""
             putLast(value):
-             => increase length
+             => increase size
             """)
     public void putLast2() {
         Stack<Integer> actual = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
@@ -528,7 +528,7 @@ class StackTest {
     @DisplayName("""
             clear():
              stack has several items
-             => stack length after `clear()` must be zero
+             => stack size after `clear()` must be zero
             """)
     public void clear3() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -624,7 +624,7 @@ class StackTest {
     @DisplayName("""
             get(index):
              stack is empty,
-             index is not negative
+             index is zero
              => exception
             """)
     public void get4() {
@@ -637,10 +637,23 @@ class StackTest {
     @DisplayName("""
             get(index):
              stack is empty,
-             index is negative
+             index is positive
              => exception
             """)
     public void get5() {
+        Stack<Integer> stack = new Stack<>();
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(1));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is empty,
+             index is negative
+             => exception
+            """)
+    public void get6() {
         Stack<Integer> stack = new Stack<>();
 
         Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(-1));
@@ -651,14 +664,14 @@ class StackTest {
             get(index):
              stack is not empty,
              index = 0
-             => return top
+             => return first stack item
             """)
-    public void get6() {
+    public void get7() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
         int actual = stack.get(0);
 
-        Assertions.assertThat(actual).isEqualTo(8);
+        Assertions.assertThat(actual).isEqualTo(0);
     }
 
     @Test
@@ -666,14 +679,14 @@ class StackTest {
             get(index):
              stack is not empty,
              index = stack.size() - 1
-             => return bottom
+             => return top
             """)
-    public void get7() {
+    public void get8() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
         int actual = stack.get(8);
 
-        Assertions.assertThat(actual).isEqualTo(0);
+        Assertions.assertThat(actual).isEqualTo(8);
     }
 
     @Test
@@ -684,12 +697,12 @@ class StackTest {
              index is positive
              => return correct item
             """)
-    public void get8() {
+    public void get9() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
         int actual = stack.get(3);
 
-        Assertions.assertThat(actual).isEqualTo(5);
+        Assertions.assertThat(actual).isEqualTo(3);
     }
 
     @Test
@@ -697,14 +710,14 @@ class StackTest {
             get(index):
              stack is not empty,
              index = -1
-             => return bottom
+             => return top
             """)
-    public void get9() {
+    public void get10() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
         int actual = stack.get(-1);
 
-        Assertions.assertThat(actual).isEqualTo(0);
+        Assertions.assertThat(actual).isEqualTo(8);
     }
 
     @Test
@@ -712,14 +725,14 @@ class StackTest {
             get(index):
              stack is not empty,
              index = -stack.size()
-             => return top
+             => return first stack item
             """)
-    public void get10() {
+    public void get11() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
         int actual = stack.get(-9);
 
-        Assertions.assertThat(actual).isEqualTo(8);
+        Assertions.assertThat(actual).isEqualTo(0);
     }
 
     @Test
@@ -730,12 +743,12 @@ class StackTest {
              index is negative
              => return correct item
             """)
-    public void get11() {
+    public void get12() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
         int actual = stack.get(-3);
 
-        Assertions.assertThat(actual).isEqualTo(2);
+        Assertions.assertThat(actual).isEqualTo(6);
     }
 
     @Test
@@ -771,7 +784,7 @@ class StackTest {
              stack not empty,
              add multiple items in sequence,
              delete multiple elements sequentially
-             => return 0, than return correct length after every element added or removed
+             => return 0, than return correct size after every element added or removed
             """)
     public void size3() {
         Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5);
@@ -989,7 +1002,7 @@ class StackTest {
     }
 
     @Test
-    @DisplayName("equals(Object o): first operand equal second, entry arrays length is equal => return true")
+    @DisplayName("equals(Object o): first operand equal second, entry arrays size is equal => return true")
     public void equals2() {
         Stack<Integer> firstOperand = Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120);
         Stack<Integer> secondOperand = Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120);
@@ -998,7 +1011,7 @@ class StackTest {
     }
 
     @Test
-    @DisplayName("equals(Object o): first operand equal second, entry array length isn't equal => return true")
+    @DisplayName("equals(Object o): first operand equal second, entry array size isn't equal => return true")
     public void equals3() {
         Stack<Integer> firstOperand = new Stack<>();
         Stack<Integer> secondOperand = Stack.of(10, 20, 30, 40, 50);

@@ -4,10 +4,10 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * Общий интерфейс для всех структур данных сохраняющих порядок добавления элементов и поддерживающих
- * произвольный доступ к своим элементам за константное время.
+ * Общий интерфейс для всех линейных структур данных поддерживающих произвольный доступ к своим
+ * элементам за константное время.
  */
-public interface ReadableSequence<T> extends Iterable<T> {
+public interface ReadableLinearStructure<T> extends Iterable<T> {
 
     /**
      * Возвращает элемент по его индексу. Первому элементу соответствует индекс [0], последнему
@@ -24,14 +24,18 @@ public interface ReadableSequence<T> extends Iterable<T> {
      * доступ к своим элементам. Первому элементу соответствует элемент под индексом [0]. Если
      * структура данных пуста - возвращает null.
      */
-    public T getFirst();
+    public default T getFirst() {
+        return isEmpty() ? null : get(0);
+    }
 
     /**
      * Возвращает последний элемент упорядоченной структуры данных поддерживающей произвольный
      * доступ к своим элементам. Последнему элементу соответствует элемент под индексом [{@link #size()} - 1].
      * Если структура данных пуста - возвращает null.
      */
-    public T getLast();
+    public default T getLast() {
+        return isEmpty() ? null : get(size() - 1);
+    }
 
     /**
      * Возвращает кол-во элементов.
@@ -43,6 +47,26 @@ public interface ReadableSequence<T> extends Iterable<T> {
      */
     public default boolean isEmpty() {
         return size() == 0;
+    }
+
+    /**
+     * Проверяет - выполняется ли для индекса условие: <br/>
+     * index >= 0 && index < {@link #size()}
+     * @param index проверяемый индекс.
+     * @return true - если описанное выше условие выполняется, иначе - false.
+     */
+    public default boolean inBound(int index) {
+        return index >= 0 && index < size();
+    }
+
+    /**
+     * Проверяет - выполняется ли для индекса условие: <br/>
+     * index >= -({@link #size()}) && index < {@link #size()}
+     * @param index проверяемый индекс.
+     * @return true - если описанное выше условие выполняется, иначе - false.
+     */
+    public default boolean inExpandBound(int index) {
+        return index >= -size() && index < size();
     }
 
     /**
@@ -65,7 +89,11 @@ public interface ReadableSequence<T> extends Iterable<T> {
      * @param predicate условие, которому должен соответствовать искомый элемент.
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
-    public int linearSearch(Predicate<T> predicate);
+    public default int linearSearch(Predicate<T> predicate) {
+        int index = 0;
+        while(index < size() && !predicate.test(get(index))) ++index;
+        return index >= size() ? -1 : index;
+    }
 
     /**
      * Возвращает индекс первого встретившегося элемента соответствующего заданному
@@ -75,7 +103,11 @@ public interface ReadableSequence<T> extends Iterable<T> {
      * @param predicate условие, которому должен соответствовать искомый элемент.
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
-    public int linearSearchLast(Predicate<T> predicate);
+    public default int linearSearchLast(Predicate<T> predicate) {
+        int index = size() - 1;
+        while(index >= 0 && !predicate.test(get(index))) --index;
+        return index;
+    }
 
     /**
      * Проверяет - содержит ли структура данных элемент с заданным значением. Если это верно - возвращает
@@ -94,5 +126,12 @@ public interface ReadableSequence<T> extends Iterable<T> {
     public default boolean contains(Predicate<T> predicate) {
         return linearSearch(predicate) != -1;
     }
+
+    /**
+     * Создает и возвращает итератор, позволяющий последовательно перебирать линейные структуру данных в
+     * обоих направлениях.
+     */
+    @Override
+    public IndexedIterator<T> iterator();
 
 }

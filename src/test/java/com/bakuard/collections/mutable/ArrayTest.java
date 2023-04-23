@@ -6,13 +6,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 
 class ArrayTest {
 
     @Test
-    @DisplayName("Array(type): => array length equal 0")
+    @DisplayName("Array(type): => array size equal 0")
     public void Array_empty1() {
         Array<String> emptyArray = new Array<>();
 
@@ -29,39 +30,39 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("Array(type, length): => all items after create is null")
-    public void Array_length1() {
+    @DisplayName("Array(size): => all items after create is null")
+    public void Array_size1() {
         Array<String> array = new Array<>(100);
 
         Assertions.assertThat(array).containsOnlyNulls();
     }
 
     @Test
-    @DisplayName("Array(type, length): => array length equal length param")
-    public void Array_length2() {
+    @DisplayName("Array(size): => array size equal size param")
+    public void Array_size2() {
         Array<String> array = new Array<>(100);
 
         Assertions.assertThat(array.size()).isEqualTo(100);
     }
 
     @Test
-    @DisplayName("Array(type, length): negative length => exception")
-    public void Array_length3() {
+    @DisplayName("Array(size): negative size => exception")
+    public void Array_size3() {
         Assertions.assertThatIllegalArgumentException().
                 isThrownBy(() -> new Array<>(-1));
     }
 
     @Test
-    @DisplayName("Array(type, length): length == 0 => array length equal 0")
-    public void Array_length4() {
+    @DisplayName("Array(size): size == 0 => array size equal 0")
+    public void Array_size4() {
         Array<String> emptyArray = new Array<>(0);
 
         Assertions.assertThat(emptyArray.size()).isZero();
     }
 
     @Test
-    @DisplayName("Array(type, length): length == 0, try get item after creating => exception")
-    public void Array_length5() {
+    @DisplayName("Array(size): size == 0, try get item after creating => exception")
+    public void Array_size5() {
         Array<String> emptyArray = new Array<>(0);
 
         Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> emptyArray.get(0));
@@ -150,18 +151,18 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("get(index): index < 0 => exception")
+    @DisplayName("get(index): array is not empty, index < -size => exception")
     public void get1() {
         Array<Integer> array = new Array<>(3);
         array.set(0, 10);
         array.set(1, 20);
         array.set(2, 30);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(-1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(-4));
     }
 
     @Test
-    @DisplayName("get(index): index == array length => exception")
+    @DisplayName("get(index): array is not empty, index == array size => exception")
     public void get2() {
         Array<Integer> array = new Array<>(3);
         array.set(0, 10);
@@ -172,7 +173,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("get(index): index > array length => exception")
+    @DisplayName("get(index): array is not empty, index > array size => exception")
     public void get3() {
         Array<Integer> array = new Array<>(3);
         array.set(0, 10);
@@ -180,6 +181,137 @@ class ArrayTest {
         array.set(2, 30);
 
         Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(4));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is empty,
+             index is zero
+             => exception
+            """)
+    public void get4() {
+        Array<Integer> array = new Array<>();
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(0));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is empty,
+             index is positive
+             => exception
+            """)
+    public void get5() {
+        Array<Integer> array = new Array<>();
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(1));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is empty,
+             index is negative
+             => exception
+            """)
+    public void get6() {
+        Array<Integer> array = new Array<>();
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(-1));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is not empty,
+             index = 0
+             => return first item
+            """)
+    public void get7() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+        int actual = array.get(0);
+
+        Assertions.assertThat(actual).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is not empty,
+             index = array.size() - 1
+             => return last item
+            """)
+    public void get8() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+        int actual = array.get(8);
+
+        Assertions.assertThat(actual).isEqualTo(8);
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is not empty,
+             index for middle item,
+             index is positive
+             => return correct item
+            """)
+    public void get9() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+        int actual = array.get(3);
+
+        Assertions.assertThat(actual).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is not empty,
+             index = -1
+             => return top
+            """)
+    public void get10() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+        int actual = array.get(-1);
+
+        Assertions.assertThat(actual).isEqualTo(8);
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is not empty,
+             index = -array.size()
+             => return first item
+            """)
+    public void get11() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+        int actual = array.get(-9);
+
+        Assertions.assertThat(actual).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             array is not empty,
+             index for middle item,
+             index is negative
+             => return correct item
+            """)
+    public void get12() {
+        Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+        int actual = array.get(-3);
+
+        Assertions.assertThat(actual).isEqualTo(6);
     }
 
     @Test
@@ -191,7 +323,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("set(index, value): index == array length => exception")
+    @DisplayName("set(index, value): index == array size => exception")
     public void set2() {
         Array<Integer> array = Array.of(0,0,1,12);
 
@@ -199,7 +331,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("set(index, value): index > array length => exception")
+    @DisplayName("set(index, value): index > array size => exception")
     public void set3() {
         Array<Integer> array = Array.of(0,0,1,12);
 
@@ -256,7 +388,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpend(index, value): index == length => add new item")
+    @DisplayName("setAndExpend(index, value): index == size => add new item")
     public void setAndExpend2() {
         Array<Integer> array = Array.of(0, 10, 25, 26);
 
@@ -266,7 +398,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index == length => length == index + 1")
+    @DisplayName("setAndExpand(index, value): index == size => size == index + 1")
     public void setAndExpand3() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 67);
 
@@ -276,7 +408,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAdnExpand(index, value): index > length + 1 => add new item")
+    @DisplayName("setAdnExpand(index, value): index > size + 1 => add new item")
     public void setAndExpand4() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 68);
 
@@ -286,7 +418,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > length + 1 => length == index + 1")
+    @DisplayName("setAndExpand(index, value): index > size + 1 => size == index + 1")
     public void setAndExpand5() {
         Array<Integer> array = Array.of(1, 1, 20, 90, 900);
 
@@ -316,7 +448,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index == length => return null")
+    @DisplayName("setAndExpand(index, value): index == size => return null")
     public void setAndExpand8() {
         Array<Integer> array = Array.of(0, 120, 111);
 
@@ -326,7 +458,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > length + 1 => return null")
+    @DisplayName("setAndExpand(index, value): index > size + 1 => return null")
     public void setAndExpand9() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 67);
 
@@ -346,7 +478,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index == length => old values are preserved")
+    @DisplayName("setAndExpand(index, value): index == size => old values are preserved")
     public void setAndExpand11() {
         Array<Integer> array = Array.of(0, 100, 200);
 
@@ -358,7 +490,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > length + 1 => old values are preserved")
+    @DisplayName("setAndExpand(index, value): index > size + 1 => old values are preserved")
     public void setAndExpand12() {
         Array<Integer> array = Array.of(0, 100, 200);
 
@@ -370,7 +502,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > length => all new added items is null")
+    @DisplayName("setAndExpand(index, value): index > size => all new added items is null")
     public void setAndExpand13() {
         Array<Integer> array = Array.of(0, 10, 120, 300);
 
@@ -394,7 +526,7 @@ class ArrayTest {
 
     @Test
     @DisplayName("""
-            append(value): => increase length
+            append(value): => increase size
             """)
     public void append2() {
         Array<Integer> actual = Array.of(0, 10, 120);
@@ -486,6 +618,72 @@ class ArrayTest {
     }
 
     @Test
+    @DisplayName("appendAll(iterable): iterable is empty => array don't change")
+    public void appendAll_Iterable1() {
+        Array<Integer> actual = Array.of(0, 12, 45);
+        Array<Integer> expected = new Array<>(actual);
+
+        actual.appendAll(List.of());
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("appendAll(iterable): array is empty, iterable is not empty => add all values in same order")
+    public void appendAll_Iterable2() {
+        Array<Integer> actual = new Array<>();
+        Array<Integer> expected = Array.of(0, 120, 200);
+
+        actual.appendAll(List.of(0, 120, 200));
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("appendAll(iterable): array is empty, iterable contains one item => add item")
+    public void appendAll_Iterable3() {
+        Array<Integer> actual = new Array<>();
+        Array<Integer> expected = Array.of(1000);
+
+        actual.appendAll(List.of(1000));
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("appendAll(iterable): array is not empty, iterable is not empty => add values in same order")
+    public void appendAll_Iterable4() {
+        Array<Integer> actual = Array.of(0, 120, 34);
+        Array<Integer> expected = Array.of(0, 120, 34, 56, 0, 10);
+
+        actual.appendAll(List.of(56, 0, 10));
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("appendAll(iterable): array is not empty, iterable contains one item => add item to the end")
+    public void appendAll_Iterable5() {
+        Array<Integer> actual = Array.of(0, 10 ,120);
+        Array<Integer> expected = Array.of(0, 10, 120, 120);
+
+        actual.appendAll(List.of(120));
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("appendAll(iterable): iterable contains null => add all values in same order include null")
+    public void appendAll_Iterable6() {
+        Array<Integer> actual = Array.of(0, 0, 10);
+        Array<Integer> expected = Array.of(0, 0, 10, 100, null, 100, null, null);
+
+        actual.appendAll(Array.of(100, null, 100, null, null));
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
     @DisplayName("concat(array): data is empty => array don't change")
     public void concat1() {
         Array<Integer> actual = Array.of(0, 10, 100);
@@ -561,7 +759,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("insert(index, value): index > length => exception")
+    @DisplayName("insert(index, value): index > size => exception")
     public void insert2() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
@@ -632,7 +830,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("insert(index, value): array contains several items, insert == length => insert item, don't shift all old items")
+    @DisplayName("insert(index, value): array contains several items, insert == size => insert item, don't shift all old items")
     public void insert8() {
         Array<Integer> actual = Array.of(10, 20, 30, 40, 50);
         Array<Integer> expected = Array.of(10, 20, 30, 40, 50, 60);
@@ -859,7 +1057,7 @@ class ArrayTest {
              value greater than last item,
              value is unique
              => add value,
-                return value equal old length of array
+                return value equal old size of array
             """)
     public void binaryInsert12() {
         Array<Integer> actual = Array.of(10, 20 ,30, 40, 50, 60, 70, 80, 90, 100);
@@ -917,7 +1115,7 @@ class ArrayTest {
              array contains an even number of elements,
              value equal the biggest item
              => add value,
-                return value belongs to [first the biggest item index, old length]
+                return value belongs to [first the biggest item index, old size]
             """)
     public void binaryInsert15() {
         Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 100, 100, 100);
@@ -956,7 +1154,7 @@ class ArrayTest {
              all array items are equal,
              value is not unique
              => add value,
-                return value belongs to [0, array old length]
+                return value belongs to [0, array old size]
             """)
     public void binaryInsert17() {
         Array<Integer> actual = Array.of(67, 67, 67, 67, 67, 67, 67, 67, 67, 67);
@@ -996,7 +1194,7 @@ class ArrayTest {
              value greater than last item,
              value is unique
              => add value,
-                return value equal old length of array
+                return value equal old size of array
             """)
     public void binaryInsert19() {
         Array<Integer> actual = Array.of(10, 20 ,30, 40, 50, 60, 70, 80, 90, 100, 110);
@@ -1054,7 +1252,7 @@ class ArrayTest {
              array contains an odd number of elements,
              value equal the biggest item
              => add value,
-                return value belongs to [first the biggest item index, old length]
+                return value belongs to [first the biggest item index, old size]
             """)
     public void binaryInsert22() {
         Array<Integer> actual = Array.of(10, 20, 30, 40, 50, 60, 70, 80, 110, 110, 110);
@@ -1093,7 +1291,7 @@ class ArrayTest {
              all array items are equal,
              value is not unique
              => add value,
-                return value belongs to [0, array old length]
+                return value belongs to [0, array old size]
             """)
     public void binaryInsert24() {
         Array<Integer> actual = Array.of(67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67);
@@ -1132,7 +1330,7 @@ class ArrayTest {
     @Test
     @DisplayName("""
             swap(firstIndex, secondIndex):
-             firstIndex == array.length
+             firstIndex == array.size
              => exception
             """)
     public void swap3() {
@@ -1144,7 +1342,7 @@ class ArrayTest {
     @Test
     @DisplayName("""
             swap(firstIndex, secondIndex):
-             secondIndex == array.length
+             secondIndex == array.size
              => exception
             """)
     public void swap4() {
@@ -1156,7 +1354,7 @@ class ArrayTest {
     @Test
     @DisplayName("""
             swap(firstIndex, secondIndex):
-             firstIndex > array.length
+             firstIndex > array.size
              => exception
             """)
     public void swap5() {
@@ -1168,7 +1366,7 @@ class ArrayTest {
     @Test
     @DisplayName("""
             swap(firstIndex, secondIndex):
-             secondIndex > array.length
+             secondIndex > array.size
              => exception
             """)
     public void swap6() {
@@ -1338,7 +1536,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("orderedRemove(index): index == array length => exception")
+    @DisplayName("orderedRemove(index): index == array size => exception")
     public void orderedRemove2() {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
 
@@ -1346,7 +1544,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("orderedRemove(index): index > array length => exception")
+    @DisplayName("orderedRemove(index): index > array size => exception")
     public void orderedRemove3() {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
 
@@ -2123,7 +2321,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("expandTo(newLength): newLength < length => return false")
+    @DisplayName("expandTo(newSize): newSize < size => return false")
     public void expandTo1() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
@@ -2133,7 +2331,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("expandTo(newLength): newLength == length => return false")
+    @DisplayName("expandTo(newSize): newSize == size => return false")
     public void expandTo2() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
@@ -2143,7 +2341,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("expandTo(newLength): newLength > length => return true")
+    @DisplayName("expandTo(newSize): newSize > size => return true")
     public void expandTo3() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
@@ -2153,7 +2351,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("expandTo(newLength): newLength < length => don't change target object")
+    @DisplayName("expandTo(newSize): newSize < size => don't change target object")
     public void expandTo4() {
         Array<Integer> actual = Array.of(10, 20, 30, 40);
         Array<Integer> expected = new Array<>(actual);
@@ -2164,7 +2362,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("expandTo(newLength): newLength == length => don't change target object")
+    @DisplayName("expandTo(newSize): newSize == size => don't change target object")
     public void expandTo5() {
         Array<Integer> actual = Array.of(10, 20, 30, 40);
         Array<Integer> expected = new Array<>(actual);
@@ -2175,7 +2373,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("expandTo(newLength): newLength > length => change target object")
+    @DisplayName("expandTo(newSize): newSize > size => change target object")
     public void expandTo6() {
         Array<Integer> actual = Array.of(10, 20, 30, 40);
         Array<Integer> expected = Array.of(10, 20, 30, 40, null, null, null, null, null, null, null, null);
@@ -2375,7 +2573,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("iterator(), Iterator#next(): next() after expandTo(), newLength > current length => exception")
+    @DisplayName("iterator(), Iterator#next(): next() after expandTo(), newSize > current size => exception")
     public void iterator17() {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Iterator<Integer> iterator = array.iterator();
@@ -2432,7 +2630,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("equals(Object o): first operand equal second, entry arrays length is equal => return true")
+    @DisplayName("equals(Object o): first operand equal second, entry arrays size is equal => return true")
     public void equals2() {
         Array<Integer> firstOperand = Array.of(10, 20, 30, 40, 50);
         Array<Integer> secondOperand = Array.of(10, 20, 30, 40, 50);
@@ -2441,7 +2639,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("equals(Object o): first operand equal second, entry array length isn't equal => return true")
+    @DisplayName("equals(Object o): first operand equal second, entry array size isn't equal => return true")
     public void equals3() {
         Array<Integer> firstOperand = new Array<>(1000);
         Array<Integer> secondOperand = Array.of(10, 20, 30, 40, 50);
