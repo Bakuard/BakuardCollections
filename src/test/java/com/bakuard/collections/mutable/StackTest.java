@@ -51,9 +51,9 @@ class StackTest {
 
         Stack<Object> actual = new Stack<>(expected);
 
-        Assertions.assertThat(actual.get(0)).isSameAs(expected.get(0));
-        Assertions.assertThat(actual.get(1)).isSameAs(expected.get(1));
-        Assertions.assertThat(actual.get(2)).isSameAs(expected.get(2));
+        Assertions.assertThat(actual.at(0)).isSameAs(expected.at(0));
+        Assertions.assertThat(actual.at(1)).isSameAs(expected.at(1));
+        Assertions.assertThat(actual.at(2)).isSameAs(expected.at(2));
     }
 
     @Test
@@ -583,170 +583,170 @@ class StackTest {
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index = stack.size()
              => exception
             """)
-    public void get1() {
+    public void at1() {
         Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(9));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.at(9));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index > stack.size()
              => exception
             """)
-    public void get2() {
+    public void at2() {
         Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(10));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.at(10));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index < -stack.size()
              => exception
             """)
-    public void get3() {
+    public void at3() {
         Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(-10));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.at(-10));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is empty,
              index is zero
              => exception
             """)
-    public void get4() {
+    public void at4() {
         Stack<Integer> stack = new Stack<>();
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(0));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.at(0));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is empty,
              index is positive
              => exception
             """)
-    public void get5() {
+    public void at5() {
         Stack<Integer> stack = new Stack<>();
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.at(1));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is empty,
              index is negative
              => exception
             """)
-    public void get6() {
+    public void at6() {
         Stack<Integer> stack = new Stack<>();
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(-1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.at(-1));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index = 0
              => return first stack item
             """)
-    public void get7() {
+    public void at7() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = stack.get(0);
+        int actual = stack.at(0);
 
         Assertions.assertThat(actual).isEqualTo(0);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index = stack.size() - 1
              => return top
             """)
-    public void get8() {
+    public void at8() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = stack.get(8);
+        int actual = stack.at(8);
 
         Assertions.assertThat(actual).isEqualTo(8);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index for middle item,
              index is positive
              => return correct item
             """)
-    public void get9() {
+    public void at9() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = stack.get(3);
+        int actual = stack.at(3);
 
         Assertions.assertThat(actual).isEqualTo(3);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index = -1
              => return top
             """)
-    public void get10() {
+    public void at10() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = stack.get(-1);
+        int actual = stack.at(-1);
 
         Assertions.assertThat(actual).isEqualTo(8);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index = -stack.size()
              => return first stack item
             """)
-    public void get11() {
+    public void at11() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = stack.get(-9);
+        int actual = stack.at(-9);
 
         Assertions.assertThat(actual).isEqualTo(0);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              stack is not empty,
              index for middle item,
              index is negative
              => return correct item
             """)
-    public void get12() {
+    public void at12() {
         Stack<Integer> stack = Stack.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = stack.get(-3);
+        int actual = stack.at(-3);
 
         Assertions.assertThat(actual).isEqualTo(6);
     }

@@ -26,7 +26,7 @@ class ArrayTest {
         Array<String> emptyArray = new Array<>();
 
         Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> emptyArray.get(0));
+                isThrownBy(() -> emptyArray.at(0));
     }
 
     @Test
@@ -65,7 +65,7 @@ class ArrayTest {
     public void Array_size5() {
         Array<String> emptyArray = new Array<>(0);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> emptyArray.get(0));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> emptyArray.at(0));
     }
 
     @Test
@@ -93,9 +93,9 @@ class ArrayTest {
         original.appendAll(new Object(), new Object(), new Object());
         Array<Object> copy = new Array<>(original);
 
-        Assertions.assertThat(copy.get(0)).isSameAs(original.get(0));
-        Assertions.assertThat(copy.get(1)).isSameAs(original.get(1));
-        Assertions.assertThat(copy.get(2)).isSameAs(original.get(2));
+        Assertions.assertThat(copy.at(0)).isSameAs(original.at(0));
+        Assertions.assertThat(copy.at(1)).isSameAs(original.at(1));
+        Assertions.assertThat(copy.at(2)).isSameAs(original.at(2));
     }
 
     @Test
@@ -151,240 +151,240 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("get(index): array is not empty, index < -size => exception")
-    public void get1() {
+    @DisplayName("at(index): array is not empty, index < -size => exception")
+    public void at1() {
         Array<Integer> array = new Array<>(3);
-        array.set(0, 10);
-        array.set(1, 20);
-        array.set(2, 30);
+        array.replace(0, 10);
+        array.replace(1, 20);
+        array.replace(2, 30);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(-4));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.at(-4));
     }
 
     @Test
-    @DisplayName("get(index): array is not empty, index == array size => exception")
-    public void get2() {
+    @DisplayName("at(index): array is not empty, index == array size => exception")
+    public void at2() {
         Array<Integer> array = new Array<>(3);
-        array.set(0, 10);
-        array.set(1, 20);
-        array.set(2, 30);
+        array.replace(0, 10);
+        array.replace(1, 20);
+        array.replace(2, 30);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(3));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.at(3));
     }
 
     @Test
-    @DisplayName("get(index): array is not empty, index > array size => exception")
-    public void get3() {
+    @DisplayName("at(index): array is not empty, index > array size => exception")
+    public void at3() {
         Array<Integer> array = new Array<>(3);
-        array.set(0, 10);
-        array.set(1, 20);
-        array.set(2, 30);
+        array.replace(0, 10);
+        array.replace(1, 20);
+        array.replace(2, 30);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(4));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.at(4));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is empty,
              index is zero
              => exception
             """)
-    public void get4() {
+    public void at4() {
         Array<Integer> array = new Array<>();
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(0));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.at(0));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is empty,
              index is positive
              => exception
             """)
-    public void get5() {
+    public void at5() {
         Array<Integer> array = new Array<>();
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.at(1));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is empty,
              index is negative
              => exception
             """)
-    public void get6() {
+    public void at6() {
         Array<Integer> array = new Array<>();
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.get(-1));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.at(-1));
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is not empty,
              index = 0
              => return first item
             """)
-    public void get7() {
+    public void at7() {
         Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = array.get(0);
+        int actual = array.at(0);
 
         Assertions.assertThat(actual).isEqualTo(0);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is not empty,
              index = array.size() - 1
              => return last item
             """)
-    public void get8() {
+    public void at8() {
         Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = array.get(8);
+        int actual = array.at(8);
 
         Assertions.assertThat(actual).isEqualTo(8);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is not empty,
              index for middle item,
              index is positive
              => return correct item
             """)
-    public void get9() {
+    public void at9() {
         Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = array.get(3);
+        int actual = array.at(3);
 
         Assertions.assertThat(actual).isEqualTo(3);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is not empty,
              index = -1
              => return top
             """)
-    public void get10() {
+    public void at10() {
         Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = array.get(-1);
+        int actual = array.at(-1);
 
         Assertions.assertThat(actual).isEqualTo(8);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is not empty,
              index = -array.size()
              => return first item
             """)
-    public void get11() {
+    public void at11() {
         Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = array.get(-9);
+        int actual = array.at(-9);
 
         Assertions.assertThat(actual).isEqualTo(0);
     }
 
     @Test
     @DisplayName("""
-            get(index):
+            at(index):
              array is not empty,
              index for middle item,
              index is negative
              => return correct item
             """)
-    public void get12() {
+    public void at12() {
         Array<Integer> array = Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
-        int actual = array.get(-3);
+        int actual = array.at(-3);
 
         Assertions.assertThat(actual).isEqualTo(6);
     }
 
     @Test
-    @DisplayName("set(index, value): index < 0 => exception")
-    public void set1() {
+    @DisplayName("replace(index, value): index < 0 => exception")
+    public void replace1() {
         Array<Integer> array = Array.of(1, 120, 12);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.set(-1, 100));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.replace(-1, 100));
     }
 
     @Test
-    @DisplayName("set(index, value): index == array size => exception")
-    public void set2() {
+    @DisplayName("replace(index, value): index == array size => exception")
+    public void replace2() {
         Array<Integer> array = Array.of(0,0,1,12);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.set(4, 100));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.replace(4, 100));
     }
 
     @Test
-    @DisplayName("set(index, value): index > array size => exception")
-    public void set3() {
+    @DisplayName("replace(index, value): index > array size => exception")
+    public void replace3() {
         Array<Integer> array = Array.of(0,0,1,12);
 
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.set(5, 100));
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> array.replace(5, 100));
     }
 
     @Test
-    @DisplayName("set(index, value): old value by this index is null => return null")
-    public void set4() {
+    @DisplayName("replace(index, value): old value by this index is null => return null")
+    public void replace4() {
         Array<Integer> array = Array.of(10, 20, null, 40);
 
-        Integer actual = array.set(2, 100);
+        Integer actual = array.replace(2, 100);
 
         Assertions.assertThat(actual).isNull();
     }
 
     @Test
-    @DisplayName("set(index, value): old value by this index is not null => return old value")
-    public void set5() {
+    @DisplayName("replace(index, value): old value by this index is not null => return old value")
+    public void replace5() {
         Array<Integer> array = Array.of(10, 20, null, 40);
 
-        int actual = array.set(1, 100);
+        int actual = array.replace(1, 100);
 
         Assertions.assertThat(actual).isEqualTo(20);
     }
 
     @Test
-    @DisplayName("set(index, value): value is null => set null by this index")
-    public void set6() {
+    @DisplayName("replace(index, value): value is null => replace null by this index")
+    public void replace6() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        array.set(1, null);
+        array.replace(1, null);
 
-        Assertions.assertThat(array.get(1)).isNull();
+        Assertions.assertThat(array.at(1)).isNull();
     }
 
     @Test
-    @DisplayName("set(index, value): value is not null => set value by this index")
-    public void set7() {
+    @DisplayName("replace(index, value): value is not null => replace value by this index")
+    public void replace7() {
         Array<Integer> array = Array.of(10, 20, 30, 40);
 
-        array.set(1, 1000);
+        array.replace(1, 1000);
 
-        Assertions.assertThat(array.get(1)).isEqualTo(1000);
+        Assertions.assertThat(array.at(1)).isEqualTo(1000);
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index < 0 => exception")
+    @DisplayName("setWithoutBound(index, value): index < 0 => exception")
     public void setAndExpend1() {
         Array<Integer> array = Array.of(0, 10, 100);
 
         Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(()-> array.setAndExpand(-1, 20));
+                isThrownBy(()-> array.setWithoutBound(-1, 20));
     }
 
     @Test
@@ -392,97 +392,97 @@ class ArrayTest {
     public void setAndExpend2() {
         Array<Integer> array = Array.of(0, 10, 25, 26);
 
-        array.setAndExpand(4, 100);
+        array.setWithoutBound(4, 100);
 
-        Assertions.assertThat(array.get(4)).isEqualTo(100);
+        Assertions.assertThat(array.at(4)).isEqualTo(100);
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index == size => size == index + 1")
-    public void setAndExpand3() {
+    @DisplayName("setWithoutBound(index, value): index == size => size == index + 1")
+    public void setWithoutBound3() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 67);
 
-        array.setAndExpand(4, 1000);
+        array.setWithoutBound(4, 1000);
 
         Assertions.assertThat(array.size()).isEqualTo(5);
     }
 
     @Test
     @DisplayName("setAdnExpand(index, value): index > size + 1 => add new item")
-    public void setAndExpand4() {
+    public void setWithoutBound4() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 68);
 
-        array.setAndExpand(10, 100);
+        array.setWithoutBound(10, 100);
 
-        Assertions.assertThat(array.get(10)).isEqualTo(100);
+        Assertions.assertThat(array.at(10)).isEqualTo(100);
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > size + 1 => size == index + 1")
-    public void setAndExpand5() {
+    @DisplayName("setWithoutBound(index, value): index > size + 1 => size == index + 1")
+    public void setWithoutBound5() {
         Array<Integer> array = Array.of(1, 1, 20, 90, 900);
 
-        array.setAndExpand(10, 1000);
+        array.setWithoutBound(10, 1000);
 
         Assertions.assertThat(array.size()).isEqualTo(11);
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): old value by this index is null => return null")
-    public void setAndExpand6() {
+    @DisplayName("setWithoutBound(index, value): old value by this index is null => return null")
+    public void setWithoutBound6() {
         Array<Integer> array = Array.of(0, 10, null, 45);
 
-        Integer actual = array.setAndExpand(2, 1000);
+        Integer actual = array.setWithoutBound(2, 1000);
 
         Assertions.assertThat(actual).isNull();
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): old value by this index is not null => return old value")
-    public void setAndExpand7() {
+    @DisplayName("setWithoutBound(index, value): old value by this index is not null => return old value")
+    public void setWithoutBound7() {
         Array<Integer> array = Array.of(0, 100, 120);
 
-        int actual = array.setAndExpand(2, 1000);
+        int actual = array.setWithoutBound(2, 1000);
 
         Assertions.assertThat(actual).isEqualTo(120);
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index == size => return null")
-    public void setAndExpand8() {
+    @DisplayName("setWithoutBound(index, value): index == size => return null")
+    public void setWithoutBound8() {
         Array<Integer> array = Array.of(0, 120, 111);
 
-        Integer actual = array.setAndExpand(3, 1000);
+        Integer actual = array.setWithoutBound(3, 1000);
 
         Assertions.assertThat(actual).isNull();
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > size + 1 => return null")
-    public void setAndExpand9() {
+    @DisplayName("setWithoutBound(index, value): index > size + 1 => return null")
+    public void setWithoutBound9() {
         Array<Integer> array = Array.of(0, 10, 25, 26, 67);
 
-        Integer actual = array.setAndExpand(10, 1000);
+        Integer actual = array.setWithoutBound(10, 1000);
 
         Assertions.assertThat(actual).isNull();
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): value == null => set null")
-    public void setAndExpand10() {
+    @DisplayName("setWithoutBound(index, value): value == null => set null")
+    public void setWithoutBound10() {
         Array<Integer> array = Array.of(0, 120, 340, 700);
 
-        array.setAndExpand(1, null);
+        array.setWithoutBound(1, null);
 
-        Assertions.assertThat(array.get(1)).isNull();
+        Assertions.assertThat(array.at(1)).isNull();
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index == size => old values are preserved")
-    public void setAndExpand11() {
+    @DisplayName("setWithoutBound(index, value): index == size => old values are preserved")
+    public void setWithoutBound11() {
         Array<Integer> array = Array.of(0, 100, 200);
 
-        array.setAndExpand(3, 250);
+        array.setWithoutBound(3, 250);
 
         Assertions.assertThat(array).
                 elements(0, 1, 2).
@@ -490,11 +490,11 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > size + 1 => old values are preserved")
-    public void setAndExpand12() {
+    @DisplayName("setWithoutBound(index, value): index > size + 1 => old values are preserved")
+    public void setWithoutBound12() {
         Array<Integer> array = Array.of(0, 100, 200);
 
-        array.setAndExpand(6, 250);
+        array.setWithoutBound(6, 250);
 
         Assertions.assertThat(array).
                 elements(0, 1, 2).
@@ -502,11 +502,11 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("setAndExpand(index, value): index > size => all new added items is null")
-    public void setAndExpand13() {
+    @DisplayName("setWithoutBound(index, value): index > size => all new added items is null")
+    public void setWithoutBound13() {
         Array<Integer> array = Array.of(0, 10, 120, 300);
 
-        array.setAndExpand(10, 1000);
+        array.setWithoutBound(10, 1000);
 
         Assertions.assertThat(array).
                 elements(4, 5, 6, 7, 8, 9).
@@ -1493,7 +1493,7 @@ class ArrayTest {
 
         array.quickRemove(1);
 
-        Assertions.assertThat(array.get(1)).isEqualTo(40);
+        Assertions.assertThat(array.at(1)).isEqualTo(40);
     }
 
     @Test
@@ -2446,19 +2446,19 @@ class ArrayTest {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Iterator<Integer> iterator = array.iterator();
 
-        array.set(0, 10);
+        array.replace(0, 10);
 
         Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
                 isThrownBy(iterator::next);
     }
 
     @Test
-    @DisplayName("iterator(), Iterator#next(): next() after setAndExpand() => exception")
+    @DisplayName("iterator(), Iterator#next(): next() after setWithoutBound() => exception")
     public void iterator7() {
         Array<Integer> array = Array.of(10, 20, 30, 40, 50);
         Iterator<Integer> iterator = array.iterator();
 
-        array.setAndExpand(100, 10);
+        array.setWithoutBound(100, 10);
 
         Assertions.assertThatExceptionOfType(ConcurrentModificationException.class).
                 isThrownBy(iterator::next);

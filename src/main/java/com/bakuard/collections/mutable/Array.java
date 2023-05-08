@@ -64,6 +64,17 @@ public final class Array<T> implements Iterable<T> {
     }
 
     /**
+     * Возвращает элемент по его индексу.
+     * @param index индекс искомого элемента.
+     * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
+     */
+    public T get(int index) {
+        assertInBound(index);
+
+        return values[index];
+    }
+
+    /**
      * Возвращает элемент хранящийся в ячейке с указанным индексом. Первому элементу массива
      * соответствует индекс [0], последнему - индекс [{@link #size()} - 1]. <br/>
      * Метод также допускает отрицательные индексы. Индексу [-1] соответствует последний элемент,
@@ -72,8 +83,8 @@ public final class Array<T> implements Iterable<T> {
      * @return элемент хранящийся в ячейке с указанным индексом.
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= -({@link #size()})  && index < size
      */
-    public T get(int index) {
-        assertInBound(index);
+    public T at(int index) {
+        assertInExpandBound(index);
 
         return index < 0 ? values[size + index] : values[index];
     }
@@ -86,8 +97,8 @@ public final class Array<T> implements Iterable<T> {
      * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
-    public T set(int index, T value) {
-        assertInExpandBound(index);
+    public T replace(int index, T value) {
+        assertInBound(index);
 
         ++actualModCount;
 
@@ -106,7 +117,7 @@ public final class Array<T> implements Iterable<T> {
      * @throws IndexOutOfBoundsException если значение индекса меньше нуля.
      * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
      */
-    public T setAndExpand(int index, T value) {
+    public T setWithoutBound(int index, T value) {
         if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
         ++actualModCount;
 
@@ -160,7 +171,7 @@ public final class Array<T> implements Iterable<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index <= size
      */
     public void insert(int index, T value) {
-        assertInClosedInterval(index);
+        assertInClosedBound(index);
 
         ++actualModCount;
 
@@ -216,8 +227,8 @@ public final class Array<T> implements Iterable<T> {
      *                                   условие index >= 0 && index <= size
      */
     public void swap(int firstIndex, int secondIndex) {
-        assertInExpandBound(firstIndex);
-        assertInExpandBound(secondIndex);
+        assertInBound(firstIndex);
+        assertInBound(secondIndex);
 
         ++actualModCount;
 
@@ -253,7 +264,7 @@ public final class Array<T> implements Iterable<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T quickRemove(int index) {
-        assertInExpandBound(index);
+        assertInBound(index);
 
         ++actualModCount;
 
@@ -274,7 +285,7 @@ public final class Array<T> implements Iterable<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T orderedRemove(int index) {
-        assertInExpandBound(index);
+        assertInBound(index);
 
         ++actualModCount;
 
@@ -401,9 +412,7 @@ public final class Array<T> implements Iterable<T> {
      * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
      * памяти занимаемый объектом Array.
-     * @return true - если размер внутреннего массива больше его минимально допустимого значения в соответствии
-     *                с текущей длинной объекта ({@link #size()}), и как следствие объем внутреннего массива
-     *                был уменьшен, иначе - false.
+     * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
     public boolean trimToLength() {
         ++actualModCount;
@@ -501,21 +510,21 @@ public final class Array<T> implements Iterable<T> {
         return size + (size >>> 1);
     }
 
-    private void assertInExpandBound(int index) {
+    private void assertInBound(int index) {
         if(index < 0 || index >= size) {
             throw new IndexOutOfBoundsException(
                     "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index);
         }
     }
 
-    private void assertInClosedInterval(int index) {
+    private void assertInClosedBound(int index) {
         if(index < 0 || index > size) {
             throw new IndexOutOfBoundsException(
                     "Expected: index >= 0 && index <= size. Actual: size=" + size + ", index=" + index);
         }
     }
 
-    private void assertInBound(int index) {
+    private void assertInExpandBound(int index) {
         if(index < -size || index >= size) {
             throw new IndexOutOfBoundsException(
                     "Expected: index >= -size() && index < size. Actual: size=" + size + ", index=" + index);

@@ -74,7 +74,7 @@ public class Stack<T> implements Iterable<T> {
     /**
      * Добавляет все элементы из указанного массива на вершину стека. Элементы добавляются
      * в порядке их следования в указанном массиве.
-     * @param data массив, все элементы которого добавляются в текущий.
+     * @param data массив, все элементы которого добавляются в текущий стек.
      */
     public void putAllOnLast(T... data) {
         if(data.length > 0) {
@@ -125,9 +125,7 @@ public class Stack<T> implements Iterable<T> {
      * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
      * памяти занимаемый объектом Stack.
-     * @return true - если размер внутреннего массива больше его минимально допустимого значения в соответствии
-     *                с текущей длинной объекта ({@link #size()}), и как следствие объем внутреннего массива
-     *                был уменьшен, иначе - false.
+     * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
     public boolean trimToLength() {
         ++actualModCount;
@@ -149,13 +147,25 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Возвращает любой элемент этого стека по его индексу, не удаляя его. Элементу с индексом [0]
+     * соответствует нижний элемент стека, а элементу с индексом [{@link #size()} - 1] - вершина.
+     * @param index индекс искомого элемента.
+     * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
+     */
+    public T get(int index) {
+        assertInBound(index);
+
+        return values[index];
+    }
+
+    /**
+     * Возвращает любой элемент этого стека по его индексу, не удаляя его. Элементу с индексом [0]
      * соответствует нижний элемент стека, а элементу с индексом [{@link #size()} - 1] - вершина. <br/>
      * Метод также допускает отрицательные индексы. Элементу с индексом [-1] соответствует вершина стека,
      * а элементу с индексом [-({@link #size()})] - нижний элемент стека.
      * @param index индекс искомого элемента.
-     * @throws IndexOutOfBoundsException если index < [-({@link #size()})] или index >= [{@link #size()}]
+     * @throws IndexOutOfBoundsException если index < -({@link #size()}) или index >= {@link #size()}
      */
-    public T get(int index) {
+    public T at(int index) {
         assertInExpandBound(index);
 
         return index < 0 ? values[size + index] : values[index];
@@ -298,6 +308,13 @@ public class Stack<T> implements Iterable<T> {
             if(newSize > values.length) {
                 values = Arrays.copyOf(values, calculateCapacity(newSize));
             }
+        }
+    }
+
+    private void assertInBound(int index) {
+        if(index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index);
         }
     }
 
