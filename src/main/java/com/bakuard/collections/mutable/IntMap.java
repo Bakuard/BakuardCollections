@@ -189,7 +189,7 @@ public final class IntMap<T> implements Iterable<IntMap.Node<T>> {
         for(int i = 0, arrayIndex = 0; i < table.length; i++) {
             Node<T> currentNode = table[i];
             while(currentNode != null) {
-                array.set(arrayIndex++, currentNode.value);
+                array.replace(arrayIndex++, currentNode.value);
                 currentNode = currentNode.next;
             }
         }

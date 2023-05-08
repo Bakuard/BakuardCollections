@@ -16,7 +16,7 @@ public final class Bits implements Comparable<Bits> {
     private int size;
 
     /**
-     * Создает пустой объект Bits размер которого({@link #getSize()}) равен 0.
+     * Создает пустой объект Bits размер которого({@link #size()}) равен 0.
      */
     public Bits() {}
 
@@ -47,7 +47,7 @@ public final class Bits implements Comparable<Bits> {
      * случае.
      * @param index индекс считываемого бита.
      * @return true - если бит установлен в 1, false - в противном случае.
-     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #getSize()}
+     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}
      */
     public boolean get(int index) throws IndexOutOfBoundsException {
         assertInHalfOpenInterval(index);
@@ -57,7 +57,7 @@ public final class Bits implements Comparable<Bits> {
     /**
      * Устанавливает бит с указанным индексом в единицу.
      * @param index индекс бита устанавливаемого в единицу.
-     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #getSize()}
+     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}
      */
     public void set(int index) throws IndexOutOfBoundsException {
         assertInHalfOpenInterval(index);
@@ -66,12 +66,12 @@ public final class Bits implements Comparable<Bits> {
 
     /**
      * Устанавливает значение для каждого бита, индекс которого указан в параметре indexes, в единицу. Если хотя
-     * бы один из индексов не соответствует условию index >= 0 && index < {@link #getSize()}, выполнения метода
+     * бы один из индексов не соответствует условию index >= 0 && index < {@link #size()}, выполнения метода
      * будет прервано и ни один из указанных бит не будет изменен. Если метод вызывается без аргументов - он не
      * вносит никаких изменений.
      * @param indexes индексы бит устанавливаемых в единицу.
      * @throws IndexOutOfBoundsException если для одного из указанных индексов не выполняется
-     *                                   условие index >= 0 && index < {@link #getSize()}.
+     *                                   условие index >= 0 && index < {@link #size()}.
      */
     public void setAll(int... indexes) throws IndexOutOfBoundsException {
         for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
@@ -89,7 +89,7 @@ public final class Bits implements Comparable<Bits> {
      * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев: <br/>
      *                                   1. Если fromIndex > toIndex; <br/>
      *                                   2. Если fromIndex < 0; <br/>
-     *                                   3. Если toIndex > {@link #getSize()}.
+     *                                   3. Если toIndex > {@link #size()}.
      */
     public void setRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
         if(fromIndex > toIndex || fromIndex < 0 || toIndex > size) {
@@ -113,7 +113,7 @@ public final class Bits implements Comparable<Bits> {
     /**
      * Устанавливает бит с указанным индексом в ноль.
      * @param index индекс бита устанавливаемого в ноль.
-     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #getSize()}.
+     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}.
      */
     public void clear(int index) throws IndexOutOfBoundsException {
         assertInHalfOpenInterval(index);
@@ -122,12 +122,12 @@ public final class Bits implements Comparable<Bits> {
 
     /**
      * Уста наливает значение для каждого бита, индекс которого указан в параметре indexes, в ноль. Если хотя бы
-     * один из индексов не соответствует условию index >= 0 && index < {@link #getSize()}, выполнения метода будет
+     * один из индексов не соответствует условию index >= 0 && index < {@link #size()}, выполнения метода будет
      * прервано и ни один из указанных бит не будет изменен. Если метод вызывается без аргументов - он не вносит
      * никаких изменений.
      * @param indexes индексы бит устанавливаемых в ноль.
      * @throws IndexOutOfBoundsException если для одного из переданных индексов не выполняется
-     *                                   условие index >= 0 && index < {@link #getSize()}.
+     *                                   условие index >= 0 && index < {@link #size()}.
      */
     public void clearAll(int... indexes) throws IndexOutOfBoundsException {
         for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
@@ -145,7 +145,7 @@ public final class Bits implements Comparable<Bits> {
      * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев: <br/>
      *                                   1. Если fromIndex > toIndex; <br/>
      *                                   2. Если fromIndex < 0; <br/>
-     *                                   3. Если toIndex > {@link #getSize()}.
+     *                                   3. Если toIndex > {@link #size()}.
      */
     public void clearRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
         if(fromIndex > toIndex || fromIndex < 0 || toIndex > size) {
@@ -185,7 +185,7 @@ public final class Bits implements Comparable<Bits> {
      * Выполняет операцию объединения двух множеств. Метод записывает результат операции в объект Bits, у которого
      * был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда выступает объект
      * у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве аргумента. Если размер
-     * объекта (см. {@link #getSize()}), у которого вызван метод, меньше чем other, то его размер увеличивается до
+     * объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его размер увеличивается до
      * размера other. Если размер передаваемого объекта меньше, то операция выполняется таким образом, как будто
      * недостающие биты второго операнда заполнены нулями.
      * @param other второй операнд операции объединения множеств.
@@ -202,7 +202,7 @@ public final class Bits implements Comparable<Bits> {
      * Выполняет операцию симметричной разности двух множеств. Метод записывает результат операции в объект Bits,
      * у которого был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда
      * выступает объект у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве
-     * аргумента. Если размер объекта (см. {@link #getSize()}), у которого вызван метод, меньше чем other, то его
+     * аргумента. Если размер объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его
      * размер увеличивается до размера other. Если размер передаваемого объекта меньше, то операция выполняется
      * таким образом, как будто недостающие биты второго операнда заполнены нулями.
      * @param other второй операнд для операции xor.
@@ -274,26 +274,26 @@ public final class Bits implements Comparable<Bits> {
      * @throws NullPointerException если src имеет значение null.
      * @throws IndexOutOfBoundsException если выполняется хотя бы одно из следующих условий:<br/>
      *                                   1. srcPos < 0 <br/>
-     *                                   2. srcPos >= src.{@link #getSize()} <br/>
+     *                                   2. srcPos >= src.{@link #size()} <br/>
      *                                   3. destPos < 0 <br/>
-     *                                   4. destPos >= this.{@link #getSize()} <br/>
+     *                                   4. destPos >= this.{@link #size()} <br/>
      *                                   5. length < 0
      */
     public int copyRange(Bits src, int srcPos, int length, int destPos) {
         Objects.requireNonNull(src, "src can not be null.");
 
-        if(srcPos < 0 || destPos < 0 || srcPos >= src.getSize() || destPos >= getSize() || length < 0) {
+        if(srcPos < 0 || destPos < 0 || srcPos >= src.size() || destPos >= size() || length < 0) {
             throw new IndexOutOfBoundsException(
                     "srcPos=" + srcPos +
                             ", destPos=" + destPos +
                             ", length=" + length +
-                            ", src.getSize()=" + src.getSize() +
-                            ", dest,getSize()=" + getSize()
+                            ", src.size()=" + src.size() +
+                            ", dest.size()=" + size()
             );
         }
 
-        int srcRange = Math.min(src.getSize() - srcPos, length);
-        int destRange = Math.min(getSize() - destPos, length);
+        int srcRange = Math.min(src.size() - srcPos, length);
+        int destRange = Math.min(size() - destPos, length);
         int actualRange = Math.min(srcRange, destRange);
 
         if(srcPos >= destPos) {
@@ -326,7 +326,7 @@ public final class Bits implements Comparable<Bits> {
      * равен текущему кол-ву бит - не оказывает никакого эффекта. Все старшие биты добавленные в результате
      * вызова этого метода будут установленны в 0.
      * @param newSize кол-во бит до которого нужно расширить текущий объект Bits.
-     * @return true - передаваемый аргумент больше текущего размера Bits ({@link #getSize()}) и, как следствие,
+     * @return true - передаваемый аргумент больше текущего размера Bits ({@link #size()}) и, как следствие,
      *                вызов метода изменил размер Bits, иначе - false.
      */
     public boolean expandTo(int newSize) {
@@ -351,7 +351,7 @@ public final class Bits implements Comparable<Bits> {
      * уменьшению объема памяти, занимаемому данным объектом. Если передаваемый аргумент больше или равен текущему
      * кол-ву бит, или меньше нуля - не оказывает никакого эффекта.
      * @param newSize кол-во бит до которого нужно сузить текущий объект Bits.
-     * @return true - передаваемый аргумент меньше текущего размера Bits ({@link #getSize()}) и вызов метода
+     * @return true - передаваемый аргумент меньше текущего размера Bits ({@link #size()}) и вызов метода
      *                изменил размер Bits, иначе - false.
      */
     public boolean compressTo(int newSize) {
@@ -402,7 +402,7 @@ public final class Bits implements Comparable<Bits> {
 
     /**
      * Возвращает true, если для всех значений начиная с индекса 0 и заканчивая индексом
-     * {@link #getSize()} - 1 метод {@link #get(int)} возвращает false.
+     * {@link #size()} - 1 метод {@link #get(int)} возвращает false.
      * @return true - если Bits не содержит ни одной единицы, false - в противном случае.
      */
     public boolean isClean() {
@@ -418,7 +418,7 @@ public final class Bits implements Comparable<Bits> {
      * length у массивов.
      * @return кол-во бит доступных для изменения.
      */
-    public int getSize() {
+    public int size() {
         return size;
     }
 
@@ -426,7 +426,7 @@ public final class Bits implements Comparable<Bits> {
      * Возвращает индекс первого встретившегося бита установленного в единицу. Поиск ведется начиная с бита,
      * индекс которого указан в качестве аргумента, включая его. Биты перебираются в порядке возрастания их
      * индексов. Если начиная с бита с указанным индексом нет ни одного единичного бита - метод вернет -1.
-     * Если fromIndex >= {@link #getSize()}, то метод вернет -1.
+     * Если fromIndex >= {@link #size()}, то метод вернет -1.
      * @param fromIndex индекс бита с которого начинается поиск.
      * @return индекс первого встретившегося бита установленного в единицу или -1.
      * @throws IndexOutOfBoundsException если fromIndex < 0.
@@ -452,7 +452,7 @@ public final class Bits implements Comparable<Bits> {
      * Возвращает индекс паевого встретившегося бита установленного в ноль. Поиск ведется начиная с бита,
      * индекс которого указан в качестве аргумента, включая его. Биты перебираются в порядке возрастания их
      * индексов. Если начиная с бита с указанным индексом нет ни одного нулевого бита - метод вернет -1.
-     * Если fromIndex >= {@link #getSize()}, то метод вернет -1.
+     * Если fromIndex >= {@link #size()}, то метод вернет -1.
      * @param fromIndex индекс бита с которого начинается поиск.
      * @return индекс первого встретившегося бита установленного в ноль или -1.
      * @throws IndexOutOfBoundsException если fromIndex < 0.
@@ -512,7 +512,7 @@ public final class Bits implements Comparable<Bits> {
     }
 
     /**
-     * Два объекта Bits считаются одинаковыми если их размеры (значения возвращаемые методом {@link #getSize()})
+     * Два объекта Bits считаются одинаковыми если их размеры (значения возвращаемые методом {@link #size()})
      * равны и значения всех бит попарно равны.
      * @param o объект типа Bits с которым производится сравнение.
      * @return true - если объекты равны, false - в противном случае.
@@ -533,7 +533,7 @@ public final class Bits implements Comparable<Bits> {
 
     /**
      * Данный метод сравнивает два объекта Bits, как целые беззнаковые числа без учета их размеров
-     * (значения возвращаемые методом {@link #getSize()}).
+     * (значения возвращаемые методом {@link #size()}).
      * @param o объект типа Bits с которым производится сравнение.
      * @return true - если логические значения объектов Bits равны, false - в противном случае.
      */

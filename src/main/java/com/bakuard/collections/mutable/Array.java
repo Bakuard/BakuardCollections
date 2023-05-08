@@ -13,7 +13,7 @@ public final class Array<T> implements Iterable<T> {
     /**
      * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект Array
      * будет содержать копию передаваемого массива, а не сам массив. Длина создаваемого объекта
-     * ({@link #getLength()}) будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит
+     * ({@link #size()}) будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит
      * ни одного элемента - создает пустой объект Array.
      * @param data элементы включаемые в создаваемый объект.
      * @throws NullPointerException если передаваемый массив элементов равен null.
@@ -29,7 +29,7 @@ public final class Array<T> implements Iterable<T> {
     private static final int MIN_CAPACITY = 10;
 
     private T[] values;
-    private int length;
+    private int size;
     private int actualModCount;
 
     /**
@@ -42,16 +42,16 @@ public final class Array<T> implements Iterable<T> {
 
     /**
      * Создает пустой массив указанной длины.
-     * @param length длина массива.
+     * @param size длина массива.
      * @throws IllegalArgumentException если указанная длина меньше нуля.
      */
     @SuppressWarnings("unchecked")
-    public Array(int length){
-        if(length < 0)
+    public Array(int size){
+        if(size < 0)
             throw new IllegalArgumentException("Длина массива не может быть отрицательной.");
 
-        this.length = length;
-        values = (T[]) new Object[Math.max(calculateCapacity(length), MIN_CAPACITY)];
+        this.size = size;
+        values = (T[]) new Object[Math.max(calculateCapacity(size), MIN_CAPACITY)];
     }
 
     /**
@@ -60,18 +60,33 @@ public final class Array<T> implements Iterable<T> {
      */
     public Array(Array<T> other) {
         values = other.values.clone();
-        length = other.length;
+        size = other.size;
     }
 
     /**
-     * Возвращает элемент хранящийся в ячейке с указанным индексом.
-     * @param index индекс ячейки массива.
-     * @return элемент хранящийся в ячейке с указанным индексом.
-     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < length
+     * Возвращает элемент по его индексу.
+     * @param index индекс искомого элемента.
+     * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
      */
     public T get(int index) {
-        assertInHalfOpenInterval(index);
+        assertInBound(index);
+
         return values[index];
+    }
+
+    /**
+     * Возвращает элемент хранящийся в ячейке с указанным индексом. Первому элементу массива
+     * соответствует индекс [0], последнему - индекс [{@link #size()} - 1]. <br/>
+     * Метод также допускает отрицательные индексы. Индексу [-1] соответствует последний элемент,
+     * а индексу [-({@link #size()})] - первый элемент.
+     * @param index индекс ячейки массива.
+     * @return элемент хранящийся в ячейке с указанным индексом.
+     * @throws IndexOutOfBoundsException если не соблюдается условие index >= -({@link #size()})  && index < size
+     */
+    public T at(int index) {
+        assertInExpandBound(index);
+
+        return index < 0 ? values[size + index] : values[index];
     }
 
     /**
@@ -80,10 +95,10 @@ public final class Array<T> implements Iterable<T> {
      * @param index индекс ячейки массива куда будет записан элемент.
      * @param value добавляемое значение.
      * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
-     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < length
+     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
-    public T set(int index, T value) {
-        assertInHalfOpenInterval(index);
+    public T replace(int index, T value) {
+        assertInBound(index);
 
         ++actualModCount;
 
@@ -102,7 +117,7 @@ public final class Array<T> implements Iterable<T> {
      * @throws IndexOutOfBoundsException если значение индекса меньше нуля.
      * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
      */
-    public T setAndExpand(int index, T value) {
+    public T setWithoutBound(int index, T value) {
         if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
         ++actualModCount;
 
@@ -119,8 +134,8 @@ public final class Array<T> implements Iterable<T> {
     public void append(T value) {
         ++actualModCount;
 
-        int lastIndex = length;
-        expandTo(length + 1);
+        int lastIndex = size;
+        expandTo(size + 1);
         values[lastIndex] = value;
     }
 
@@ -133,10 +148,19 @@ public final class Array<T> implements Iterable<T> {
         if(data.length > 0) {
             ++actualModCount;
 
-            int lastIndex = length;
-            expandTo(length + data.length);
+            int lastIndex = size;
+            expandTo(size + data.length);
             System.arraycopy(data, 0, this.values, lastIndex, data.length);
         }
+    }
+
+    /**
+     * Добавляет все переданные элементы в конец массива увеличивая его длину на кол-во переданных элементов.
+     * Элементы добавляются в порядке их возвращения итератором.
+     * @param iterable структура данных, все элементы которой добавляются в данный массив.
+     */
+    public void appendAll(Iterable<T> iterable) {
+        for(T value : iterable) append(value);
     }
 
     /**
@@ -144,17 +168,17 @@ public final class Array<T> implements Iterable<T> {
      * позиции и все элементы следующие за ним сдвигаются вверх на одну позицию.
      * @param index позиция, в которую будет добавлен элемент
      * @param value добавляемое значение
-     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index <= length
+     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index <= size
      */
     public void insert(int index, T value) {
-        assertInClosedInterval(index);
+        assertInClosedBound(index);
 
         ++actualModCount;
 
-        int oldLength = length;
-        expandTo(length + 1);
-        if(index < oldLength) {
-            System.arraycopy(values, index, values, index + 1, oldLength - index);
+        int oldSize = size;
+        expandTo(size + 1);
+        if(index < oldSize) {
+            System.arraycopy(values, index, values, index + 1, oldSize - index);
         }
         values[index] = value;
     }
@@ -175,7 +199,7 @@ public final class Array<T> implements Iterable<T> {
         ++actualModCount;
 
         int fromIndex = 0;
-        int toIndex = length;
+        int toIndex = size;
         int middle = 0;
         while (fromIndex < toIndex) {
             middle = (fromIndex + toIndex) >>> 1;
@@ -200,11 +224,11 @@ public final class Array<T> implements Iterable<T> {
      * @param firstIndex индекс первого элемента
      * @param secondIndex индекс второго элемента
      * @throws IndexOutOfBoundsException если хотя бы для одного зи индексов не соблюдается
-     *                                   условие index >= 0 && index <= length
+     *                                   условие index >= 0 && index <= size
      */
     public void swap(int firstIndex, int secondIndex) {
-        assertInHalfOpenInterval(firstIndex);
-        assertInHalfOpenInterval(secondIndex);
+        assertInBound(firstIndex);
+        assertInBound(secondIndex);
 
         ++actualModCount;
 
@@ -219,12 +243,12 @@ public final class Array<T> implements Iterable<T> {
      * @param array добавляемые элементы.
      */
     public void concat(Array<T> array) {
-        if(array.getLength() > 0) {
+        if(array.size() > 0) {
             ++actualModCount;
 
-            int lastIndex = length;
-            expandTo(length + array.getLength());
-            System.arraycopy(array.values, 0, this.values, lastIndex, array.getLength());
+            int lastIndex = size;
+            expandTo(size + array.size());
+            System.arraycopy(array.values, 0, this.values, lastIndex, array.size());
         }
     }
 
@@ -237,16 +261,16 @@ public final class Array<T> implements Iterable<T> {
      * важен - для удаления рекомендуется использовать этот метод.
      * @param index индекс удаляемого элемента.
      * @return удаляемый элемент под указанным индексом.
-     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < length
+     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T quickRemove(int index) {
-        assertInHalfOpenInterval(index);
+        assertInBound(index);
 
         ++actualModCount;
 
         T removableItem = values[index];
-        values[index] = values[--length];
-        values[length] = null;
+        values[index] = values[--size];
+        values[size] = null;
         return removableItem;
     }
 
@@ -258,18 +282,18 @@ public final class Array<T> implements Iterable<T> {
      * используйте метод {@link #trimToLength()}.
      * @param index индекс удаляемого элемента.
      * @return удаляемый элемент под указанным индексом.
-     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < length
+     * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T orderedRemove(int index) {
-        assertInHalfOpenInterval(index);
+        assertInBound(index);
 
         ++actualModCount;
 
         T removableItem = values[index];
-        if(--length > index) {
-            System.arraycopy(values, index + 1, values, index, length - index);
+        if(--size > index) {
+            System.arraycopy(values, index + 1, values, index, size - index);
         }
-        values[length] = null;
+        values[size] = null;
         return removableItem;
     }
 
@@ -280,7 +304,7 @@ public final class Array<T> implements Iterable<T> {
      */
     public void clear() {
         ++actualModCount;
-        for(int to = length, i = length = 0; i < to; ++i) values[i] = null;
+        for(int to = size, i = size = 0; i < to; ++i) values[i] = null;
     }
 
     /**
@@ -290,7 +314,7 @@ public final class Array<T> implements Iterable<T> {
     public void sort(Comparator<T> comparator) {
         ++actualModCount;
 
-        Arrays.sort(values, 0, length, comparator);
+        Arrays.sort(values, 0, size, comparator);
     }
 
     /**
@@ -299,15 +323,15 @@ public final class Array<T> implements Iterable<T> {
      * в них значений из старых.
      * @return длина массива.
      */
-    public int getLength() {
-        return length;
+    public int size() {
+        return size;
     }
 
     /**
      * Возвращает true если данный массив пуст, иначе - false.
      */
     public boolean isEmpty() {
-        return length == 0;
+        return size == 0;
     }
 
     /**
@@ -317,7 +341,7 @@ public final class Array<T> implements Iterable<T> {
      * @return индекс первого встретившегося элемента с указанным значением.
      */
     public int linearSearch(T value) {
-        return linearSearchInRange(value, 0, length);
+        return linearSearchInRange(value, 0, size);
     }
 
     /**
@@ -327,7 +351,7 @@ public final class Array<T> implements Iterable<T> {
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
     public int linearSearch(Predicate<T> predicate) {
-        return linearSearchInRange(predicate, 0, length);
+        return linearSearchInRange(predicate, 0, size);
     }
 
     /**
@@ -346,7 +370,7 @@ public final class Array<T> implements Iterable<T> {
      * @return индекс элемента часть полей которого имеет нужное значение или -1, если таковой не был найден.
      */
     public int binarySearch(ToIntFunction<T> comparator) {
-        return binarySearchByPropertyInRange(0, length, comparator);
+        return binarySearchInRange(0, size, comparator);
     }
 
     /**
@@ -354,29 +378,29 @@ public final class Array<T> implements Iterable<T> {
      */
     public int frequency(Predicate<T> predicate) {
         int result = 0;
-        for(int i = 0; i < length; ++i) {
+        for(int i = 0; i < size; ++i) {
             if(predicate.test(values[i])) ++result;
         }
         return result;
     }
 
     /**
-     * Если newLength больше длины массива ({@link #getLength()}), то увеличивает внутреннюю емкость массива
-     * таким образом, чтобы вмещать кол-во элементов как минимум равное newLength, а длинна массива станет
-     * равна newLength. Если значение newLength меньше или равно длине массива - метод не вносит никаких
+     * Если newSize больше длины массива ({@link #size()}), то увеличивает внутреннюю емкость массива
+     * таким образом, чтобы вмещать кол-во элементов как минимум равное newSize, а длинна массива станет
+     * равна newSize. Если значение newSize меньше или равно длине массива - метод не вносит никаких
      * изменений.
-     * @param newLength новая длина массива.
-     * @return true - передаваемый аргумент больше длины массива {@link #getLength()}, иначе - false.
+     * @param newSize новая длина массива.
+     * @return true - передаваемый аргумент больше длины массива {@link #size()}, иначе - false.
      */
-    public boolean expandTo(int newLength) {
-        boolean isExpand = newLength > length;
+    public boolean expandTo(int newSize) {
+        boolean isExpand = newSize > size;
 
         if(isExpand) {
             ++actualModCount;
 
-            length = newLength;
-            if(newLength > values.length) {
-                values = Arrays.copyOf(values, calculateCapacity(newLength));
+            size = newSize;
+            if(newSize > values.length) {
+                values = Arrays.copyOf(values, calculateCapacity(newSize));
             }
         }
 
@@ -385,17 +409,15 @@ public final class Array<T> implements Iterable<T> {
 
     /**
      * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
-     * длинной объекта ({@link #getLength()}), то уменьшает емкость внутреннего массива, иначе - не вносит
+     * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
      * памяти занимаемый объектом Array.
-     * @return true - если размер внутреннего массива больше его минимально допустимого значения в соответствии
-     *                с текущей длинной объекта ({@link #getLength()}), и как следствие объем внутреннего массива
-     *                был уменьшен, иначе - false.
+     * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
     public boolean trimToLength() {
         ++actualModCount;
 
-        int capacity = calculateCapacity(length);
+        int capacity = calculateCapacity(size);
         boolean isTrim = capacity < values.length;
 
         if(isTrim) values = Arrays.copyOf(values, capacity);
@@ -413,7 +435,7 @@ public final class Array<T> implements Iterable<T> {
     public void forEach(Consumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
-        for(int i = 0; i < length; i++) {
+        for(int i = 0; i < size; i++) {
             action.accept(values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
@@ -436,14 +458,14 @@ public final class Array<T> implements Iterable<T> {
 
             @Override
             public boolean hasNext() {
-                return currentIndex < length;
+                return currentIndex < size;
             }
 
             @Override
             public T next() {
                 if(EXPECTED_COUNT_MOD != actualModCount) {
                     throw new ConcurrentModificationException();
-                } else if(currentIndex >= length) {
+                } else if(currentIndex >= size) {
                     throw new NoSuchElementException();
                 } else {
                     return values[currentIndex++];
@@ -460,8 +482,8 @@ public final class Array<T> implements Iterable<T> {
         if (o == null || getClass() != o.getClass()) return false;
         Array<?> array = (Array<?>) o;
 
-        boolean result = array.length == length;
-        for(int i = 0; i < length && result; i++) {
+        boolean result = array.size == size;
+        for(int i = 0; i < size && result; i++) {
             result = Objects.equals(array.values[i], values[i]);
         }
         return result;
@@ -469,36 +491,43 @@ public final class Array<T> implements Iterable<T> {
 
     @Override
     public int hashCode() {
-        int result = length;
-        for(int i = 0; i < length; i++) result = result * 31 + Objects.hashCode(values[i]);
+        int result = size;
+        for(int i = 0; i < size; i++) result = result * 31 + Objects.hashCode(values[i]);
         return result;
     }
 
     @Override
     public String toString() {
         StringBuilder valuesToString = new StringBuilder("[");
-        for(int i = 0; i < length; ++i) valuesToString.append(values[i]).append(',');
+        for(int i = 0; i < size; ++i) valuesToString.append(values[i]).append(',');
         valuesToString.deleteCharAt(valuesToString.length() - 1).append(']');
 
-        return "Array{length=" + length + ", " + valuesToString + '}';
+        return "Array{size=" + size + ", " + valuesToString + '}';
     }
 
 
-    private int calculateCapacity(int length) {
-        return length + (length >>> 1);
+    private int calculateCapacity(int size) {
+        return size + (size >>> 1);
     }
 
-    private void assertInHalfOpenInterval(int index) {
-        if(index < 0 || index >= length) {
+    private void assertInBound(int index) {
+        if(index < 0 || index >= size) {
             throw new IndexOutOfBoundsException(
-                    "Expected: index >= 0 && index < length. Actual: length=" + length + ", index=" + index);
+                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index);
         }
     }
 
-    private void assertInClosedInterval(int index) {
-        if(index < 0 || index > length) {
+    private void assertInClosedBound(int index) {
+        if(index < 0 || index > size) {
             throw new IndexOutOfBoundsException(
-                    "Expected: index >= 0 && index <= length. Actual: length=" + length + ", index=" + index);
+                    "Expected: index >= 0 && index <= size. Actual: size=" + size + ", index=" + index);
+        }
+    }
+
+    private void assertInExpandBound(int index) {
+        if(index < -size || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= -size() && index < size. Actual: size=" + size + ", index=" + index);
         }
     }
 
@@ -522,7 +551,7 @@ public final class Array<T> implements Iterable<T> {
         return index;
     }
 
-    private int binarySearchByPropertyInRange(int fromIndex, int toIndex, ToIntFunction<T> comparator) {
+    private int binarySearchInRange(int fromIndex, int toIndex, ToIntFunction<T> comparator) {
         while(fromIndex < toIndex) {
             int middle = (fromIndex + toIndex) >>> 1;
             int different = comparator.applyAsInt(values[middle]);

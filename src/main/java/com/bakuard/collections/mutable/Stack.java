@@ -11,7 +11,7 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Создает и возвращает стек содержащий указанные элементы в указанном порядке. Итоговый стек будет содержать
-     * копию передаваемого массива, а не сам массив. Длина создаваемого объекта ({@link #getLength()})
+     * копию передаваемого массива, а не сам массив. Длина создаваемого объекта ({@link #size()})
      * будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит ни одного элемента -
      * создает пустой стек.
      * @param data элементы включаемые в создаваемый стек.
@@ -21,7 +21,7 @@ public class Stack<T> implements Iterable<T> {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Stack<T> result = new Stack<>();
-        result.putAllOnTop(data);
+        result.putAllOnLast(data);
         return result;
     }
 
@@ -29,7 +29,7 @@ public class Stack<T> implements Iterable<T> {
 
 
     private T[] values;
-    private int length;
+    private int size;
     private int actualModCount;
 
     /**
@@ -45,62 +45,43 @@ public class Stack<T> implements Iterable<T> {
      * @param other копируемый стек.
      */
     public Stack(Stack<T> other) {
-        this.length = other.length;
+        this.size = other.size;
         this.values = other.values.clone();
     }
 
     /**
-     * Добавляет элемент на вершину стека увеличивая его длину ({@link #getLength()}) на единицу.
+     * Добавляет элемент на вершину стека увеличивая его длину ({@link #size()}) на единицу.
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
      */
-    public void putTop(T value) {
+    public void putLast(T value) {
         ++actualModCount;
 
-        int lastIndex = length;
-        grow(length + 1);
+        int lastIndex = size;
+        grow(size + 1);
         values[lastIndex] = value;
     }
 
     /**
-     * Добавляет все элементы из указанного стека на вершину текущего. Элементы добавляются в порядке
-     * их следования в указанном стеке.
-     * @param stack стек, все элементы которого добавляются в текущий.
+     * Добавляет все элементы из указанной перебираемой структуры данных на вершину стека. Элементы
+     * добавляются в порядке из возвращения итератором.
+     * @param iterable структура данных, все элементы которой добавляются на вершину текущего стека.
      */
-    public void putAllOnTop(Stack<T> stack) {
-        ++actualModCount;
-
-        int lastIndex = length;
-        grow(length + stack.getLength());
-        System.arraycopy(stack.values, 0, this.values, lastIndex, stack.getLength());
-    }
-
-    /**
-     * Добавляет все элементы из указанного динамического массива на вершину стека. Элементы добавляются
-     * в порядке их следования в указанном массиве.
-     * @param array массив, все элементы которого добавляются в текущий.
-     */
-    public void putAllOnTop(Array<T> array) {
-        ++actualModCount;
-
-        int lastIndex = length;
-        grow(length + array.getLength());
-        for(int i = 0; i < array.getLength(); i++) {
-            values[lastIndex + i] = array.get(i);
-        }
+    public void putAllOnLast(Iterable<T> iterable) {
+        for(T value : iterable) putLast(value);
     }
 
     /**
      * Добавляет все элементы из указанного массива на вершину стека. Элементы добавляются
      * в порядке их следования в указанном массиве.
-     * @param data массив, все элементы которого добавляются в текущий.
+     * @param data массив, все элементы которого добавляются в текущий стек.
      */
-    public void putAllOnTop(T... data) {
+    public void putAllOnLast(T... data) {
         if(data.length > 0) {
             ++actualModCount;
 
-            int lastIndex = length;
-            grow(length + data.length);
+            int lastIndex = size;
+            grow(size + data.length);
             System.arraycopy(data, 0, this.values, lastIndex, data.length);
         }
     }
@@ -109,23 +90,23 @@ public class Stack<T> implements Iterable<T> {
      * Удаляет элемент с вершины стека и возвращает его. Если стек пуст - возвращает null. <br/>
      * <b>ВАЖНО!</b> Т.к. стек допускает хранение null элементов, то возвращение данным методом
      * null в качестве результата не гарантирует, что стек пуст. Для проверки наличия элементов
-     * в стеке используйте методы {@link #getLength()} или {@link #isEmpty()}.
+     * в стеке используйте методы {@link #size()} или {@link #isEmpty()}.
      */
-    public T removeTop() {
+    public T removeLast() {
         ++actualModCount;
-        return length > 0 ? values[--length] : null;
+        return size > 0 ? values[--size] : null;
     }
 
     /**
      * Удаляет элемент с вершины стека и возвращает его. Если стек пуст, выбрасывает исключение.
      * @throws NoSuchElementException если стек пуст.
      */
-    public T tryRemoveTop() {
-        if(length == 0) {
+    public T tryRemoveLast() {
+        if(size == 0) {
             throw new NoSuchElementException("Fail to remove top: stack is empty.");
         }
 
-        return removeTop();
+        return removeLast();
     }
 
     /**
@@ -136,22 +117,20 @@ public class Stack<T> implements Iterable<T> {
     public void clear() {
         ++actualModCount;
 
-        length = 0;
+        size = 0;
     }
 
     /**
      * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
-     * длинной объекта ({@link #getLength()}), то уменьшает емкость внутреннего массива, иначе - не вносит
+     * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
      * памяти занимаемый объектом Stack.
-     * @return true - если размер внутреннего массива больше его минимально допустимого значения в соответствии
-     *                с текущей длинной объекта ({@link #getLength()}), и как следствие объем внутреннего массива
-     *                был уменьшен, иначе - false.
+     * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
     public boolean trimToLength() {
         ++actualModCount;
 
-        int capacity = calculateCapacity(length);
+        int capacity = calculateCapacity(size);
         boolean isTrim = capacity < values.length;
 
         if(isTrim) values = Arrays.copyOf(values, capacity);
@@ -162,61 +141,71 @@ public class Stack<T> implements Iterable<T> {
     /**
      * Возвращает вершину стека не удаляя её. Если стек пуст - возвращает null.
      */
-    public T getTop() {
-        return length > 0 ? values[length - 1] : null;
+    public T getLast() {
+        return size > 0 ? values[size - 1] : null;
     }
 
     /**
      * Возвращает любой элемент этого стека по его индексу, не удаляя его. Элементу с индексом [0]
-     * соответствует вершина стека, а элементу с индексом [{@link #getLength()} - 1] - самый нижний
-     * элемент стека. <br/>
-     * Метод также допускает отрицательные индексы. Элементу с индексом [-1] соответствует самый
-     * нижний элемент стека, а элементу с индексом [-({@link #getLength()})] - вершина стека.
+     * соответствует нижний элемент стека, а элементу с индексом [{@link #size()} - 1] - вершина.
      * @param index индекс искомого элемента.
-     * @throws IndexOutOfBoundsException если index < [-({@link #getLength()})] или index >= [{@link #getLength()}]
+     * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
      */
-    public T getAny(int index) {
-        assertInHalfOpenInterval(index);
+    public T get(int index) {
+        assertInBound(index);
 
-        if(index < 0) return values[Math.abs(index) - 1];
-        return values[length - 1 - index];
+        return values[index];
+    }
+
+    /**
+     * Возвращает любой элемент этого стека по его индексу, не удаляя его. Элементу с индексом [0]
+     * соответствует нижний элемент стека, а элементу с индексом [{@link #size()} - 1] - вершина. <br/>
+     * Метод также допускает отрицательные индексы. Элементу с индексом [-1] соответствует вершина стека,
+     * а элементу с индексом [-({@link #size()})] - нижний элемент стека.
+     * @param index индекс искомого элемента.
+     * @throws IndexOutOfBoundsException если index < -({@link #size()}) или index >= {@link #size()}
+     */
+    public T at(int index) {
+        assertInExpandBound(index);
+
+        return index < 0 ? values[size + index] : values[index];
     }
 
     /**
      * Возвращает кол-во элементов в стеке.
      */
-    public int getLength() {
-        return length;
+    public int size() {
+        return size;
     }
 
     /**
      * Если стек пуст - возвращает true, иначе - false.
      */
     public boolean isEmpty() {
-        return length == 0;
+        return size == 0;
     }
 
     /**
-     * Находит и возвращает индекс первого элемента равного заданному. Поиск начинается с вершины
-     * стека. Элементу с индексом [0] соответствует вершина стека. Выполняет линейный поиск.
+     * Находит и возвращает индекс первого элемента равного заданному. Выполняет линейный поиск
+     * начиная с самого нижнего элемента стека в направлении вершины стека. Выполняет линейный поиск.
      * @param value искомый элемент
      */
     public int linearSearch(T value) {
         int index = 0;
-        while(index < length && !Objects.equals(values[length - 1 - index], value)) ++index;
-        return index >= length ? -1 : index;
+        while(index < size && !Objects.equals(values[index], value)) ++index;
+        return index >= size ? -1 : index;
     }
 
     /**
      * Возвращает индекс первого встретившегося элемента соответствующего заданному предикату.
-     * Если такого элемента нет - возвращает -1. Поиск начинается с вершины стека.
-     * Элементу с индексом [0] соответствует вершина стека. Выполняет линейный поиск.
+     * Если такого элемента нет - возвращает -1. Выполняет линейный поиск начиная с самого нижнего
+     * элемента стека в направлении вершины стека. Выполняет линейный поиск.
      * @param predicate условие, которому должен соответствовать искомый элемент.
      */
     public int linearSearch(Predicate<T> predicate) {
         int index = 0;
-        while(index < length && !predicate.test(values[length - 1 - index])) ++index;
-        return index >= length ? -1 : index;
+        while(index < size && !predicate.test(values[index])) ++index;
+        return index >= size ? -1 : index;
     }
 
     /**
@@ -224,7 +213,7 @@ public class Stack<T> implements Iterable<T> {
      */
     public int frequency(Predicate<T> predicate) {
         int result = 0;
-        for(int i = 0; i < length; ++i) {
+        for(int i = 0; i < size; ++i) {
             if(predicate.test(values[i])) ++result;
         }
         return result;
@@ -232,7 +221,7 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Возвращает итератор для одностороннего перебора элементов данного стека. Элементы перебираются
-     * начиная с вершины стека.
+     * начиная с нижнего элемента стека в направлении его вершины.
      * @return итератор для одностороннего перебора элементов данного стека.
      */
     @Override
@@ -240,21 +229,21 @@ public class Stack<T> implements Iterable<T> {
         return new Iterator<T>() {
 
             private final int EXPECTED_COUNT_MOD = actualModCount;
-            private int currentIndex = length - 1;
+            private int currentIndex = 0;
 
             @Override
             public boolean hasNext() {
-                return currentIndex >= 0;
+                return currentIndex < size;
             }
 
             @Override
             public T next() {
                 if(EXPECTED_COUNT_MOD != actualModCount) {
                     throw new ConcurrentModificationException();
-                } else if(currentIndex < 0) {
+                } else if(currentIndex >= size) {
                     throw new NoSuchElementException();
                 } else {
-                    return values[currentIndex--];
+                    return values[currentIndex++];
                 }
             }
         };
@@ -262,7 +251,8 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Выполняет переданную операцию, реализованную объектом типа Consumer, для каждого элемента
-     * хранящегося в стеке. Элементы перебираются начиная с вершины стека.
+     * хранящегося в стеке. Элементы перебираются начиная с нижнего элемента стека в направлении его
+     * вершины.
      * @param action действие выполняемое для каждого элемента хранящегося в данном стеке.
      * @throws ConcurrentModificationException если стек изменяется в момент выполнения этого метода.
      */
@@ -270,7 +260,7 @@ public class Stack<T> implements Iterable<T> {
     public void forEach(Consumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
-        for(int i = length - 1; i >= 0; --i) {
+        for(int i = 0; i < size; ++i) {
             action.accept(values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
@@ -284,8 +274,8 @@ public class Stack<T> implements Iterable<T> {
         if (o == null || getClass() != o.getClass()) return false;
         Stack<?> stack = (Stack<?>) o;
 
-        boolean result = stack.length == length;
-        for(int i = 0; i < length && result; i++) {
+        boolean result = stack.size == size;
+        for(int i = 0; i < size && result; i++) {
             result = Objects.equals(stack.values[i], values[i]);
         }
         return result;
@@ -293,38 +283,45 @@ public class Stack<T> implements Iterable<T> {
 
     @Override
     public int hashCode() {
-        int result = length;
-        for(int i = 0; i < length; i++) result = result * 31 + Objects.hashCode(values[i]);
+        int result = size;
+        for(int i = 0; i < size; i++) result = result * 31 + Objects.hashCode(values[i]);
         return result;
     }
 
     @Override
     public String toString() {
         StringBuilder valuesToString = new StringBuilder("[");
-        for(int i = length - 1; i >= 0; --i) valuesToString.append(values[i]).append(',');
+        for(int i = size - 1; i >= 0; --i) valuesToString.append(values[i]).append(',');
         valuesToString.deleteCharAt(valuesToString.length() - 1).append(']');
 
-        return "Stack{length=" + length + ", " + valuesToString + '}';
+        return "Stack{size=" + size + ", " + valuesToString + '}';
     }
 
 
-    private int calculateCapacity(int length) {
-        return length + (length >>> 1);
+    private int calculateCapacity(int size) {
+        return size + (size >>> 1);
     }
 
-    private void grow(int newLength) {
-        if(newLength > length) {
-            length = newLength;
-            if(newLength > values.length) {
-                values = Arrays.copyOf(values, calculateCapacity(newLength));
+    private void grow(int newSize) {
+        if(newSize > size) {
+            size = newSize;
+            if(newSize > values.length) {
+                values = Arrays.copyOf(values, calculateCapacity(newSize));
             }
         }
     }
 
-    private void assertInHalfOpenInterval(int index) {
-        if(index < -length || index >= length) {
+    private void assertInBound(int index) {
+        if(index < 0 || index >= size) {
             throw new IndexOutOfBoundsException(
-                    "Expected: index >= -length && index < length. Actual: length=" + length + ", index=" + index);
+                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index);
+        }
+    }
+
+    private void assertInExpandBound(int index) {
+        if(index < -size || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= -size && index < size. Actual: size=" + size + ", index=" + index);
         }
     }
 
