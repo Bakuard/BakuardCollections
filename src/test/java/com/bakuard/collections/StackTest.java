@@ -1,5 +1,7 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
+import com.bakuard.collections.Array;
+import com.bakuard.collections.Stack;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -579,6 +581,103 @@ class StackTest {
         Integer actual = stack.getLast();
 
         Assertions.assertThat(actual).isNull();
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is not empty,
+             index = stack size
+             => exception
+            """)
+    public void get1() {
+        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(9));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is not empty,
+             index > stack size
+             => exception
+            """)
+    public void get2() {
+        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(10));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is not empty,
+             index < 0
+             => exception
+            """)
+    public void get3() {
+        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(-1));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is empty,
+             index = 0
+             => exception
+            """)
+    public void get4() {
+        Stack<Integer> stack = new Stack<>();
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> stack.get(0));
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is not empty,
+             index = 0
+             => return first element
+            """)
+    public void get5() {
+        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        int actual = stack.get(0);
+
+        Assertions.assertThat(actual).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is not empty,
+             index = stack size - 1
+             => return last element
+            """)
+    public void get6() {
+        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        int actual = stack.get(8);
+
+        Assertions.assertThat(actual).isEqualTo(9);
+    }
+
+    @Test
+    @DisplayName("""
+            get(index):
+             stack is not empty,
+             index in the middle of stack
+             => return correct element
+            """)
+    public void get7() {
+        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        int actual = stack.get(5);
+
+        Assertions.assertThat(actual).isEqualTo(6);
     }
 
     @Test

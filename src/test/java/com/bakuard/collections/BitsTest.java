@@ -1,5 +1,6 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
+import com.bakuard.collections.Bits;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -159,7 +160,130 @@ class BitsTest {
         Assertions.assertThatIndexOutOfBoundsException().
                 isThrownBy(() -> actual.set(100001));
     }
-    
+
+    @Test
+    @DisplayName("""
+            set(index):
+             index = 0,
+             Bits.size() = 0
+             => exception
+            """)
+    void set4() {
+        Bits bits  = new Bits();
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> bits.set(0));
+    }
+
+    @Test
+    @DisplayName("""
+            set(index):
+             Bits.size() > 0,
+             set first bit
+             => first bit must be set
+            """)
+    void set5() {
+        Bits bits = new Bits(10000);
+
+        bits.set(0);
+
+        Assertions.assertThat(bits.get(0)).isTrue();
+    }
+
+    @Test
+    @DisplayName("""
+            set(index):
+             Bits.size() > 0,
+             set last bit
+             => last bit must be set
+            """)
+    void set6() {
+        Bits bits = new Bits(10000);
+
+        bits.set(9999);
+
+        Assertions.assertThat(bits.get(9999)).isTrue();
+    }
+
+    @Test
+    @DisplayName("""
+            setWithoutBound(index):
+             index < 0
+             => exception
+            """)
+    void setWithoutBound1() {
+        Bits bits = new Bits(100000);
+
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> bits.set(-1));
+    }
+
+    @Test
+    @DisplayName("setWithoutBound(index): index = size => expand bits and set bit with index = size")
+    void setWithoutBound2() {
+        Bits actual = new Bits(100000);
+
+        actual.setWithoutBound(100000);
+
+        Assertions.assertThat(actual.get(100000)).isTrue();
+        Assertions.assertThat(actual.size()).isEqualTo(100001);
+    }
+
+    @Test
+    @DisplayName("setWithoutBound(index): index > size => expand bits and set bit with this index")
+    void setWithoutBound3() {
+        Bits actual = new Bits(100000);
+
+        actual.setWithoutBound(100001);
+
+        Assertions.assertThat(actual.get(100001)).isTrue();
+        Assertions.assertThat(actual.size()).isEqualTo(100002);
+    }
+
+    @Test
+    @DisplayName("""
+            setWithoutBound(index):
+             Bits.size() = 0,
+             index = 0
+             => expand bits and set bit with 0 index
+            """)
+    void setWithoutBound4() {
+        Bits bits = new Bits();
+
+        bits.setWithoutBound(0);
+
+        Assertions.assertThat(bits.get(0)).isTrue();
+        Assertions.assertThat(bits.size()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("""
+            setWithoutBound(index):
+             Bits.size() > 0,
+             set first bit
+             => first bit must be set
+            """)
+    void setWithoutBound5() {
+        Bits bits = new Bits(10000);
+
+        bits.setWithoutBound(0);
+
+        Assertions.assertThat(bits.get(0)).isTrue();
+    }
+
+    @Test
+    @DisplayName("""
+            setWithoutBound(index):
+             Bits.size() > 0,
+             set last bit
+             => last bit must be set
+            """)
+    void setWithoutBound6() {
+        Bits bits = new Bits(10000);
+
+        bits.setWithoutBound(9999);
+
+        Assertions.assertThat(bits.get(9999)).isTrue();
+    }
+
     @Test
     @DisplayName("setAll(indexes): all indexes is correct => get() return true for each")
     void setAllWithArguments1() {

@@ -1,4 +1,4 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
 import java.util.*;
 import java.util.function.Consumer;

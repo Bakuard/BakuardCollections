@@ -1,4 +1,4 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -61,6 +61,20 @@ public final class Bits implements Comparable<Bits> {
      */
     public void set(int index) throws IndexOutOfBoundsException {
         assertInHalfOpenInterval(index);
+        words[index >>> 6] |= 1L << index;
+    }
+
+    /**
+     * Устанавливает бит с указанным индексом в единицу. Позволяет устанавливать биты находящееся за
+     * верхней границей текущего объекта Bits. При этом будет выполнено автоматическое увеличение размера
+     * данного объекта.
+     * @param index индекс бита устанавливаемого в единицу.
+     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0
+     */
+    public void setWithoutBound(int index) throws IndexOutOfBoundsException {
+        assertNotNegative(index);
+
+        expandTo(index + 1);
         words[index >>> 6] |= 1L << index;
     }
 
@@ -637,7 +651,14 @@ public final class Bits implements Comparable<Bits> {
 
     private void assertInHalfOpenInterval(int index) {
         if(index < 0 || index >= size)
-            throw new IndexOutOfBoundsException("expected: index >= 0 && index < size; actual: index=" + size);
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= 0 && index < size; Actual: index=" + index + ", size=" + size);
+    }
+
+    private void assertNotNegative(int index) {
+        if(index < 0) {
+            throw new IndexOutOfBoundsException("Expected: index >= 0; Actual: index=" + index);
+        }
     }
 
 }

@@ -1,5 +1,6 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
+import com.bakuard.collections.Array;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
