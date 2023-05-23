@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 /**
  * Реализация динамической очереди с объектами произвольного типа.
  */
-public class Queue<T> implements Iterable<T> {
+public class Queue<T> implements ReadableLinearStructure<T> {
 
     /**
      * Создает и возвращает очередь содержащую указанные элементы в указанном порядке. Итоговая очередь будет содержать
@@ -18,7 +18,11 @@ public class Queue<T> implements Iterable<T> {
      * @throws NullPointerException если передаваемый массив элементов равен null.
      */
     public static <T> Queue<T> of(T... data) {
-        return null;
+        if(data == null) throw new NullPointerException("data[] can not be null.");
+
+        Queue<T> queue = new Queue<>();
+        queue.putAllOnLast(data);
+        return queue;
     }
 
 
@@ -118,6 +122,11 @@ public class Queue<T> implements Iterable<T> {
         return null;
     }
 
+    @Override
+    public T get(int index) {
+        return null;
+    }
+
     /**
      * Возвращает любой элемент очереди по его индексу, не удаляя его. Элементу с индексом [0]
      * соответствует первый элемент очереди, а элементу с индексом [{@link #size()} - 1] - последний элемент
@@ -127,6 +136,7 @@ public class Queue<T> implements Iterable<T> {
      * @param index индекс искомого элемента.
      * @throws IndexOutOfBoundsException если index < -({@link #size()}) или index >= {@link #size()}
      */
+    @Override
     public T at(int index) {
         return null;
     }

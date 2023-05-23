@@ -72,7 +72,7 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
      * @return true - если описанное выше условие выполняется, иначе - false.
      */
     public default boolean inNegativeBound(int index) {
-        return index >= -size() && index < size();
+        return index >= -size() && index < 0;
     }
 
     /**
@@ -131,6 +131,17 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
      */
     public default boolean contains(Predicate<T> predicate) {
         return linearSearch(predicate) != -1;
+    }
+
+    /**
+     * Возвращает кол-во элементов соответствующих заданному предикату.
+     */
+    public default int frequency(Predicate<T> predicate) {
+        int result = 0;
+        for(int i = 0; i < size(); ++i) {
+            if(predicate.test(get(i))) ++result;
+        }
+        return result;
     }
 
     /**
