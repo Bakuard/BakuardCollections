@@ -225,11 +225,11 @@ public class Stack<T> implements ReadableLinearStructure<T> {
 
     /**
      * Возвращает итератор для одностороннего перебора элементов данного стека. Элементы перебираются
-     * начиная с нижнего элемента стека в направлении его вершины.
+     * в направлении от нижнего элемента к его вершине.
      * @return итератор для одностороннего перебора элементов данного стека.
      */
     @Override
-    public IndexedIterator<T> iterator() {
+    public IndexedIterator<T> iterator(int fromIndex) {
         return null;
         /*return new Iterator<T>() {
 
@@ -296,8 +296,11 @@ public class Stack<T> implements ReadableLinearStructure<T> {
     @Override
     public String toString() {
         StringBuilder valuesToString = new StringBuilder("[");
-        for(int i = size - 1; i >= 0; --i) valuesToString.append(values[i]).append(',');
-        valuesToString.deleteCharAt(valuesToString.length() - 1).append(']');
+        if(size > 0) {
+            valuesToString.append(values[size - 1]);
+            for(int i = size - 2; i >= 0; --i) valuesToString.append(',').append(values[i]);
+        }
+        valuesToString.append(']');
 
         return "Stack{size=" + size + ", " + valuesToString + '}';
     }

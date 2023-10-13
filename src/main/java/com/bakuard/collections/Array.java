@@ -446,12 +446,12 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Возвращает итератор для одностороннего перебора элементов данного массива. Порядок перебора соответствует
-     * порядку элементов в массиве.
+     * Возвращает итератор для одностороннего перебора элементов данного массива. Элементы перебираются
+     * в направлении от элемента {@link #getFirst()} к элементу {@link #getLast()}.
      * @return итератор для одностороннего перебора элементов данного массива.
      */
     @Override
-    public IndexedIterator<T> iterator() {
+    public IndexedIterator<T> iterator(int fromIndex) {
 
         return null;
 
@@ -503,8 +503,11 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     @Override
     public String toString() {
         StringBuilder valuesToString = new StringBuilder("[");
-        for(int i = 0; i < size; ++i) valuesToString.append(values[i]).append(',');
-        valuesToString.deleteCharAt(valuesToString.length() - 1).append(']');
+        if(size > 0) {
+            valuesToString.append(values[0]);
+            for(int i = 1; i < size; ++i) valuesToString.append(',').append(values[i]);
+        }
+        valuesToString.append(']');
 
         return "Array{size=" + size + ", " + valuesToString + '}';
     }
