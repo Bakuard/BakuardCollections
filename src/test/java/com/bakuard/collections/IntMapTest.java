@@ -1,5 +1,7 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
+import com.bakuard.collections.Array;
+import com.bakuard.collections.IntMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

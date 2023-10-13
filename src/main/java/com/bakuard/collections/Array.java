@@ -1,4 +1,4 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -8,7 +8,7 @@ import java.util.function.ToIntFunction;
 /**
  * Реализация динамического массива с объектами произвольного типа.
  */
-public final class Array<T> implements Iterable<T> {
+public final class Array<T> implements ReadableLinearStructure<T> {
 
     /**
      * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект Array
@@ -68,6 +68,7 @@ public final class Array<T> implements Iterable<T> {
      * @param index индекс искомого элемента.
      * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
      */
+    @Override
     public T get(int index) {
         assertInBound(index);
 
@@ -83,6 +84,7 @@ public final class Array<T> implements Iterable<T> {
      * @return элемент хранящийся в ячейке с указанным индексом.
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= -({@link #size()})  && index < size
      */
+    @Override
     public T at(int index) {
         assertInExpandBound(index);
 
@@ -444,14 +446,16 @@ public final class Array<T> implements Iterable<T> {
     }
 
     /**
-     * Возвращает итератор для одностороннего перебора элементов данного массива. Порядок перебора соответствует
-     * порядку элементов в массиве.
+     * Возвращает итератор для одностороннего перебора элементов данного массива. Элементы перебираются
+     * в направлении от элемента {@link #getFirst()} к элементу {@link #getLast()}.
      * @return итератор для одностороннего перебора элементов данного массива.
      */
     @Override
-    public Iterator<T> iterator() {
+    public IndexedIterator<T> iterator(int fromIndex) {
 
-        return new Iterator<>() {
+        return null;
+
+        /*return new Iterator<>() {
 
             private final int EXPECTED_COUNT_MOD = actualModCount;
             private int currentIndex;
@@ -472,7 +476,7 @@ public final class Array<T> implements Iterable<T> {
                 }
             }
 
-        };
+        };*/
 
     }
 
@@ -499,8 +503,11 @@ public final class Array<T> implements Iterable<T> {
     @Override
     public String toString() {
         StringBuilder valuesToString = new StringBuilder("[");
-        for(int i = 0; i < size; ++i) valuesToString.append(values[i]).append(',');
-        valuesToString.deleteCharAt(valuesToString.length() - 1).append(']');
+        if(size > 0) {
+            valuesToString.append(values[0]);
+            for(int i = 1; i < size; ++i) valuesToString.append(',').append(values[i]);
+        }
+        valuesToString.append(']');
 
         return "Array{size=" + size + ", " + valuesToString + '}';
     }

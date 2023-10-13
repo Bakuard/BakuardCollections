@@ -1,10 +1,11 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
 import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
  * Общий интерфейс для всех линейных структур данных. Индексация элементов начинается с 0.
+ * Все реализации этого интерфейса могут содержать null.
  */
 public interface ReadableLinearStructure<T> extends Iterable<T> {
 
@@ -72,7 +73,7 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
      * @return true - если описанное выше условие выполняется, иначе - false.
      */
     public default boolean inNegativeBound(int index) {
-        return index >= -size() && index < size();
+        return index >= -size() && index < 0;
     }
 
     /**
@@ -134,10 +135,31 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
     }
 
     /**
+     * Возвращает кол-во элементов соответствующих заданному предикату.
+     */
+    public default int frequency(Predicate<T> predicate) {
+        int result = 0;
+        for(int i = 0; i < size(); ++i) {
+            if(predicate.test(get(i))) ++result;
+        }
+        return result;
+    }
+
+    /**
      * Создает и возвращает итератор, позволяющий последовательно перебирать линейные структуру данных в
-     * обоих направлениях.
+     * обоих направлениях. Курсор итератора установлен перед элементом {@link #getFirst()}.
      */
     @Override
-    public IndexedIterator<T> iterator();
+    public default IndexedIterator<T> iterator() {
+        return iterator(0);
+    }
+
+    /**
+     * Создает и возвращает итератор, позволяющий последовательно перебирать линейные структуру данных в
+     * обоих направлениях. Курсор итератора установлен перед элементом с индексом fromIndex. Если
+     * fromIndex равен {@link #size()}, то курсор будет установлен после последнего элемента.
+     * @throws IndexOutOfBoundsException если fromIndex < 0 || fromIndex > {@link #size()}
+     */
+    public IndexedIterator<T> iterator(int fromIndex);
 
 }

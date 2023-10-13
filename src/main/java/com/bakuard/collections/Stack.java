@@ -1,4 +1,4 @@
-package com.bakuard.collections.mutable;
+package com.bakuard.collections;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 /**
  * Реализация динамического стека с объектами произвольного типа.
  */
-public class Stack<T> implements Iterable<T> {
+public class Stack<T> implements ReadableLinearStructure<T> {
 
     /**
      * Создает и возвращает стек содержащий указанные элементы в указанном порядке. Итоговый стек будет содержать
@@ -94,7 +94,12 @@ public class Stack<T> implements Iterable<T> {
      */
     public T removeLast() {
         ++actualModCount;
-        return size > 0 ? values[--size] : null;
+        if(size > 0) {
+            T value = values[--size];
+            values[size] = null;
+            return value;
+        }
+        return null;
     }
 
     /**
@@ -116,8 +121,7 @@ public class Stack<T> implements Iterable<T> {
      */
     public void clear() {
         ++actualModCount;
-
-        size = 0;
+        for(int to = size, i = size = 0; i < to; ++i) values[i] = null;
     }
 
     /**
@@ -221,12 +225,13 @@ public class Stack<T> implements Iterable<T> {
 
     /**
      * Возвращает итератор для одностороннего перебора элементов данного стека. Элементы перебираются
-     * начиная с нижнего элемента стека в направлении его вершины.
+     * в направлении от нижнего элемента к его вершине.
      * @return итератор для одностороннего перебора элементов данного стека.
      */
     @Override
-    public Iterator<T> iterator() {
-        return new Iterator<T>() {
+    public IndexedIterator<T> iterator(int fromIndex) {
+        return null;
+        /*return new Iterator<T>() {
 
             private final int EXPECTED_COUNT_MOD = actualModCount;
             private int currentIndex = 0;
@@ -246,7 +251,7 @@ public class Stack<T> implements Iterable<T> {
                     return values[currentIndex++];
                 }
             }
-        };
+        };*/
     }
 
     /**
@@ -291,8 +296,11 @@ public class Stack<T> implements Iterable<T> {
     @Override
     public String toString() {
         StringBuilder valuesToString = new StringBuilder("[");
-        for(int i = size - 1; i >= 0; --i) valuesToString.append(values[i]).append(',');
-        valuesToString.deleteCharAt(valuesToString.length() - 1).append(']');
+        if(size > 0) {
+            valuesToString.append(values[size - 1]);
+            for(int i = size - 2; i >= 0; --i) valuesToString.append(',').append(values[i]);
+        }
+        valuesToString.append(']');
 
         return "Stack{size=" + size + ", " + valuesToString + '}';
     }
