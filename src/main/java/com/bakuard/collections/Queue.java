@@ -171,7 +171,7 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     }
 
     @Override
-    public IndexedIterator<T> iterator(int fromIndex) {
+    public IndexedIterator<T> iterator() {
         return null;
     }
 

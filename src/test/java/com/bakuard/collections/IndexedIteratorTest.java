@@ -27,7 +27,7 @@ class IndexedIteratorTest {
             assertions.assertThat(iterator.next()).isEqualTo(item);
         }
         assertions.assertThat(iterator.hasNext()).isFalse();
-        assertions.assertThatThrownBy(iterator::next).hasCauseInstanceOf(NoSuchElementException.class);
+        assertions.assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
         assertions.assertAll();
     }
 
@@ -48,7 +48,7 @@ class IndexedIteratorTest {
             assertions.assertThat(iterator.next()).isEqualTo(item);
         }
         assertions.assertThat(iterator.hasNext()).isFalse();
-        assertions.assertThatThrownBy(iterator::next).hasCauseInstanceOf(NoSuchElementException.class);
+        assertions.assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
         assertions.assertAll();
     }
 
@@ -60,7 +60,8 @@ class IndexedIteratorTest {
             """)
     @MethodSource("provideForPreviousAndHasPreviousMethods1")
     void hasPreviousAndPrevious1(ReadableLinearStructure<Integer> linearStructure, Integer[] expected) {
-        IndexedIterator<Integer> iterator = linearStructure.iterator(linearStructure.size());
+        IndexedIterator<Integer> iterator = linearStructure.iterator();
+        iterator.afterLast();
 
         SoftAssertions assertions = new SoftAssertions();
         for(Integer item : expected) {
@@ -68,7 +69,7 @@ class IndexedIteratorTest {
             assertions.assertThat(iterator.previous()).isEqualTo(item);
         }
         assertions.assertThat(iterator.hasPrevious()).isFalse();
-        assertions.assertThatThrownBy(iterator::previous).hasCauseInstanceOf(NoSuchElementException.class);
+        assertions.assertThatThrownBy(iterator::previous).isInstanceOf(NoSuchElementException.class);
         assertions.assertAll();
     }
 
@@ -81,7 +82,8 @@ class IndexedIteratorTest {
             """)
     @MethodSource("provideForPreviousAndHasPreviousMethods2")
     void hasPreviousAndPrevious2(ReadableLinearStructure<Integer> linearStructure, Integer[] expected) {
-        IndexedIterator<Integer> iterator = linearStructure.iterator(linearStructure.size());
+        IndexedIterator<Integer> iterator = linearStructure.iterator();
+        iterator.afterLast();
 
         SoftAssertions assertions = new SoftAssertions();
         for(Integer item : expected) {
@@ -89,7 +91,7 @@ class IndexedIteratorTest {
             assertions.assertThat(iterator.previous()).isEqualTo(item);
         }
         assertions.assertThat(iterator.hasNext()).isFalse();
-        assertions.assertThatThrownBy(iterator::next).hasCauseInstanceOf(NoSuchElementException.class);
+        assertions.assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
         assertions.assertAll();
     }
 
@@ -107,7 +109,7 @@ class IndexedIteratorTest {
             if(result.isResultException()) {
                 assertions.assertThat(iterator.canJump(result.itemsNumber())).isFalse();
                 assertions.assertThatThrownBy(() -> iterator.jump(result.itemsNumber())).
-                        hasCauseInstanceOf(result.getResultAsClass());
+                        isInstanceOf(result.getResultAsClass());
             } else {
                 assertions.assertThat(iterator.canJump(result.itemsNumber())).isTrue();
                 assertions.assertThat(iterator.jump(result.itemsNumber())).isEqualTo(result.expectedResult());
@@ -141,7 +143,8 @@ class IndexedIteratorTest {
             """)
     @MethodSource("provideForRecentIndexAndPreviousMethods")
     void recentIndexAndPrevious(ReadableLinearStructure<Integer> linearStructure, Integer[] expected) {
-        IndexedIterator<Integer> iterator = linearStructure.iterator(linearStructure.size());
+        IndexedIterator<Integer> iterator = linearStructure.iterator();
+        iterator.afterLast();
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(iterator.recentIndex()).isEqualTo(-1);
@@ -475,9 +478,9 @@ class IndexedIteratorTest {
                 Arguments.of(new Stack<>(), ResultOfJumpMethod.by()),
                 Arguments.of(new Queue<>(), ResultOfJumpMethod.by()),
 
-                Arguments.of(Array.of(10), ResultOfJumpMethod.by(1, 10)),
-                Arguments.of(Stack.of(10), ResultOfJumpMethod.by(1, 10)),
-                Arguments.of(Queue.of(10), ResultOfJumpMethod.by(1, 10)),
+                Arguments.of(Array.of(10), ResultOfJumpMethod.by(1, 0)),
+                Arguments.of(Stack.of(10), ResultOfJumpMethod.by(1, 0)),
+                Arguments.of(Queue.of(10), ResultOfJumpMethod.by(1, 0)),
 
                 Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6, 7, null, null),
                         ResultOfJumpMethod.by(

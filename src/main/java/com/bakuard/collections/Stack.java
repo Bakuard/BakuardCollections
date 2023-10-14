@@ -229,29 +229,8 @@ public class Stack<T> implements ReadableLinearStructure<T> {
      * @return итератор для одностороннего перебора элементов данного стека.
      */
     @Override
-    public IndexedIterator<T> iterator(int fromIndex) {
-        return null;
-        /*return new Iterator<T>() {
-
-            private final int EXPECTED_COUNT_MOD = actualModCount;
-            private int currentIndex = 0;
-
-            @Override
-            public boolean hasNext() {
-                return currentIndex < size;
-            }
-
-            @Override
-            public T next() {
-                if(EXPECTED_COUNT_MOD != actualModCount) {
-                    throw new ConcurrentModificationException();
-                } else if(currentIndex >= size) {
-                    throw new NoSuchElementException();
-                } else {
-                    return values[currentIndex++];
-                }
-            }
-        };*/
+    public IndexedIterator<T> iterator() {
+        return new IndexedIteratorImpl<>(actualModCount, size);
     }
 
     /**
@@ -305,6 +284,112 @@ public class Stack<T> implements ReadableLinearStructure<T> {
         return "Stack{size=" + size + ", " + valuesToString + '}';
     }
 
+
+    private final class IndexedIteratorImpl<E> implements IndexedIterator<E> {
+
+        private final int expectedModCount;
+        private final int totalItems;
+        private int cursor;
+        private int recentIndex;
+
+        public IndexedIteratorImpl(int actualModCount, int itemsNumber) {
+            this.expectedModCount = actualModCount;
+            this.totalItems = itemsNumber;
+            this.cursor = - 1;
+            this.recentIndex = -1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor + 1 < totalItems;
+        }
+
+        @Override
+        public E next() {
+            assertLinearStructureWasNotBeenChanged();
+            assertHasNext();
+            recentIndex = ++cursor;
+            return (E) Stack.this.get(recentIndex);
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return cursor >= 0;
+        }
+
+        @Override
+        public E previous() {
+            assertLinearStructureWasNotBeenChanged();
+            assertHasPrevious();
+            recentIndex = cursor--;
+            return (E) Stack.this.get(recentIndex);
+        }
+
+        @Override
+        public boolean canJump(int itemsNumber) {
+            return cursor + itemsNumber >= 0 && cursor + itemsNumber < totalItems;
+        }
+
+        @Override
+        public E jump(int itemsNumber) {
+            assertLinearStructureWasNotBeenChanged();
+            assertCanJump(itemsNumber);
+            recentIndex = cursor += itemsNumber;
+            return (E) Stack.this.get(recentIndex);
+        }
+
+        @Override
+        public void beforeFirst() {
+            cursor = -1;
+            recentIndex = -1;
+        }
+
+        @Override
+        public void afterLast() {
+            cursor = totalItems - 1;
+            recentIndex = -1;
+        }
+
+        @Override
+        public int recentIndex() {
+            return recentIndex;
+        }
+
+
+        private void assertLinearStructureWasNotBeenChanged() {
+            if(Stack.this.actualModCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        private void assertCanJump(int itemsNumber) {
+            if(!canJump(itemsNumber)) {
+                throw new NoSuchElementException(
+                        "There is no item for itemsNumber=%d, totalItems=%d, currentIndex=%d".
+                                formatted(itemsNumber, totalItems, cursor)
+                );
+            }
+        }
+
+        private void assertHasNext() {
+            if(!hasNext()) {
+                throw new NoSuchElementException(
+                        "There is no next item for totalItems=%d, currentIndex=%d".
+                                formatted(totalItems, cursor)
+                );
+            }
+        }
+
+        private void assertHasPrevious() {
+            if(!hasPrevious()) {
+                throw new NoSuchElementException(
+                        "There is no previous item for totalItems=%d, currentIndex=%d".
+                                formatted(totalItems, cursor)
+                );
+            }
+        }
+
+    }
 
     private int calculateCapacity(int size) {
         return size + (size >>> 1);

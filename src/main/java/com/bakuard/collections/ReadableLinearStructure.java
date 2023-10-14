@@ -150,16 +150,6 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
      * обоих направлениях. Курсор итератора установлен перед элементом {@link #getFirst()}.
      */
     @Override
-    public default IndexedIterator<T> iterator() {
-        return iterator(0);
-    }
-
-    /**
-     * Создает и возвращает итератор, позволяющий последовательно перебирать линейные структуру данных в
-     * обоих направлениях. Курсор итератора установлен перед элементом с индексом fromIndex. Если
-     * fromIndex равен {@link #size()}, то курсор будет установлен после последнего элемента.
-     * @throws IndexOutOfBoundsException если fromIndex < 0 || fromIndex > {@link #size()}
-     */
-    public IndexedIterator<T> iterator(int fromIndex);
+    public IndexedIterator<T> iterator();
 
 }
