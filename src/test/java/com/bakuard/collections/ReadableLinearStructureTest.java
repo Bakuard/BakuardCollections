@@ -12,1134 +12,672 @@ import java.util.stream.Stream;
 
 class ReadableLinearStructureTest {
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            get(index):
-             linearStructure is not empty,
-             index < 0
-             => exception
+    @DisplayName("get(index):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             index = {1}
+             => expected {2}
             """)
-    void get1(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.get(-1));
+    @MethodSource("provideForGetMethod")
+    void get(ReadableLinearStructure<Integer> linearStructure, int index, Object expected) {
+        if(isExceptionType(expected)) {
+            Assertions.assertThatThrownBy(() -> linearStructure.get(index)).isInstanceOf((Class<?>) expected);
+        } else {
+            Integer actual = linearStructure.get(index);
+
+            Assertions.assertThat(actual).isEqualTo(expected);
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            get(index):
-             linearStructure is not empty,
-             index = linearStructure.size()
-             => exception
+    @DisplayName("at(index):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             index = {1}
+             => expected {2}
             """)
-    void get2(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.get(10));
+    @MethodSource("provideForAtMethod")
+    void at(ReadableLinearStructure<Integer> linearStructure, int index, Object expected) {
+        if(isExceptionType(expected)) {
+            Assertions.assertThatThrownBy(() -> linearStructure.at(index)).isInstanceOf((Class<?>) expected);
+        } else {
+            Integer actual = linearStructure.at(index);
+
+            Assertions.assertThat(actual).isEqualTo(expected);
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            get(index):
-             linearStructure is not empty,
-             index > linearStructure.size()
-             => exception
+    @DisplayName("getFirst():")
+    @ParameterizedTest(name = """
+             linearStructure is {0}
+             => expected {1}
             """)
-    void get3(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.get(11));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            get(index):
-             linearStructure is empty,
-             index = 0
-             => exception
-            """)
-    void get4(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.get(0));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            get(index):
-             linearStructure is not empty,
-             index = 0
-             => return first item
-            """)
-    void get5(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.get(0);
-
-        Assertions.assertThat(actual).isEqualTo(1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            get(index):
-             linearStructure is not empty,
-             index = linearStructure.size() - 1
-             => return last item
-            """)
-    void get6(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.get(9);
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            get(index):
-             linearStructure is not empty,
-             index in the middle of stack
-             => return correct item
-            """)
-    void get7(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.get(5);
-
-        Assertions.assertThat(actual).isEqualTo(6);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructureWithSingleItem")
-    @DisplayName("""
-            get(index):
-             linearStructure contains single item,
-             index = 0
-             => return this item
-            """)
-    void get8(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.get(0);
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index = linearStructure.size()
-             => exception
-            """)
-    void at1(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.at(10));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index > linearStructure.size()
-             => exception
-            """)
-    void at2(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.at(11));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index < -linearStructure.size()
-             => exception
-            """)
-    void at3(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.at(-11));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            at(index):
-             linearStructure is empty,
-             index = 0
-             => exception
-            """)
-    void at4(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.at(0));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            at(index):
-             linearStructure is empty,
-             index < 0
-             => exception
-            """)
-    void at5(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.at(-1));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            at(index):
-             linearStructure is empty,
-             index > 0
-             => exception
-            """)
-    void at6(ReadableLinearStructure<Integer> linearStructure) {
-        Assertions.assertThatIndexOutOfBoundsException().
-                isThrownBy(() -> linearStructure.at(1));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index = 0
-             => return first item
-            """)
-    void at7(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(0);
-
-        Assertions.assertThat(actual).isEqualTo(1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index = linearStructure.size() - 1
-             => return last item
-            """)
-    void at8(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(9);
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index for middle item,
-             index is positive
-             => return correct item
-            """)
-    void at9(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(5);
-
-        Assertions.assertThat(actual).isEqualTo(6);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index = -1
-             => return last item
-            """)
-    void at10(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(-1);
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index = -linearStructure.size()
-             => return first item
-            """)
-    void at11(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(-10);
-
-        Assertions.assertThat(actual).isEqualTo(1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            at(index):
-             linearStructure is not empty,
-             index for middle item,
-             index is negative
-             => return correct item
-            """)
-    void at12(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(-5);
-
-        Assertions.assertThat(actual).isEqualTo(6);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructureWithSingleItem")
-    @DisplayName("""
-            at(index):
-             linearStructure contains single item,
-             index = 0
-             => return this item
-            """)
-    void at13(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(0);
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructureWithSingleItem")
-    @DisplayName("""
-            at(index):
-             linearStructure contains single item,
-             index = -1
-             => return this item
-            """)
-    void at14(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.at(-1);
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            getFirst():
-             linearStructure is empty
-             => return null
-            """)
-    void getFirst1(ReadableLinearStructure<Integer> linearStructure) {
+    @MethodSource("provideForGetFirstMethod")
+    void getFirst(ReadableLinearStructure<Integer> linearStructure, Integer expected) {
         Integer actual = linearStructure.getFirst();
 
-        Assertions.assertThat(actual).isNull();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            getFirst():
-             linearStructure is not empty
-             => return first
+    @DisplayName("getLast():")
+    @ParameterizedTest(name = """
+             linearStructure is {0}
+             => expected {1}
             """)
-    void getFirst2(ReadableLinearStructure<Integer> linearStructure) {
-        Integer actual = linearStructure.getFirst();
-
-        Assertions.assertThat(actual).isEqualTo(1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsIncludeNull")
-    @DisplayName("""
-            getFirst():
-             linearStructure is not empty,
-             first item is null
-             => return null
-            """)
-    void getFirst3(ReadableLinearStructure<Integer> linearStructure) {
-        Integer actual = linearStructure.getFirst();
-
-        Assertions.assertThat(actual).isNull();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructureWithSingleItem")
-    @DisplayName("""
-            getFirst():
-             linearStructure contains single item
-             => return this item
-            """)
-    void getFirst4(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.getFirst();
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            getLast():
-             linearStructure is empty
-             => return null
-            """)
-    void getLast1(ReadableLinearStructure<Integer> linearStructure) {
+    @MethodSource("provideForGetLastMethod")
+    void getLast(ReadableLinearStructure<Integer> linearStructure, Integer expected) {
         Integer actual = linearStructure.getLast();
 
-        Assertions.assertThat(actual).isNull();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            getLast():
-             linearStructure is not empty
-             => return last
+    @DisplayName("size():")
+    @ParameterizedTest(name = """
+             linearStructure is {0}
+             => expected {1}
             """)
-    void getLast2(ReadableLinearStructure<Integer> linearStructure) {
-        Integer actual = linearStructure.getLast();
+    @MethodSource("provideForSizeMethod")
+    void size(ReadableLinearStructure<Integer> linearStructure, Integer expected,
+              Consumer<ReadableLinearStructure<Integer>> mutator) {
+        mutator.accept(linearStructure);
 
-        Assertions.assertThat(actual).isEqualTo(10);
+        Integer actual = linearStructure.size();
+
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsIncludeNull")
-    @DisplayName("""
-            getLast():
-             linearStructure is not empty,
-             last item is null
-             => return null
+    @DisplayName("isEmpty():")
+    @ParameterizedTest(name = """
+             linearStructure is {0}
+             => expected {1}
             """)
-    void getLast3(ReadableLinearStructure<Integer> linearStructure) {
-        Integer actual = linearStructure.getLast();
-
-        Assertions.assertThat(actual).isNull();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructureWithSingleItem")
-    @DisplayName("""
-            getLast():
-             linearStructure contains single item
-             => return this item
-            """)
-    void getLast4(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.getLast();
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            size():
-             linearStructure is empty
-             => return 0
-            """)
-    void size1(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.size();
-
-        Assertions.assertThat(actual).isZero();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            size():
-             linearStructure not is empty
-             => return correct result
-            """)
-    void size2(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.size();
-
-        Assertions.assertThat(actual).isEqualTo(10);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsAndAddOperation")
-    @DisplayName("""
-            size():
-             linearStructure not is empty,
-             add several items
-             => return correct result after items were added
-            """)
-    void size3(ReadableLinearStructure<Integer> linearStructure,
-               Consumer<Integer> addItem) {
-        for(int i = 0; i < 100; i++) addItem.accept(i);
-
-        int actual = linearStructure.size();
-
-        Assertions.assertThat(actual).isEqualTo(110);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsAndRemoveOperation")
-    @DisplayName("""
-            size():
-             linearStructure not is empty,
-             remove several items
-             => return correct result after items were removed
-            """)
-    void size4(ReadableLinearStructure<Integer> linearStructure,
-               Runnable removeItem) {
-        for(int i = 0; i < 10; i++) removeItem.run();
-
-        int actual = linearStructure.size();
-
-        Assertions.assertThat(actual).isZero();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            isEmpty():
-             linearStructure is empty
-             => return true
-            """)
-    void isEmpty1(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.isEmpty();
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            isEmpty():
-             linearStructure is not empty
-             => return false
-            """)
-    void isEmpty2(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.isEmpty();
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructuresWithAddOperation")
-    @DisplayName("""
-            isEmpty():
-             linearStructure is empty,
-             add several items
-             => return false after items were added
-            """)
-    void isEmpty3(ReadableLinearStructure<Integer> linearStructure,
-                  Consumer<Integer> addItem) {
-        for(int i = 0; i < 100; i++) addItem.accept(i);
+    @MethodSource("provideForEmptyMethod")
+    void isEmpty(ReadableLinearStructure<Integer> linearStructure, boolean expected,
+                 Consumer<ReadableLinearStructure<Integer>> mutator) {
+        mutator.accept(linearStructure);
 
         boolean actual = linearStructure.isEmpty();
 
-        Assertions.assertThat(actual).isFalse();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsAndRemoveOperation")
-    @DisplayName("""
-            isEmpty():
-             linearStructure is not empty,
-             remove several items
-             => return true after items were removed
+    @DisplayName("inBound(index):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             index = {1}
+             => expected {2}
             """)
-    void isEmpty4(ReadableLinearStructure<Integer> linearStructure,
-                  Runnable removeItem) {
-        for(int i = 0; i < 10; i++) removeItem.run();
+    @MethodSource("provideForInBoundMethod")
+    void inBound(ReadableLinearStructure<Integer> linearStructure, int index, boolean expected) {
+        boolean actual = linearStructure.inBound(index);
 
-        boolean actual = linearStructure.isEmpty();
-
-        Assertions.assertThat(actual).isTrue();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inBound(index):
-             linearStructure is not empty,
-             index < 0
-             => return false
+    @DisplayName("inBoundByModulo(index):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             index = {1}
+             => expected {2}
             """)
-    void inBound1(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inBound(-1);
+    @MethodSource("provideForInBoundByModuloMethod")
+    void inBoundByModulo(ReadableLinearStructure<Integer> linearStructure, int index, boolean expected) {
+        boolean actual = linearStructure.inBoundByModulo(index);
 
-        Assertions.assertThat(actual).isFalse();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inBound(index):
-             linearStructure is not empty,
-             index = linearStructures.size()
-             => return false
+    @DisplayName("linearSearch(value):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             value = {1}
+             => expected {2}
             """)
-    void inBound2(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inBound(10);
+    @MethodSource("provideForLinearSearchMethod")
+    void linearSearch(ReadableLinearStructure<Integer> linearStructure, Integer value, int expected) {
+        int actual = linearStructure.linearSearch(value);
 
-        Assertions.assertThat(actual).isFalse();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inBound(index):
-             linearStructure is not empty,
-             index > linearStructures.size()
-             => return false
+    @DisplayName("linearSearch(predicate):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             value = {1}
+             => expected {2}
             """)
-    void inBound3(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inBound(11);
+    @MethodSource("provideForLinearSearchWithPredicateMethod")
+    void linearSearchWithPredicate(ReadableLinearStructure<Integer> linearStructure, Integer value, int expected) {
+        int actual = linearStructure.linearSearch(v -> Objects.equals(v, value));
 
-        Assertions.assertThat(actual).isFalse();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inBound(index):
-             linearStructure is not empty,
-             index = 0
-             => return true
+    @DisplayName("linearSearchLast(value):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             value = {1}
+             => expected {2}
             """)
-    void inBound4(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inBound(0);
+    @MethodSource("provideForLinearSearchLastMethod")
+    void linearSearchLast(ReadableLinearStructure<Integer> linearStructure, Integer value, int expected) {
+        int actual = linearStructure.linearSearchLast(v -> Objects.equals(v, value));
 
-        Assertions.assertThat(actual).isTrue();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inBound(index):
-             linearStructure is not empty,
-             index = linearStructure.size() - 1
-             => return true
+    @DisplayName("contains(value):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             value = {1}
+             => expected {2}
             """)
-    void inBound5(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inBound(9);
+    @MethodSource("provideForContainsMethod")
+    void contains(ReadableLinearStructure<Integer> linearStructure, Integer value, boolean expected) {
+        boolean actual = linearStructure.contains(value);
 
-        Assertions.assertThat(actual).isTrue();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inBound(index):
-             linearStructure is not empty,
-             index in the middle
-             => return true
+    @DisplayName("contains(predicate):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             value = {1}
+             => expected {2}
             """)
-    void inBound6(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inBound(4);
+    @MethodSource("provideForContainsWithPredicateMethod")
+    void containsWithPredicate(ReadableLinearStructure<Integer> linearStructure, Integer value, boolean expected) {
+        boolean actual = linearStructure.contains(v -> Objects.equals(v, value));
 
-        Assertions.assertThat(actual).isTrue();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            inBound(index):
-             linearStructure is empty,
-             index = 0
-             => return false
+    @DisplayName("frequency(predicate):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             value = {1}
+             => expected {2}
             """)
-    void inBound7(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inBound(0);
+    @MethodSource("provideForFrequencyMethod")
+    void frequency(ReadableLinearStructure<Integer> linearStructure, Integer value, int expected) {
+        int actual = linearStructure.frequency(v -> Objects.equals(v, value));
 
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is not empty,
-             index = 0
-             => return false
-            """)
-    void inNegativeBound1(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(0);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is not empty,
-             index > 0
-             => return false
-            """)
-    void inNegativeBound2(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(1);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is not empty,
-             index < -linearStructures.size()
-             => return false
-            """)
-    void inNegativeBound3(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(-11);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is not empty,
-             index = -1
-             => return true
-            """)
-    void inNegativeBound4(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(-1);
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is not empty,
-             index = -10
-             => return true
-            """)
-    void inNegativeBound5(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(-10);
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is not empty,
-             index between -1 and -linearStructure.size()
-             => return true
-            """)
-    void inNegativeBound6(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(-5);
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is empty,
-             index = -1
-             => return false
-            """)
-    void inNegativeBound7(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(-1);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            inNegativeBound(index):
-             linearStructure is empty,
-             index = 0
-             => return false
-            """)
-    void inNegativeBound8(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.inNegativeBound(0);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            linearSearch(value):
-             linearStructure is empty
-             => return -1
-            """)
-    void linearSearch1(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch(100);
-
-        Assertions.assertThat(actual).isEqualTo(-1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            linearSearch(value):
-             linearStructure is not empty,
-             linearStructure doesn't contain item with such value
-             => return -1
-            """)
-    void linearSearch2(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch(100);
-
-        Assertions.assertThat(actual).isEqualTo(-1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            linearSearch(value):
-             linearStructure is not empty,
-             linearStructure contains item with such value
-             => return correct index
-            """)
-    void linearSearch3(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch(3);
-
-        Assertions.assertThat(actual).isEqualTo(2);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsIncludeNull")
-    @DisplayName("""
-            linearSearch(value):
-             linearStructure is not empty,
-             linearStructure contains item with such value,
-             value is null
-             => return correct index
-            """)
-    void linearSearch4(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch((Integer)null);
-
-        Assertions.assertThat(actual).isZero();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            linearSearch(predicate):
-             linearStructure is empty
-             => return -1
-            """)
-    void linearSearchWithPredicate1(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch(value -> 100 == value);
-
-        Assertions.assertThat(actual).isEqualTo(-1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            linearSearch(predicate):
-             linearStructure is not empty,
-             linearStructure doesn't contain item with such value
-             => return -1
-            """)
-    void linearSearchWithPredicate2(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch(value -> 100 == value);
-
-        Assertions.assertThat(actual).isEqualTo(-1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            linearSearch(predicate):
-             linearStructure is not empty,
-             linearStructure contains item with such value
-             => return correct index
-            """)
-    void linearSearchWithPredicate3(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch(value -> 3 == value);
-
-        Assertions.assertThat(actual).isEqualTo(2);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsIncludeNull")
-    @DisplayName("""
-            linearSearch(predicate):
-             linearStructure is not empty,
-             linearStructure contains item with such value,
-             value is null
-             => return correct index
-            """)
-    void linearSearchWithPredicate4(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearch(Objects::isNull);
-
-        Assertions.assertThat(actual).isZero();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            linearSearchLast(predicate):
-             linearStructure is empty
-             => return -1
-            """)
-    void linearSearchLast1(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearchLast(value -> 100 == value);
-
-        Assertions.assertThat(actual).isEqualTo(-1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            linearSearchLast(predicate):
-             linearStructure is not empty,
-             linearStructure doesn't contain item with such value
-             => return -1
-            """)
-    void linearSearchLast2(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearchLast(value -> 100 == value);
-
-        Assertions.assertThat(actual).isEqualTo(-1);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            linearSearchLast(predicate):
-             linearStructure is not empty,
-             linearStructure contains item with such value
-             => return correct index
-            """)
-    void linearSearchLast3(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearchLast(value -> 4 == value);
-
-        Assertions.assertThat(actual).isEqualTo(6);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsIncludeNull")
-    @DisplayName("""
-            linearSearchLast(predicate):
-             linearStructure is not empty,
-             linearStructure contains item with such value,
-             value is null
-             => return correct index
-            """)
-    void linearSearchLast4(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.linearSearchLast(Objects::isNull);
-
-        Assertions.assertThat(actual).isEqualTo(9);
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            contains(value):
-             linearStructure is empty
-             => return false
-            """)
-    void contains1(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains(100);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            contains(value):
-             linearStructure is not empty,
-             linearStructure doesn't contain item with such value
-             => return false
-            """)
-    void contains2(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains(100);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            contains(value):
-             linearStructure is not empty,
-             linearStructure contains item with such value
-             => return true
-            """)
-    void contains3(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains(5);
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsIncludeNull")
-    @DisplayName("""
-            contains(value):
-             linearStructure is not empty,
-             linearStructure contains item with such value,
-             value is null
-             => return true
-            """)
-    void contains4(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains((Integer)null);
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            contains(predicate):
-             linearStructure is empty
-             => return false
-            """)
-    void containsWithPredicate1(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains(value -> value == 100);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            contains(predicate):
-             linearStructure is not empty,
-             linearStructure doesn't contain item with such value
-             => return false
-            """)
-    void containsWithPredicate2(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains(value -> value == 100);
-
-        Assertions.assertThat(actual).isFalse();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10NotUniqueItems")
-    @DisplayName("""
-            contains(predicate):
-             linearStructure is not empty,
-             linearStructure contains item with such value
-             => return true
-            """)
-    void containsWithPredicate3(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains(value -> value == 5);
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10ItemsIncludeNull")
-    @DisplayName("""
-            contains(predicate):
-             linearStructure is not empty,
-             linearStructure contains item with such value,
-             value is null
-             => return true
-            """)
-    void containsWithPredicate4(ReadableLinearStructure<Integer> linearStructure) {
-        boolean actual = linearStructure.contains(Objects::isNull);
-
-        Assertions.assertThat(actual).isTrue();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideEmptyLinearStructures")
-    @DisplayName("""
-            frequency(predicate):
-             linearStructure is empty
-             => return 0
-            """)
-    void frequency1(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.frequency(value -> value == 100);
-
-        Assertions.assertThat(actual).isZero();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            frequency(predicate):
-             linearStructure is not empty,
-             linearStructure doesn't contain items matching predicate
-             => return 0
-            """)
-    void frequency2(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.frequency(value -> value == 100);
-
-        Assertions.assertThat(actual).isZero();
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideLinearStructuresWith10Items")
-    @DisplayName("""
-            frequency(predicate):
-             linearStructure is not empty,
-             linearStructure contains items matching predicate
-             => return correct result
-            """)
-    void frequency3(ReadableLinearStructure<Integer> linearStructure) {
-        int actual = linearStructure.frequency(value -> value % 2 == 0);
-
-        Assertions.assertThat(actual).isEqualTo(5);
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
 
-    private static Stream<Arguments> provideEmptyLinearStructures() {
+    private static boolean isExceptionType(Object obj) {
+        return obj instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>)obj);
+    }
+
+    private static Stream<Arguments> provideForGetMethod() {
         return Stream.of(
-                Arguments.of(new Array<>()),
-                Arguments.of(new Stack<>()),
-                Arguments.of(new Queue<>())
+                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        -1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        -1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        -1, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        10, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        10, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        10, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        11, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        11, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        11, IndexOutOfBoundsException.class),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        0, 10),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        0, 10),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        0, 10),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        9, 100),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        9, 100),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        9, 100),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        5, 60),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        5, 60),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        5, 60),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        5, null),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        5, null),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        5, null),
+
+                Arguments.of(Array.of(), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(), 0, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(), 0, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(), 0, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(), 1, IndexOutOfBoundsException.class),
+
+                Arguments.of(Array.of(1000), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(1000), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(1000), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(1000), 0, 1000),
+                Arguments.of(Stack.of(1000), 0, 1000),
+                Arguments.of(Queue.of(1000), 0, 1000),
+                Arguments.of(Array.of(1000), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(1000), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(1000), 1, IndexOutOfBoundsException.class)
         );
     }
 
-    private static Stream<Arguments> provideEmptyLinearStructuresWithAddOperation() {
-        Array<Integer> array = new Array<>();
-        Stack<Integer> stack = new Stack<>();
-        Queue<Integer> queue = new Queue<>();
+    private static Stream<Arguments> provideForAtMethod() {
         return Stream.of(
-                Arguments.of(array, (Consumer<Integer>) array::append),
-                Arguments.of(stack, (Consumer<Integer>) stack::putLast),
-                Arguments.of(queue, (Consumer<Integer>) queue::putLast)
+                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        -11, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        -11, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        -11, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        10, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        10, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        10, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        11, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        11, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
+                        11, IndexOutOfBoundsException.class),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        0, 10),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        0, 10),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        0, 10),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        9, 100),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        9, 100),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        9, 100),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        5, 60),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        5, 60),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        5, 60),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        5, null),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        5, null),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        5, null),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        -1, 100),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        -1, 100),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        -1, 100),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        -10, 10),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        -10, 10),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
+                        -10, 10),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        -5, 60),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        -5, 60),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
+                        -5, 60),
+
+                Arguments.of(Array.of(), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(), -1, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(), 0, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(), 0, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(), 0, IndexOutOfBoundsException.class),
+                Arguments.of(Array.of(), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(), 1, IndexOutOfBoundsException.class),
+
+                Arguments.of(Array.of(1000), -1, 1000),
+                Arguments.of(Stack.of(1000), -1, 1000),
+                Arguments.of(Queue.of(1000), -1, 1000),
+                Arguments.of(Array.of(1000), 0, 1000),
+                Arguments.of(Stack.of(1000), 0, 1000),
+                Arguments.of(Queue.of(1000), 0, 1000),
+                Arguments.of(Array.of(1000), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Stack.of(1000), 1, IndexOutOfBoundsException.class),
+                Arguments.of(Queue.of(1000), 1, IndexOutOfBoundsException.class)
         );
     }
 
-    private static Stream<Arguments> provideLinearStructureWithSingleItem() {
+    private static Stream<Arguments> provideForGetFirstMethod() {
         return Stream.of(
-                Arguments.of(Array.of(10)),
-                Arguments.of(Stack.of(10)),
-                Arguments.of(Queue.of(10))
+                Arguments.of(Array.of(), null),
+                Arguments.of(Stack.of(), null),
+                Arguments.of(Queue.of(), null),
+
+                Arguments.of(Array.of(1000), 1000),
+                Arguments.of(Stack.of(1000), 1000),
+                Arguments.of(Queue.of(1000), 1000),
+
+                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, 9), null),
+                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, 9), null),
+                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, 9), null),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10)
         );
     }
 
-    private static Stream<Arguments> provideLinearStructuresWith10Items() {
+    private static Stream<Arguments> provideForGetLastMethod() {
         return Stream.of(
-                Arguments.of(Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)),
-                Arguments.of(Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)),
-                Arguments.of(Queue.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+                Arguments.of(Array.of(), null),
+                Arguments.of(Stack.of(), null),
+                Arguments.of(Queue.of(), null),
+
+                Arguments.of(Array.of(1000), 1000),
+                Arguments.of(Stack.of(1000), 1000),
+                Arguments.of(Queue.of(1000), 1000),
+
+                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), null),
+                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), null),
+                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), null),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 100),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 100),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 100)
         );
     }
 
-    private static Stream<Arguments> provideLinearStructuresWith10NotUniqueItems() {
+    private static Stream<Arguments> provideForSizeMethod() {
+        Consumer<ReadableLinearStructure<Integer>> mutator = readableLinearStructure -> {};
+
         return Stream.of(
-                Arguments.of(Array.of(1, 2, 3, 4, 5, 5, 4, 3, 2, 1)),
-                Arguments.of(Stack.of(1, 2, 3, 4, 5, 5, 4, 3, 2, 1)),
-                Arguments.of(Queue.of(1, 2, 3, 4, 5, 5, 4, 3, 2, 1))
+                Arguments.of(Array.of(), 0, mutator),
+                Arguments.of(Stack.of(), 0, mutator),
+                Arguments.of(Queue.of(), 0, mutator),
+
+                Arguments.of(Array.of(1000), 1, mutator),
+                Arguments.of(Stack.of(1000), 1, mutator),
+                Arguments.of(Queue.of(1000), 1, mutator),
+
+                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 10, mutator),
+                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 10, mutator),
+                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 10, mutator),
+
+                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6, 7, null, null), 7,
+                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
+                            Array<Integer> array = (Array<Integer>) structure;
+                            for(int i = 0; i < 7; i++) array.orderedRemove(0);
+                            for(int i = 0; i < 4; i++) array.append(100);
+                        }),
+                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 7,
+                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
+                            Stack<Integer> stack = (Stack<Integer>) structure;
+                            for(int i = 0; i < 7; i++) stack.removeLast();
+                            for(int i = 0; i < 4; i++) stack.putLast(1000);
+                        }),
+                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 7,
+                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
+                            Queue<Integer> queue = (Queue<Integer>) structure;
+                            for(int i = 0; i < 7; i++) queue.removeFirst();
+                            for(int i = 0; i < 4; i++) queue.putLast(1000);
+                        })
         );
     }
 
-    private static Stream<Arguments> provideLinearStructuresWith10ItemsIncludeNull() {
+    private static Stream<Arguments> provideForEmptyMethod() {
+        Consumer<ReadableLinearStructure<Integer>> mutator = readableLinearStructure -> {};
+
         return Stream.of(
-                Arguments.of(Array.of(null, 2, 3, 4, 5, 6, null, 8, 9, null)),
-                Arguments.of(Stack.of(null, 2, 3, 4, 5, 6, null, 8, 9, null)),
-                Arguments.of(Queue.of(null, 2, 3, 4, 5, 6, null, 8, 9, null))
+                Arguments.of(Array.of(), true, mutator),
+                Arguments.of(Stack.of(), true, mutator),
+                Arguments.of(Queue.of(), true, mutator),
+
+                Arguments.of(Array.of(1000), false, mutator),
+                Arguments.of(Stack.of(1000), false, mutator),
+                Arguments.of(Queue.of(1000), false, mutator),
+
+                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false, mutator),
+                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false, mutator),
+                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false, mutator),
+
+                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6, 7, null, null), false,
+                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
+                            Array<Integer> array = (Array<Integer>) structure;
+                            for(int i = 0; i < 10; i++) array.orderedRemove(0);
+                            for(int i = 0; i < 1; i++) array.append(100);
+                        }),
+                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false,
+                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
+                            Stack<Integer> stack = (Stack<Integer>) structure;
+                            for(int i = 0; i < 10; i++) stack.removeLast();
+                            for(int i = 0; i < 1; i++) stack.putLast(1000);
+                        }),
+                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false,
+                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
+                            Queue<Integer> queue = (Queue<Integer>) structure;
+                            for(int i = 0; i < 10; i++) queue.removeFirst();
+                            for(int i = 0; i < 1; i++) queue.putLast(1000);
+                        })
         );
     }
 
-    private static Stream<Arguments> provideLinearStructuresWith10ItemsAndAddOperation() {
-        Array<Integer> array = Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Queue<Integer> queue = Queue.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+    private static Stream<Arguments> provideForInBoundMethod() {
         return Stream.of(
-                Arguments.of(array, (Consumer<Integer>) array::append),
-                Arguments.of(stack, (Consumer<Integer>) stack::putLast),
-                Arguments.of(queue, (Consumer<Integer>) queue::putLast)
+                Arguments.of(Array.of(), 0, false),
+                Arguments.of(Stack.of(), 0, false),
+                Arguments.of(Queue.of(), 0, false),
+
+                Arguments.of(Array.of(100), 0, true),
+                Arguments.of(Stack.of(100), 0, true),
+                Arguments.of(Queue.of(100), 0, true),
+                Arguments.of(Array.of(100), 1, false),
+                Arguments.of(Stack.of(100), 1, false),
+                Arguments.of(Queue.of(100), 1, false),
+                Arguments.of(Array.of(100), -1, false),
+                Arguments.of(Stack.of(100), -1, false),
+                Arguments.of(Queue.of(100), -1, false),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, false),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true)
         );
     }
 
-    private static Stream<Arguments> provideLinearStructuresWith10ItemsAndRemoveOperation() {
-        Array<Integer> array = Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Stack<Integer> stack = Stack.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Queue<Integer> queue = Queue.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+    private static Stream<Arguments> provideForInBoundByModuloMethod() {
         return Stream.of(
-                Arguments.of(array, (Runnable)() -> array.quickRemove(0)),
-                Arguments.of(stack, (Runnable) stack::removeLast),
-                Arguments.of(queue, (Runnable) queue::removeFirst)
+                Arguments.of(Array.of(), 0, false),
+                Arguments.of(Stack.of(), 0, false),
+                Arguments.of(Queue.of(), 0, false),
+
+                Arguments.of(Array.of(100), 0, true),
+                Arguments.of(Stack.of(100), 0, true),
+                Arguments.of(Queue.of(100), 0, true),
+                Arguments.of(Array.of(100), 1, false),
+                Arguments.of(Stack.of(100), 1, false),
+                Arguments.of(Queue.of(100), 1, false),
+                Arguments.of(Array.of(100), -1, true),
+                Arguments.of(Stack.of(100), -1, true),
+                Arguments.of(Queue.of(100), -1, true),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, true),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -10, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -10, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -10, true),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -5, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -5, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -5, true),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -11, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -11, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -11, false),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true)
+        );
+    }
+
+    private static Stream<Arguments> provideForLinearSearchMethod() {
+        return Stream.of(
+                Arguments.of(Array.of(), 1000, -1),
+                Arguments.of(Stack.of(), 1000, -1),
+                Arguments.of(Queue.of(), 1000, -1),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
+
+                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
+                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
+                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3)
+        );
+    }
+
+    private static Stream<Arguments> provideForLinearSearchWithPredicateMethod() {
+        return Stream.of(
+                Arguments.of(Array.of(), 1000, -1),
+                Arguments.of(Stack.of(), 1000, -1),
+                Arguments.of(Queue.of(), 1000, -1),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
+
+                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
+                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
+                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3)
+        );
+    }
+
+    private static Stream<Arguments> provideForLinearSearchLastMethod() {
+        return Stream.of(
+                Arguments.of(Array.of(), 1000, -1),
+                Arguments.of(Stack.of(), 1000, -1),
+                Arguments.of(Queue.of(), 1000, -1),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 6),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 6),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 6),
+
+                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 6),
+                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 6),
+                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 6)
+        );
+    }
+
+    private static Stream<Arguments> provideForContainsMethod() {
+        return Stream.of(
+                Arguments.of(Array.of(), 1000, false),
+                Arguments.of(Stack.of(), 1000, false),
+                Arguments.of(Queue.of(), 1000, false),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
+
+                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
+                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
+                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true)
+        );
+    }
+
+    private static Stream<Arguments> provideForContainsWithPredicateMethod() {
+        return Stream.of(
+                Arguments.of(Array.of(), 1000, false),
+                Arguments.of(Stack.of(), 1000, false),
+                Arguments.of(Queue.of(), 1000, false),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
+
+                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
+                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
+                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true)
+        );
+    }
+
+    private static Stream<Arguments> provideForFrequencyMethod() {
+        return Stream.of(
+                Arguments.of(Array.of(), 1000, 0),
+                Arguments.of(Stack.of(), 1000, 0),
+                Arguments.of(Queue.of(), 1000, 0),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, 0),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, 0),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, 0),
+
+                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 2),
+                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 2),
+                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 2),
+
+                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 2),
+                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 2),
+                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 2)
         );
     }
 

@@ -106,7 +106,7 @@ class IndexedIteratorTest {
 
         SoftAssertions assertions = new SoftAssertions();
         for(ResultOfJumpMethod result : expected) {
-            if(result.isResultException()) {
+            if(result.isResultExceptionType()) {
                 assertions.assertThat(iterator.canJump(result.itemsNumber())).isFalse();
                 assertions.assertThatThrownBy(() -> iterator.jump(result.itemsNumber())).
                         isInstanceOf(result.getResultAsClass());
@@ -187,7 +187,7 @@ class IndexedIteratorTest {
             return result;
         }
 
-        public boolean isResultException() {
+        public boolean isResultExceptionType() {
             return expectedResult instanceof Class<?> &&
                     Throwable.class.isAssignableFrom((Class<?>)expectedResult);
         }

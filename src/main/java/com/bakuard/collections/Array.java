@@ -614,7 +614,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     }
 
     private void assertInExpandBound(int index) {
-        if(index < -size || index >= size) {
+        if(!inBoundByModulo(index)) {
             throw new IndexOutOfBoundsException(
                     "Expected: index >= -size() && index < size. Actual: size=" + size + ", index=" + index);
         }
