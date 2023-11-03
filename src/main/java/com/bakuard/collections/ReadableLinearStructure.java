@@ -66,14 +66,14 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
 
     /**
      * Проверяет - выполняется ли для индекса условие: <br/>
-     * index >= -({@link #size()}) && index < 0. <br/>
-     * Данный метод может использоваться для проверки корректности аргумента
+     * index >= -({@link #size()}) && index < {@link #size()}. <br/>
+     * Данный метод может использоваться для проверки корректности индекса
      * принимаемого методом {@link #at(int)}.
      * @param index проверяемый индекс.
      * @return true - если описанное выше условие выполняется, иначе - false.
      */
-    public default boolean inNegativeBound(int index) {
-        return index >= -size() && index < 0;
+    public default boolean inBoundByModulo(int index) {
+        return index >= -size() && index < size();
     }
 
     /**
