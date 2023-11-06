@@ -1,5 +1,6 @@
 package com.bakuard.collections;
 
+import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -47,7 +48,7 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     /**
      * Добавляет элемент в конец очереди увеличивая его длину ({@link #size()}) на единицу.
      * Добавляемый элемент может иметь значение null.
-     * @param value добавялемый элемент.
+     * @param value добавляемый элемент.
      */
     public void putLast(T value) {
         ++actualModCount;
@@ -116,23 +117,20 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Возвращает первый элемент очереди не удаляя его. Если очередь пуста - возвращает null.
+     * Возвращает любой элемент этой очереди по его индексу, не удаляя его. Элементу с индексом [0]
+     * соответствует первый элемент очереди, а элементу с индексом [{@link #size()} - 1] - последний.
+     * @param index индекс искомого элемента.
+     * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
      */
-    public T getFirst() {
-        return null;
-    }
-
     @Override
     public T get(int index) {
         return null;
     }
 
     /**
-     * Возвращает любой элемент очереди по его индексу, не удаляя его. Элементу с индексом [0]
-     * соответствует первый элемент очереди, а элементу с индексом [{@link #size()} - 1] - последний элемент
-     * очереди. <br/>
-     * Метод также допускает отрицательные индексы. Элементу с индексом [-1] соответствует последний элемент,
-     * а элементу с индексом [-({@link #size()})] - первый элемент очереди.
+     * Данный метод расширяет поведение метода {@link #get(int)} допуская отрицательные индексы.
+     * Элементу с индексом [-1] соответствует последний элемент очереди, а элементу с индексом
+     * [-({@link #size()})] - первый элемент очереди.
      * @param index индекс искомого элемента.
      * @throws IndexOutOfBoundsException если index < -({@link #size()}) или index >= {@link #size()}
      */
@@ -149,16 +147,23 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Если очередь пуста - возвращает true, иначе - false.
+     * Находит и возвращает индекс первого элемента равного заданному. Выполняет линейный поиск
+     * начиная с первого элемента очереди в направлении последнего элемента. Если нет элемента
+     * равного заданному значению - возвращает -1.
+     * @param value значение искомого элемента.
+     * @return индекс первого встретившегося элемента с указанным значением.
      */
-    public boolean isEmpty() {
-        return false;
-    }
-
     public int linearSearch(T value) {
         return 0;
     }
 
+    /**
+     * Находит и возвращает индекс первого элемента соответствующего заданному предикату. Выполняет линейный
+     * поиск начиная с первого элемента очереди в направлении последнего элемента. Если нет подходящего
+     * элемента - возвращает -1.
+     * @param predicate условие, которому должен соответствовать искомый элемент.
+     * @return индекс первого встретившегося элемента соответствующего заданному предикату.
+     */
     public int linearSearch(Predicate<T> predicate) {
         return 0;
     }
@@ -170,11 +175,21 @@ public class Queue<T> implements ReadableLinearStructure<T> {
         return 0;
     }
 
+    /**
+     * Создает и возвращает итератор, позволяющий последовательно перебрать очередь в обоих направлениях.
+     * Сразу после создания, курсор итератора установлен перед элементом {@link #getFirst()}.
+     */
     @Override
     public IndexedIterator<T> iterator() {
         return null;
     }
 
+    /**
+     * Выполняет линейный перебор элементов очереди начиная с элемента {@link #getFirst()} в направлении
+     * элемента {@link #getLast()}. При этом для каждого элемента выполняется указанная операция action.
+     * @param action действие выполняемое для каждого элемента хранящегося в данной очереди.
+     * @throws ConcurrentModificationException если очередь изменяется в момент выполнения этого метода.
+     */
     @Override
     public void forEach(Consumer<? super T> action) {
 
