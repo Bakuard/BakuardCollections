@@ -82,7 +82,7 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
      * в направлении элемента {@link #getLast()}.
      * Если нет элемента равного заданному значению - возвращает -1.
      * @param value значение искомого элемента.
-     * @return индекс первого встретившегося элемента соответствующего заданному предикату.
+     * @return индекс первого встретившегося элемента равного значению value.
      */
     public default int linearSearch(T value) {
         return linearSearch(current -> Objects.equals(current, value));
@@ -147,7 +147,7 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
 
     /**
      * Создает и возвращает итератор, позволяющий последовательно перебирать линейные структуру данных в
-     * обоих направлениях. Курсор итератора установлен перед элементом {@link #getFirst()}.
+     * обоих направлениях. Сразу после создания, курсор итератора установлен перед элементом {@link #getFirst()}.
      */
     @Override
     public IndexedIterator<T> iterator();
