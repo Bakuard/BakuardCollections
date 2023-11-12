@@ -256,7 +256,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Удаляет элемент под указанным индексом и возвращает его. На место удаленного элемента будет записан
      * последний элемент массива и длина массива будет уменьшена на единицу. Данный метод не уменьшает емкость
      * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link Array},
-     * используйте метод {@link #trimToLength()}. <br/>
+     * используйте метод {@link #trimToSize()}. <br/>
      * Данный метод работает быстрее {@link #orderedRemove(int)}. Если порядок элементов в массиве для вас не
      * важен - для удаления рекомендуется использовать этот метод.
      * @param index индекс удаляемого элемента.
@@ -279,7 +279,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * сдвигаются вниз на одну позицию. Иначе говоря, данный метод выполняет удаление элемента с сохранением
      * порядка для оставшихся элементов. Длина массива будет уменьшена на единицу. Данный метод не уменьшает емкость
      * внутреннего хранилища. Если вам необходимо уменьшить объект памяти занимаемый данным объектом {@link Array},
-     * используйте метод {@link #trimToLength()}.
+     * используйте метод {@link #trimToSize()}.
      * @param index индекс удаляемого элемента.
      * @return удаляемый элемент под указанным индексом.
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
@@ -300,7 +300,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     /**
      * Удаляет все элементы массива и уменьшает его длину до нуля. Данный метод не уменьшает емкость
      * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link Array},
-     * используйте метод {@link #trimToLength()}.
+     * используйте метод {@link #trimToSize()}.
      */
     public void clear() {
         ++actualModCount;
@@ -416,13 +416,12 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * памяти занимаемый объектом Array.
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
-    public boolean trimToLength() {
+    public boolean trimToSize() {
         ++actualModCount;
 
-        int capacity = calculateCapacity(size);
-        boolean isTrim = capacity < values.length;
+        boolean isTrim = size < values.length;
 
-        if(isTrim) values = Arrays.copyOf(values, capacity);
+        if(isTrim) values = Arrays.copyOf(values, size);
 
         return isTrim;
     }
@@ -484,6 +483,64 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         valuesToString.append(']');
 
         return "Array{size=" + size + ", " + valuesToString + '}';
+    }
+
+
+    private int calculateCapacity(int size) {
+        return size + (size >>> 1);
+    }
+
+    private void assertInBound(int index) {
+        if(index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index);
+        }
+    }
+
+    private void assertInClosedBound(int index) {
+        if(index < 0 || index > size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= 0 && index <= size. Actual: size=" + size + ", index=" + index);
+        }
+    }
+
+    private void assertInExpandBound(int index) {
+        if(!inBoundByModulo(index)) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= -size() && index < size. Actual: size=" + size + ", index=" + index);
+        }
+    }
+
+    private int linearSearchInRange(T value, int fromIndex, int toIndex) {
+        Object[] vs = values;
+        if(value == null) {
+            for(int i = fromIndex; i < toIndex; ++i) if(vs[i] == null) return i;
+        } else {
+            for(int i = fromIndex; i < toIndex; ++i) if(value.equals(vs[i])) return i;
+        }
+        return -1;
+    }
+
+    private int linearSearchInRange(Predicate<T> predicate, int fromIndex, int toIndex) {
+        Object[] vs = values;
+        int index = fromIndex;
+        while(index < toIndex && !predicate.test((T) vs[index])) {
+            ++index;
+        }
+        if(index == toIndex) index = -1;
+        return index;
+    }
+
+    private int binarySearchInRange(int fromIndex, int toIndex, ToIntFunction<T> comparator) {
+        while(fromIndex < toIndex) {
+            int middle = (fromIndex + toIndex) >>> 1;
+            int different = comparator.applyAsInt(values[middle]);
+
+            if(different == 0) return middle;
+            else if(different > 0) fromIndex = middle + 1;
+            else toIndex = middle;
+        }
+        return -1;
     }
 
 
@@ -567,7 +624,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         private void assertCanJump(int itemsNumber) {
             if(!canJump(itemsNumber)) {
                 throw new NoSuchElementException(
-                        "There is no item for itemsNumber=%d, totalItems=%d, currentIndex=%d".
+                        "There is no item for jump. Detail: itemsNumber=%d, totalItems=%d, currentIndex=%d".
                                 formatted(itemsNumber, totalItems, cursor)
                 );
             }
@@ -576,7 +633,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         private void assertHasNext() {
             if(!hasNext()) {
                 throw new NoSuchElementException(
-                        "There is no next item for totalItems=%d, currentIndex=%d".
+                        "There is no next item. Detail: totalItems=%d, currentIndex=%d".
                                 formatted(totalItems, cursor)
                 );
             }
@@ -585,70 +642,12 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         private void assertHasPrevious() {
             if(!hasPrevious()) {
                 throw new NoSuchElementException(
-                        "There is no previous item for totalItems=%d, currentIndex=%d".
+                        "There is no previous item. Detail: totalItems=%d, currentIndex=%d".
                                 formatted(totalItems, cursor)
                 );
             }
         }
 
-    }
-
-
-    private int calculateCapacity(int size) {
-        return size + (size >>> 1);
-    }
-
-    private void assertInBound(int index) {
-        if(index < 0 || index >= size) {
-            throw new IndexOutOfBoundsException(
-                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index);
-        }
-    }
-
-    private void assertInClosedBound(int index) {
-        if(index < 0 || index > size) {
-            throw new IndexOutOfBoundsException(
-                    "Expected: index >= 0 && index <= size. Actual: size=" + size + ", index=" + index);
-        }
-    }
-
-    private void assertInExpandBound(int index) {
-        if(!inBoundByModulo(index)) {
-            throw new IndexOutOfBoundsException(
-                    "Expected: index >= -size() && index < size. Actual: size=" + size + ", index=" + index);
-        }
-    }
-
-    private int linearSearchInRange(T value, int fromIndex, int toIndex) {
-        Object[] vs = values;
-        if(value == null) {
-            for(int i = fromIndex; i < toIndex; ++i) if(vs[i] == null) return i;
-        } else {
-            for(int i = fromIndex; i < toIndex; ++i) if(value.equals(vs[i])) return i;
-        }
-        return -1;
-    }
-
-    private int linearSearchInRange(Predicate<T> predicate, int fromIndex, int toIndex) {
-        Object[] vs = values;
-        int index = fromIndex;
-        while(index < toIndex && !predicate.test((T) vs[index])) {
-            ++index;
-        }
-        if(index == toIndex) index = -1;
-        return index;
-    }
-
-    private int binarySearchInRange(int fromIndex, int toIndex, ToIntFunction<T> comparator) {
-        while(fromIndex < toIndex) {
-            int middle = (fromIndex + toIndex) >>> 1;
-            int different = comparator.applyAsInt(values[middle]);
-
-            if(different == 0) return middle;
-            else if(different > 0) fromIndex = middle + 1;
-            else toIndex = middle;
-        }
-        return -1;
     }
 
 }

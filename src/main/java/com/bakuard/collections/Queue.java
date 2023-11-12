@@ -2,6 +2,7 @@ package com.bakuard.collections;
 
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -26,15 +27,20 @@ public class Queue<T> implements ReadableLinearStructure<T> {
         return queue;
     }
 
+    private static final int MIN_CAPACITY = 10;
 
-    private int size;
+
+    private T[] values;
+    private int firstItemIndex;
+    private int lastItemIndex;
     private int actualModCount;
 
     /**
      * Создает новую пустую очередь.
      */
+    @SuppressWarnings("unchecked")
     public Queue() {
-
+        values = (T[]) new Object[MIN_CAPACITY];
     }
 
     /**
@@ -42,7 +48,9 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      * @param other копируемая очередь.
      */
     public Queue(Queue<T> other) {
-
+        this.values = other.values.clone();
+        this.firstItemIndex = other.firstItemIndex;
+        this.lastItemIndex = other.lastItemIndex;
     }
 
     /**
@@ -52,6 +60,11 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      */
     public void putLast(T value) {
         ++actualModCount;
+
+        int currentSize = size();
+        grow(currentSize, currentSize + 1);
+        values[lastItemIndex] = value;
+        lastItemIndex = ++lastItemIndex % values.length;
     }
 
     /**
@@ -66,10 +79,17 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     /**
      * Добавляет каждый элемент из указанного массива в конец очереди. Элементы добавляются в порядке
      * их следования в массиве.
-     * @param value массив, все элементы которого добавляются в текущую очередь.
+     * @param data массив, все элементы которого добавляются в текущую очередь.
      */
-    public void putAllOnLast(T... value) {
+    public void putAllOnLast(T... data) {
         ++actualModCount;
+
+        int currentSize = size();
+        grow(currentSize, currentSize + data.length);
+        for(T item : data) {
+            values[lastItemIndex] = item;
+            lastItemIndex = ++lastItemIndex % values.length;
+        }
     }
 
     /**
@@ -81,7 +101,14 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     public T removeFirst() {
         ++actualModCount;
 
-        return null;
+        T result = null;
+        if(!isEmpty()) {
+            result = values[firstItemIndex];
+            values[firstItemIndex] = null;
+            firstItemIndex = ++firstItemIndex % values.length;
+        }
+
+        return result;
     }
 
     /**
@@ -89,18 +116,24 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      * @throws NoSuchElementException если очередь пуста.
      */
     public T tryRemoveFirst() {
-        ++actualModCount;
+        if(isEmpty()) {
+            throw new NoSuchElementException("Fail to remove first item: queue is empty.");
+        }
 
-        return null;
+        return removeFirst();
     }
 
     /**
      * Удаляет все элементы из очереди и уменьшает её длину до нуля. Данный метод не уменьшает емкость
      * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом,
-     * используйте метод {@link #trimToLength()}.
+     * используйте метод {@link #trimToSize()}.
      */
     public void clear() {
         ++actualModCount;
+
+        for(int i = 0; i < values.length; ++i) values[i] = null;
+        firstItemIndex = 0;
+        lastItemIndex = 0;
     }
 
     /**
@@ -110,10 +143,15 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      * памяти занимаемый объектом Queue.
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
-    public boolean trimToLength() {
+    public boolean trimToSize() {
         ++actualModCount;
 
-        return false;
+        int size = size();
+        boolean isTrim = size < values.length;
+
+        if(isTrim) repackInnerArray(size, size + 1);
+
+        return isTrim;
     }
 
     /**
@@ -124,7 +162,9 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public T get(int index) {
-        return null;
+        assertInBound(index);
+
+        return unsafeGet(index);
     }
 
     /**
@@ -136,14 +176,28 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public T at(int index) {
-        return null;
+        assertInBoundByModulo(index);
+
+        return index < 0 ?
+                values[(firstItemIndex + size() + index) % values.length] :
+                unsafeGet(index);
     }
 
     /**
      * Возвращает кол-во элементов очереди.
      */
     public int size() {
-        return 0;
+        int size = lastItemIndex - firstItemIndex;
+        if(size < 0) size = values.length + size;
+        return size;
+    }
+
+    /**
+     * Возвращает true, если кол-во элементов равно нулю, иначе - false.
+     */
+    @Override
+    public boolean isEmpty() {
+        return lastItemIndex == firstItemIndex;
     }
 
     /**
@@ -154,7 +208,10 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      * @return индекс первого встретившегося элемента с указанным значением.
      */
     public int linearSearch(T value) {
-        return 0;
+        final int size = size();
+        int index = 0;
+        while(index < size && !Objects.equals(unsafeGet(index), value)) ++index;
+        return index >= size ? -1 : index;
     }
 
     /**
@@ -165,14 +222,23 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
     public int linearSearch(Predicate<T> predicate) {
-        return 0;
+        final int size = size();
+        int index = 0;
+        while(index < size && !predicate.test(unsafeGet(index))) ++index;
+        return index >= size ? -1 : index;
     }
 
     /**
      * Возвращает кол-во элементов соответствующих заданному предикату.
      */
     public int frequency(Predicate<T> predicate) {
-        return 0;
+        int result = 0;
+
+        for(int i = 0, size = size(); i < size; ++i) {
+            if(predicate.test(unsafeGet(i))) ++result;
+        }
+
+        return result;
     }
 
     /**
@@ -181,7 +247,7 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public IndexedIterator<T> iterator() {
-        return null;
+        return new IndexedIteratorImpl<>(actualModCount, size());
     }
 
     /**
@@ -192,6 +258,205 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public void forEach(Consumer<? super T> action) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        for(int i = 0, size = size(); i < size; ++i) {
+            action.accept(unsafeGet(i));
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Queue<?> queue = (Queue<?>) o;
+
+        final int size = size();
+        boolean result = queue.size() == size;
+        for(int i = 0; i < size && result; i++) {
+            result = Objects.equals(queue.unsafeGet(i), unsafeGet(i));
+        }
+        return result;
+    }
+
+    @Override
+    public int hashCode() {
+        final int size = size();
+        int result = size;
+        for(int i = 0; i < size; i++) result = result * 31 + Objects.hashCode(unsafeGet(i));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        final int size = size();
+        StringBuilder valuesToString = new StringBuilder("[");
+        if(size > 0) {
+            valuesToString.append(unsafeGet(0));
+            for(int i = 1; i < size; ++i) valuesToString.append(',').append(unsafeGet(i));
+        }
+        valuesToString.append(']');
+
+        return "Queue{size=" + size + ", " + valuesToString + '}';
+    }
+
+
+    T unsafeGet(int index) {
+        return values[(firstItemIndex + index) % values.length];
+    }
+
+    private void grow(int currentSize, int newSize) {
+        if(newSize >= values.length) {
+            repackInnerArray(currentSize, calculateCapacity(newSize));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void repackInnerArray(int currentSize, int newSize) {
+        T[] newValues = (T[]) new Object[newSize];
+
+        if(firstItemIndex < lastItemIndex) {
+            System.arraycopy(values, firstItemIndex, newValues, 0, currentSize);
+        } else if(firstItemIndex > lastItemIndex) {
+            int firstHalfSize = values.length - firstItemIndex;
+            System.arraycopy(values, firstItemIndex, newValues, 0, firstHalfSize);
+            System.arraycopy(values, 0, newValues, firstHalfSize, lastItemIndex);
+        }
+
+        values = newValues;
+        firstItemIndex = 0;
+        lastItemIndex = currentSize;
+    }
+
+    private int calculateCapacity(int size) {
+        return size + (size >>> 1);
+    }
+
+    private void assertInBound(int index) {
+        int size = size();
+        if(index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index
+            );
+        }
+    }
+
+    private void assertInBoundByModulo(int index) {
+        int size = size();
+        if(index < -size || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= -size && index < size. Actual: size=" + size + ", index=" + index
+            );
+        }
+    }
+
+
+    private final class IndexedIteratorImpl<E> implements IndexedIterator<E> {
+
+        private final int expectedModCount;
+        private final int totalItems;
+        private int cursor;
+        private int recentIndex;
+
+        public IndexedIteratorImpl(int actualModCount, int itemsNumber) {
+            this.expectedModCount = actualModCount;
+            this.totalItems = itemsNumber;
+            this.cursor = - 1;
+            this.recentIndex = -1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor + 1 < totalItems;
+        }
+
+        @Override
+        public E next() {
+            assertLinearStructureWasNotBeenChanged();
+            assertHasNext();
+            recentIndex = ++cursor;
+            return (E) Queue.this.unsafeGet(recentIndex);
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return cursor >= 0;
+        }
+
+        @Override
+        public E previous() {
+            assertLinearStructureWasNotBeenChanged();
+            assertHasPrevious();
+            recentIndex = cursor--;
+            return (E) Queue.this.unsafeGet(recentIndex);
+        }
+
+        @Override
+        public boolean canJump(int itemsNumber) {
+            return cursor + itemsNumber >= 0 && cursor + itemsNumber < totalItems;
+        }
+
+        @Override
+        public E jump(int itemsNumber) {
+            assertLinearStructureWasNotBeenChanged();
+            assertCanJump(itemsNumber);
+            recentIndex = cursor += itemsNumber;
+            return (E) Queue.this.unsafeGet(recentIndex);
+        }
+
+        @Override
+        public void beforeFirst() {
+            cursor = -1;
+            recentIndex = -1;
+        }
+
+        @Override
+        public void afterLast() {
+            cursor = totalItems - 1;
+            recentIndex = -1;
+        }
+
+        @Override
+        public int recentIndex() {
+            return recentIndex;
+        }
+
+
+        private void assertLinearStructureWasNotBeenChanged() {
+            if(actualModCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        private void assertCanJump(int itemsNumber) {
+            if(!canJump(itemsNumber)) {
+                throw new NoSuchElementException(
+                        "There is no item for jump. Detail: itemsNumber=%d, totalItems=%d, currentIndex=%d".
+                                formatted(itemsNumber, totalItems, cursor)
+                );
+            }
+        }
+
+        private void assertHasNext() {
+            if(!hasNext()) {
+                throw new NoSuchElementException(
+                        "There is no next item. Detail: totalItems=%d, currentIndex=%d".
+                                formatted(totalItems, cursor)
+                );
+            }
+        }
+
+        private void assertHasPrevious() {
+            if(!hasPrevious()) {
+                throw new NoSuchElementException(
+                        "There is no previous item. Detail: totalItems=%d, currentIndex=%d".
+                                formatted(totalItems, cursor)
+                );
+            }
+        }
 
     }
 
