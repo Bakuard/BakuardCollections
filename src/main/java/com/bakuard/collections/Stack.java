@@ -117,7 +117,7 @@ public class Stack<T> implements ReadableLinearStructure<T> {
     /**
      * Удаляет все элементы из стека и уменьшает его длину до нуля. Данный метод не уменьшает емкость
      * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом,
-     * используйте метод {@link #trimToLength()}.
+     * используйте метод {@link #trimToSize()}.
      */
     public void clear() {
         ++actualModCount;
@@ -131,13 +131,12 @@ public class Stack<T> implements ReadableLinearStructure<T> {
      * памяти занимаемый объектом Stack.
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
-    public boolean trimToLength() {
+    public boolean trimToSize() {
         ++actualModCount;
 
-        int capacity = calculateCapacity(size);
-        boolean isTrim = capacity < values.length;
+        boolean isTrim = size < values.length;
 
-        if(isTrim) values = Arrays.copyOf(values, capacity);
+        if(isTrim) values = Arrays.copyOf(values, size);
 
         return isTrim;
     }
@@ -162,7 +161,7 @@ public class Stack<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если index < -({@link #size()}) или index >= {@link #size()}
      */
     public T at(int index) {
-        assertInExpandBound(index);
+        assertInBoundByModulo(index);
 
         return index < 0 ? values[size + index] : values[index];
     }
@@ -271,6 +270,36 @@ public class Stack<T> implements ReadableLinearStructure<T> {
     }
 
 
+    private int calculateCapacity(int size) {
+        return size + (size >>> 1);
+    }
+
+    private void grow(int newSize) {
+        if(newSize > size) {
+            size = newSize;
+            if(newSize > values.length) {
+                values = Arrays.copyOf(values, calculateCapacity(newSize));
+            }
+        }
+    }
+
+    private void assertInBound(int index) {
+        if(index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index
+            );
+        }
+    }
+
+    private void assertInBoundByModulo(int index) {
+        if(index < -size || index >= size) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= -size && index < size. Actual: size=" + size + ", index=" + index
+            );
+        }
+    }
+
+
     private final class IndexedIteratorImpl<E> implements IndexedIterator<E> {
 
         private final int expectedModCount;
@@ -351,7 +380,7 @@ public class Stack<T> implements ReadableLinearStructure<T> {
         private void assertCanJump(int itemsNumber) {
             if(!canJump(itemsNumber)) {
                 throw new NoSuchElementException(
-                        "There is no item for itemsNumber=%d, totalItems=%d, currentIndex=%d".
+                        "There is no item for jump. Detail: itemsNumber=%d, totalItems=%d, currentIndex=%d".
                                 formatted(itemsNumber, totalItems, cursor)
                 );
             }
@@ -360,7 +389,7 @@ public class Stack<T> implements ReadableLinearStructure<T> {
         private void assertHasNext() {
             if(!hasNext()) {
                 throw new NoSuchElementException(
-                        "There is no next item for totalItems=%d, currentIndex=%d".
+                        "There is no next item. Detail: totalItems=%d, currentIndex=%d".
                                 formatted(totalItems, cursor)
                 );
             }
@@ -369,39 +398,12 @@ public class Stack<T> implements ReadableLinearStructure<T> {
         private void assertHasPrevious() {
             if(!hasPrevious()) {
                 throw new NoSuchElementException(
-                        "There is no previous item for totalItems=%d, currentIndex=%d".
+                        "There is no previous item. Detail: totalItems=%d, currentIndex=%d".
                                 formatted(totalItems, cursor)
                 );
             }
         }
 
-    }
-
-    private int calculateCapacity(int size) {
-        return size + (size >>> 1);
-    }
-
-    private void grow(int newSize) {
-        if(newSize > size) {
-            size = newSize;
-            if(newSize > values.length) {
-                values = Arrays.copyOf(values, calculateCapacity(newSize));
-            }
-        }
-    }
-
-    private void assertInBound(int index) {
-        if(index < 0 || index >= size) {
-            throw new IndexOutOfBoundsException(
-                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index);
-        }
-    }
-
-    private void assertInExpandBound(int index) {
-        if(index < -size || index >= size) {
-            throw new IndexOutOfBoundsException(
-                    "Expected: index >= -size && index < size. Actual: size=" + size + ", index=" + index);
-        }
     }
 
 }

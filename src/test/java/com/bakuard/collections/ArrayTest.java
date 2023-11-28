@@ -1,20 +1,16 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.Array;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 
 class ArrayTest {
 
     @Test
-    @DisplayName("Array(type): => array size equal 0")
+    @DisplayName("Array(): => array size equal 0")
     public void Array_empty1() {
         Array<String> emptyArray = new Array<>();
 
@@ -22,7 +18,7 @@ class ArrayTest {
     }
 
     @Test
-    @DisplayName("Array(type): try get item after creating => exception")
+    @DisplayName("Array(): try get item after creating => exception")
     public void Array_empty2() {
         Array<String> emptyArray = new Array<>();
 

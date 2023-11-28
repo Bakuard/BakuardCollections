@@ -90,8 +90,8 @@ class IndexedIteratorTest {
             assertions.assertThat(iterator.hasPrevious()).isTrue();
             assertions.assertThat(iterator.previous()).isEqualTo(item);
         }
-        assertions.assertThat(iterator.hasNext()).isFalse();
-        assertions.assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
+        assertions.assertThat(iterator.hasPrevious()).isFalse();
+        assertions.assertThatThrownBy(iterator::previous).isInstanceOf(NoSuchElementException.class);
         assertions.assertAll();
     }
 
@@ -424,10 +424,10 @@ class IndexedIteratorTest {
 
     //updated linear structures for hasPrevious() and previous() methods
     private static Stream<Arguments> provideForPreviousAndHasPreviousMethods2() {
-        Queue<Integer> queue = Queue.of(1, 2, 3, 4, 5, null, 1, 2, 3, 4);
-        Integer[] expected = {null, 1, 2, 3, 4, null, 6, 7, null, null};
+        Queue<Integer> queue = Queue.of(null, 6, 7, null, null, null, 1, 2, 3, 4);
+        Integer[] expected = {null, null, 7, 6, null, 4, 3, 2, 1, null};
 
-        for(int i = 5; i < 10; i++) {
+        for(int i = 4; i >= 0; --i) {
             queue.removeFirst();
             queue.putLast(expected[i]);
         }

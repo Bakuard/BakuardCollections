@@ -572,31 +572,29 @@ class StackTest {
     @Test
     @DisplayName("equals(Object o): idempotence property")
     public void equals4() {
-        Stack<Integer> firstOperand = Stack.of(10, 20, 30, 40, 50);
+        Stack<Integer> origin = Stack.of(10, 20, 30, 40, 50);
 
-        Assertions.assertThat(firstOperand).isEqualTo(firstOperand);
+        Assertions.assertThat(origin.equals(origin)).isTrue();
     }
 
     @Test
     @DisplayName("equals(Object o): commutative property")
     public void equals5() {
-        Stack<Integer> firstOperand = Stack.of(10, 20, 30, 40, 50);
-        Stack<Integer> secondOperand = Stack.of(10, 20, 30, 40, 50);
+        Stack<Integer> first = Stack.of(10, 20, 30, 40, 50);
+        Stack<Integer> second = Stack.of(10, 20, 30, 40, 50);
 
-        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
-        Assertions.assertThat(secondOperand).isEqualTo(firstOperand);
+        Assertions.assertThat(first.equals(second) == second.equals(first)).isTrue();
     }
 
     @Test
     @DisplayName("equals(Object o): transitive property")
     public void equals6() {
-        Stack<Integer> firstOperand = Stack.of(10, 20, 30, 40, 50);
-        Stack<Integer> secondOperand = Stack.of(10, 20, 30, 40, 50);
-        Stack<Integer> thirdOperand = Stack.of(10, 20, 30, 40, 50);
+        Stack<Integer> first = Stack.of(10, 20, 30, 40, 50);
+        Stack<Integer> second = Stack.of(10, 20, 30, 40, 50);
+        Stack<Integer> third = Stack.of(10, 20, 30, 40, 50);
 
-        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
-        Assertions.assertThat(secondOperand).isEqualTo(thirdOperand);
-        Assertions.assertThat(firstOperand).isEqualTo(thirdOperand);
+        Assertions.assertThat(first.equals(second) == second.equals(third) == first.equals(third)).
+                isTrue();
     }
 
 }
