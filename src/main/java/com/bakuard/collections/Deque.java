@@ -1,17 +1,19 @@
 package com.bakuard.collections;
 
-import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.Objects;
 
 /**
  * Реализация динамической двусторонней очереди с объектами произвольного типа.
  */
-public class Deque<T> implements ReadableLinearStructure<T> {
+public final class Deque<T> extends Queue<T> {
 
     public static <T> Deque<T> of(T... data) {
-        return null;
+        if(data == null) throw new NullPointerException("data[] can not be null.");
+
+        Deque<T> deque = new Deque<>();
+        deque.putAllOnLast(data);
+        return deque;
     }
 
     private static final int MIN_CAPACITY = 10;
@@ -20,8 +22,9 @@ public class Deque<T> implements ReadableLinearStructure<T> {
     /**
      * Создает пустую двустороннюю очередь.
      */
+    @SuppressWarnings("unchecked")
     public Deque() {
-
+        values = (T[]) new Object[MIN_CAPACITY];
     }
 
     /**
@@ -29,34 +32,9 @@ public class Deque<T> implements ReadableLinearStructure<T> {
      * @param other копируемая двусторонняя очередь.
      */
     public Deque(Deque<T> other) {
-
-    }
-
-    /**
-     * Добавляет элемент в конец двусторонней очереди увеличивая его длину ({@link #size()}) на единицу.
-     * Добавляемый элемент может иметь значение null.
-     * @param value добавляемый элемент.
-     */
-    public void putLast(T value) {
-
-    }
-
-    /**
-     * Добавляет каждый элемент из указанной перебираемой структуры данных в конец двусторонней очереди.
-     * Элементы добавляются в порядке их возвращения итератором.
-     * @param iterable структура данных, все элементы которого добавляются в текущую двустороннюю очередь.
-     */
-    public void putAllOnLast(Iterable<T> iterable) {
-
-    }
-
-    /**
-     * Добавляет каждый элемент из указанного массива в конец двусторонней очереди. Элементы добавляются
-     * в порядке их следования в массиве.
-     * @param data массив, все элементы которого добавляются в текущую двустороннюю очередь.
-     */
-    public void putAllOnLast(T... data) {
-
+        this.values = other.values.clone();
+        this.firstItemIndex = other.firstItemIndex;
+        this.lastItemIndex = other.lastItemIndex;
     }
 
     /**
@@ -65,44 +43,48 @@ public class Deque<T> implements ReadableLinearStructure<T> {
      * @param value добавляемый элемент.
      */
     public void putFirst(T value) {
+        ++actualModCount;
 
+        int currentSize = size();
+        grow(currentSize, currentSize + 1);
+        firstItemIndex = firstItemIndex - 1 >= 0 ? firstItemIndex - 1 : values.length - 1;
+        values[firstItemIndex] = value;
     }
 
     /**
      * Добавляет каждый элемент из указанной перебираемой структуры данных в начало двусторонней очереди.
-     * Элементы добавляются в порядке их возвращения итератором.
+     * После добавления элементов в двустороннюю очередь - порядок их следования будет тот же, что и
+     * порядок их возвращения итератором.
      * @param iterable структура данных, все элементы которого добавляются в текущую двустороннюю очередь.
      */
     public void putAllOnFirst(Iterable<T> iterable) {
+        ++actualModCount;
 
+        Stack<T> stack = new Stack<>();
+        putAllOnLast(iterable);
+
+        int currentSize = size();
+        grow(currentSize, currentSize + stack.size());
+        while(!stack.isEmpty()) {
+            firstItemIndex = firstItemIndex - 1 >= 0 ? firstItemIndex - 1 : values.length - 1;
+            values[firstItemIndex] = stack.removeLast();
+        }
     }
 
     /**
-     * Добавляет каждый элемент из указанного массива в начало двусторонней очереди. Элементы добавляются
-     * в порядке их следования в массиве.
+     * Добавляет каждый элемент из указанного массива в начало двусторонней очереди. После добавления
+     * элементов в двустороннюю очередь - порядок их следования будет тот же, что и в массиве.
      * @param data массив, все элементы которого добавляются в текущую двустороннюю очередь.
      */
     public void putAllOnFirst(T... data) {
+        ++actualModCount;
 
-    }
-
-    /**
-     * Удаляет элемент из начала двусторонней очереди и возвращает его. Если двусторонняя очередь пуста -
-     * возвращает null. <br/>
-     * <b>ВАЖНО!</b> Т.к. двусторонняя очередь допускает хранение null элементов, то возвращение данным
-     * методом null в качестве результата не гарантирует, что двусторонняя очередь пуста. Для проверки
-     * наличия элементов в двусторонней очереди используйте методы {@link #size()} или {@link #isEmpty()}.
-     */
-    public T removeFirst() {
-        return null;
-    }
-
-    /**
-     * Удаляет элемент из начала двусторонней очереди и возвращает его.
-     * @throws NoSuchElementException если очередь пуста.
-     */
-    public T tryRemoveFirst() {
-        return null;
+        int currentSize = size();
+        grow(currentSize, currentSize + data.length);
+        for(int i = data.length - 1; i >= 0; --i) {
+            firstItemIndex = firstItemIndex - 1 >= 0 ? firstItemIndex - 1 : values.length - 1;
+            values[firstItemIndex] = data[i];
+        }
     }
 
     /**
@@ -113,7 +95,16 @@ public class Deque<T> implements ReadableLinearStructure<T> {
      * наличия элементов в двусторонней очереди используйте методы {@link #size()} или {@link #isEmpty()}.
      */
     public T removeLast() {
-        return null;
+        ++actualModCount;
+
+        T result = null;
+        if(!isEmpty()) {
+            lastItemIndex = lastItemIndex - 1 >= 0 ? lastItemIndex - 1 : values.length - 1;
+            result = values[lastItemIndex];
+            values[lastItemIndex] = null;
+        }
+
+        return result;
     }
 
     /**
@@ -121,133 +112,36 @@ public class Deque<T> implements ReadableLinearStructure<T> {
      * @throws NoSuchElementException если очередь пуста.
      */
     public T tryRemoveLast() {
-        return null;
-    }
+        if(isEmpty()) {
+            throw new NoSuchElementException("Fail to remove last item: deque is empty.");
+        }
 
-    /**
-     * Удаляет все элементы из двусторонней очереди и уменьшает её длину до нуля. Данный метод не уменьшает
-     * емкость внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом,
-     * используйте метод {@link #trimToSize()}.
-     */
-    public void clear() {
-
-    }
-
-    /**
-     * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
-     * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
-     * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
-     * памяти занимаемый объектом Deque.
-     * @return true - если объем внутреннего массива был уменьшен, иначе - false.
-     */
-    public boolean trimToSize() {
-        return false;
-    }
-
-    /**
-     * Возвращает любой элемент этой двусторонней очереди по его индексу, не удаляя его. Элементу с
-     * индексом [0] соответствует первый элемент двусторонней очереди, а элементу с индексом
-     * [{@link #size()} - 1] - последний.
-     * @param index индекс искомого элемента.
-     * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
-     */
-    @Override
-    public T get(int index) {
-        return null;
-    }
-
-    /**
-     * Данный метод расширяет поведение метода {@link #get(int)} допуская отрицательные индексы.
-     * Элементу с индексом [-1] соответствует последний элемент двусторонней очереди, а элементу с индексом
-     * [-({@link #size()})] - первый элемент.
-     * @param index индекс искомого элемента.
-     * @throws IndexOutOfBoundsException если index < -({@link #size()}) или index >= {@link #size()}
-     */
-    @Override
-    public T at(int index) {
-        return null;
-    }
-
-    /**
-     * Возвращает кол-во элементов двусторонней очереди.
-     */
-    @Override
-    public int size() {
-        return 0;
-    }
-
-    /**
-     * Возвращает true, если кол-во элементов равно нулю, иначе - false.
-     */
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    /**
-     * Находит и возвращает индекс первого элемента равного заданному. Выполняет линейный поиск
-     * начиная с первого элемента двусторонней очереди в направлении последнего элемента. Если нет элемента
-     * равного заданному значению - возвращает -1.
-     * @param value значение искомого элемента.
-     * @return индекс первого встретившегося элемента с указанным значением.
-     */
-    @Override
-    public int linearSearch(T value) {
-        return 0;
-    }
-
-    /**
-     * Находит и возвращает индекс первого элемента соответствующего заданному предикату. Выполняет линейный
-     * поиск начиная с первого элемента двусторонней очереди в направлении последнего элемента. Если нет
-     * подходящего элемента - возвращает -1.
-     * @param predicate условие, которому должен соответствовать искомый элемент.
-     * @return индекс первого встретившегося элемента соответствующего заданному предикату.
-     */
-    @Override
-    public int linearSearch(Predicate<T> predicate) {
-        return 0;
-    }
-
-    /**
-     * Возвращает кол-во элементов соответствующих заданному предикату.
-     */
-    @Override
-    public int frequency(Predicate<T> predicate) {
-        return 0;
-    }
-
-    /**
-     * Создает и возвращает итератор, позволяющий последовательно перебрать двустороннюю очередь в
-     * обоих направлениях. Сразу после создания, курсор итератора установлен перед элементом {@link #getFirst()}.
-     */
-    @Override
-    public IndexedIterator<T> iterator() {
-        return null;
-    }
-
-    /**
-     * Выполняет линейный перебор элементов двусторонней очереди начиная с элемента {@link #getFirst()}
-     * в направлении элемента {@link #getLast()}. При этом для каждого элемента выполняется указанная
-     * операция action.
-     * @param action действие выполняемое для каждого элемента хранящегося в данной двусторонней очереди.
-     * @throws ConcurrentModificationException если двусторонняя очередь изменяется в момент выполнения
-     *                                         этого метода.
-     */
-    @Override
-    public void forEach(Consumer<? super T> action) {
-
+        return removeLast();
     }
 
     @Override
     public boolean equals(Object o) {
-        return false;
-    }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Deque<?> deque = (Deque<?>) o;
 
-    public int hashCode() {
-        return 0;
+        final int size = size();
+        boolean result = deque.size() == size;
+        for(int i = 0; i < size && result; i++) {
+            result = Objects.equals(deque.unsafeGet(i), unsafeGet(i));
+        }
+        return result;
     }
 
     public String toString() {
-        return null;
+        final int size = size();
+        StringBuilder valuesToString = new StringBuilder("[");
+        if(size > 0) {
+            valuesToString.append(unsafeGet(0));
+            for(int i = 1; i < size; ++i) valuesToString.append(',').append(unsafeGet(i));
+        }
+        valuesToString.append(']');
+
+        return "Deque{size=" + size + ", " + valuesToString + '}';
     }
 }

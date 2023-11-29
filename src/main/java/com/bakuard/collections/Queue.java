@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 /**
  * Реализация динамической очереди с объектами произвольного типа.
  */
-public class Queue<T> implements ReadableLinearStructure<T> {
+public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque {
 
     /**
      * Создает и возвращает очередь содержащую указанные элементы в указанном порядке. Итоговая очередь будет содержать
@@ -30,10 +30,10 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     private static final int MIN_CAPACITY = 10;
 
 
-    private T[] values;
-    private int firstItemIndex;
-    private int lastItemIndex;
-    private int actualModCount;
+    protected T[] values;
+    protected int firstItemIndex;
+    protected int lastItemIndex;
+    protected int actualModCount;
 
     /**
      * Создает новую пустую очередь.
@@ -307,11 +307,11 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     }
 
 
-    T unsafeGet(int index) {
+    protected T unsafeGet(int index) {
         return values[(firstItemIndex + index) % values.length];
     }
 
-    private void grow(int currentSize, int newSize) {
+    protected void grow(int currentSize, int newSize) {
         if(newSize >= values.length) {
             repackInnerArray(currentSize, calculateCapacity(newSize));
         }

@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 /**
  * Реализация динамического стека с объектами произвольного типа.
  */
-public class Stack<T> implements ReadableLinearStructure<T> {
+public final class Stack<T> implements ReadableLinearStructure<T> {
 
     /**
      * Создает и возвращает стек содержащий указанные элементы в указанном порядке. Итоговый стек будет содержать
@@ -64,7 +64,7 @@ public class Stack<T> implements ReadableLinearStructure<T> {
 
     /**
      * Добавляет все элементы из указанной перебираемой структуры данных на вершину стека. Элементы
-     * добавляются в порядке из возвращения итератором.
+     * добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которой добавляются на вершину текущего стека.
      */
     public void putAllOnLast(Iterable<T> iterable) {
