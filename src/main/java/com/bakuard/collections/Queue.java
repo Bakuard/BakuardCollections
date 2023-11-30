@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 /**
  * Реализация динамической очереди с объектами произвольного типа.
  */
-public class Queue<T> implements ReadableLinearStructure<T> {
+public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque {
 
     /**
      * Создает и возвращает очередь содержащую указанные элементы в указанном порядке. Итоговая очередь будет содержать
@@ -30,10 +30,10 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     private static final int MIN_CAPACITY = 10;
 
 
-    private T[] values;
-    private int firstItemIndex;
-    private int lastItemIndex;
-    private int actualModCount;
+    protected T[] values;
+    protected int firstItemIndex;
+    protected int lastItemIndex;
+    protected int actualModCount;
 
     /**
      * Создает новую пустую очередь.
@@ -70,7 +70,7 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     /**
      * Добавляет каждый элемент из указанной перебираемой структуры данных в конец очереди. Элементы
      * добавляются в порядке их возвращения итератором.
-     * @param iterable структура данных, все элементы которой добавляются на вершину текущего стека.
+     * @param iterable структура данных, все элементы которого добавляются в текущую очередь.
      */
     public void putAllOnLast(Iterable<T> iterable) {
         for(T value: iterable) putLast(value);
@@ -207,6 +207,7 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      * @param value значение искомого элемента.
      * @return индекс первого встретившегося элемента с указанным значением.
      */
+    @Override
     public int linearSearch(T value) {
         final int size = size();
         int index = 0;
@@ -221,6 +222,7 @@ public class Queue<T> implements ReadableLinearStructure<T> {
      * @param predicate условие, которому должен соответствовать искомый элемент.
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
+    @Override
     public int linearSearch(Predicate<T> predicate) {
         final int size = size();
         int index = 0;
@@ -231,6 +233,7 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     /**
      * Возвращает кол-во элементов соответствующих заданному предикату.
      */
+    @Override
     public int frequency(Predicate<T> predicate) {
         int result = 0;
 
@@ -304,11 +307,11 @@ public class Queue<T> implements ReadableLinearStructure<T> {
     }
 
 
-    T unsafeGet(int index) {
+    protected T unsafeGet(int index) {
         return values[(firstItemIndex + index) % values.length];
     }
 
-    private void grow(int currentSize, int newSize) {
+    protected void grow(int currentSize, int newSize) {
         if(newSize >= values.length) {
             repackInnerArray(currentSize, calculateCapacity(newSize));
         }
@@ -459,5 +462,4 @@ public class Queue<T> implements ReadableLinearStructure<T> {
         }
 
     }
-
 }
