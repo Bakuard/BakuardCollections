@@ -1,7 +1,6 @@
 package com.bakuard.collections;
 
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 /**
  * Реализация динамической двусторонней очереди с объектами произвольного типа.
@@ -61,7 +60,7 @@ public final class Deque<T> extends Queue<T> {
         ++actualModCount;
 
         Stack<T> stack = new Stack<>();
-        putAllOnLast(iterable);
+        stack.putAllOnLast(iterable);
 
         int currentSize = size();
         grow(currentSize, currentSize + stack.size());
@@ -117,20 +116,6 @@ public final class Deque<T> extends Queue<T> {
         }
 
         return removeLast();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Deque<?> deque = (Deque<?>) o;
-
-        final int size = size();
-        boolean result = deque.size() == size;
-        for(int i = 0; i < size && result; i++) {
-            result = Objects.equals(deque.unsafeGet(i), unsafeGet(i));
-        }
-        return result;
     }
 
     public String toString() {

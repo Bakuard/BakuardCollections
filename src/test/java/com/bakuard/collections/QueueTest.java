@@ -101,7 +101,7 @@ public class QueueTest {
              iterable is {1}
              => expected queue {2}
             """)
-    @MethodSource("provideForPutAllOnLastLastIterable")
+    @MethodSource("provideForPutAllOnLastIterable")
     void putAllOnLast_Iterable(Queue<Integer> originQueue, Iterable<Integer> iterable, Queue<Integer> expectedQueue) {
         originQueue.putAllOnLast(iterable);
 
@@ -114,7 +114,7 @@ public class QueueTest {
              data is {1}
              => expected queue {2}
             """)
-    @MethodSource("provideForPutAllOnLastLastData")
+    @MethodSource("provideForPutAllOnLastData")
     void putAllOnLast_Data(Queue<Integer> originQueue, Integer[] data, Queue<Integer> expectedQueue) {
         originQueue.putAllOnLast(data);
 
@@ -297,6 +297,9 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForPutLast() {
+        Queue<Integer> modifiedQueue = Queue.of(0, 1, 2, 3, 4, 5, 6, 7);
+        for(int i = 0; i < 5; i++) modifiedQueue.putLast(modifiedQueue.removeFirst());
+
         return Stream.of(
                 Arguments.of(
                         Queue.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
@@ -327,11 +330,16 @@ public class QueueTest {
                         new Queue<>(),
                         null,
                         Queue.of(new Integer[]{null})
+                ),
+                Arguments.of(
+                        modifiedQueue,
+                        100,
+                        Queue.of(5, 6, 7, 0, 1, 2, 3, 4, 100)
                 )
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastLastIterable() {
+    private static Stream<Arguments> provideForPutAllOnLastIterable() {
         return Stream.of(
                 Arguments.of(
                         new Queue<>(),
@@ -356,7 +364,7 @@ public class QueueTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastLastData() {
+    private static Stream<Arguments> provideForPutAllOnLastData() {
         return Stream.of(
                 Arguments.of(
                         new Queue<>(),
@@ -382,6 +390,9 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForRemoveFirst() {
+        Queue<Integer> modifiedQueue = Queue.of(0, 1, 2, 3, 4, 5, 6, 7);
+        for(int i = 0; i < 5; i++) modifiedQueue.putLast(modifiedQueue.removeFirst());
+
         return Stream.of(
                 Arguments.of(
                         new Queue<>(),
@@ -407,6 +418,11 @@ public class QueueTest {
                         Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         Queue.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         0
+                ),
+                Arguments.of(
+                        modifiedQueue,
+                        Queue.of(6, 7, 0, 1, 2, 3, 4),
+                        5
                 )
         );
     }
