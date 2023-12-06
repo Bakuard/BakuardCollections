@@ -146,7 +146,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     public boolean trimToSize() {
         ++actualModCount;
 
-        int size = size();
+        int size = Math.max(MIN_CAPACITY - 1, size());
         boolean isTrim = size < values.length;
 
         if(isTrim) repackInnerArray(size, size + 1);
