@@ -64,7 +64,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         int currentSize = size();
         grow(currentSize, currentSize + 1);
         values[lastItemIndex] = value;
-        lastItemIndex = ++lastItemIndex % values.length;
+        lastItemIndex = (lastItemIndex + 1) % values.length;
     }
 
     /**
@@ -88,7 +88,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         grow(currentSize, currentSize + data.length);
         for(T item : data) {
             values[lastItemIndex] = item;
-            lastItemIndex = ++lastItemIndex % values.length;
+            lastItemIndex = (lastItemIndex + 1) % values.length;
         }
     }
 
@@ -105,7 +105,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         if(!isEmpty()) {
             result = values[firstItemIndex];
             values[firstItemIndex] = null;
-            firstItemIndex = ++firstItemIndex % values.length;
+            firstItemIndex = (firstItemIndex + 1) % values.length;
         }
 
         return result;
@@ -324,9 +324,9 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         if(firstItemIndex < lastItemIndex) {
             System.arraycopy(values, firstItemIndex, newValues, 0, currentSize);
         } else if(firstItemIndex > lastItemIndex) {
-            int firstHalfSize = values.length - firstItemIndex;
-            System.arraycopy(values, firstItemIndex, newValues, 0, firstHalfSize);
-            System.arraycopy(values, 0, newValues, firstHalfSize, lastItemIndex);
+            int lengthBeforeWrap = values.length - firstItemIndex;
+            System.arraycopy(values, firstItemIndex, newValues, 0, lengthBeforeWrap);
+            System.arraycopy(values, 0, newValues, lengthBeforeWrap, lastItemIndex);
         }
 
         values = newValues;

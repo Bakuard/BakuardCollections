@@ -1,7 +1,9 @@
 package com.bakuard.collections;
 
-import java.util.ConcurrentModificationException;
-import java.util.NoSuchElementException;
+import com.bakuard.collections.exceptions.MaxSizeExceededException;
+import com.bakuard.collections.exceptions.NegativeSizeException;
+
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -21,7 +23,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public static <T> RingBuffer<T> of(T... data) {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
-        return null;
+        RingBuffer<T> result = new RingBuffer<>(data.length);
+        result.putAllOnLastOrSkip(data);
+        return result;
     }
 
 
@@ -33,12 +37,12 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     /**
      * Создает новый пустой циклический буфер с заданным максимальным размером.
      * @param maxSize максимальный размер циклического буфера.
+     * @throws NegativeSizeException если maxSize < 0
      */
     @SuppressWarnings("unchecked")
     public RingBuffer(int maxSize) {
         if(maxSize < 0) {
-            throw new NegativeArraySizeException(
-                    "Expected: maxSize can't be less then zero. Actual: maxSize=" + maxSize);
+            throw new NegativeSizeException("Expected: maxSize can't be less then zero. Actual: maxSize=" + maxSize);
         }
         values = (T[]) new Object[maxSize];
     }
@@ -59,7 +63,15 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param iterable структура данных, элементы которой копируются в новый буфер.
      */
     public RingBuffer(Iterable<T> iterable) {
+        this(0);
 
+        Array<T> tempBuffer = new Array<>();
+        tempBuffer.appendAll(iterable);
+
+        if(!tempBuffer.isEmpty()) {
+            values = tempBuffer.toArray();
+            currentSize = tempBuffer.size();
+        }
     }
 
     /**
@@ -98,7 +110,14 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public Array<T> putAllOnLastOrReplace(Iterable<T> iterable) {
         ++actualModCount;
 
-        return null;
+        Array<T> rewritingValues = new Array<>();
+        for(T value : iterable) {
+            boolean valueWasRewriting = isFull();
+            T rewritingValue = putLastOrReplace(value);
+            if(valueWasRewriting) rewritingValues.append(rewritingValue);
+        }
+
+        return rewritingValues;
     }
 
     /**
@@ -111,7 +130,14 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public Array<T> putAllOnLastOrReplace(T... data) {
         ++actualModCount;
 
-        return null;
+        Array<T> rewritingValues = new Array<>();
+        for(T value : data) {
+            boolean valueWasRewriting = isFull();
+            T rewritingValue = putLastOrReplace(value);
+            if(valueWasRewriting) rewritingValues.append(rewritingValue);
+        }
+
+        return rewritingValues;
     }
 
     /**
@@ -124,7 +150,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public boolean putLastOrSkip(T value) {
         ++actualModCount;
 
-        return false;
+        boolean canBeAdded = !isFull();
+        if(canBeAdded) values[(firstItemIndex + currentSize++) % values.length] = value;
+        return canBeAdded;
     }
 
     /**
@@ -138,7 +166,15 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public int putAllOnLastOrSkip(Iterable<T> iterable) {
         ++actualModCount;
 
-        return 0;
+        int addedValuesNumber = 0;
+        boolean wasAdded = true;
+        Iterator<T> iterator = iterable.iterator();
+        while(wasAdded && iterator.hasNext()) {
+            wasAdded = putLastOrSkip(iterator.next());
+            if(wasAdded) ++addedValuesNumber;
+        }
+
+        return addedValuesNumber;
     }
 
     /**
@@ -152,7 +188,12 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public int putAllOnLastOrSkip(T... data) {
         ++actualModCount;
 
-        return 0;
+        final int addedValuesNumber = values.length - currentSize;
+        for(int i = 0; i < addedValuesNumber && i < data.length; i++) {
+            putLastOrSkip(data[i]);
+        }
+
+        return Math.min(addedValuesNumber, data.length);
     }
 
     /**
@@ -164,6 +205,13 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public void tryPutLast(T value) {
         ++actualModCount;
 
+        if(isFull()) {
+            throw new MaxSizeExceededException(
+                    "Adding items to a filled RingBuffer with the 'tryPutLast' method is prohibited. MaxSize: " +
+                            maxSize() + ", added item: " + value
+            );
+        }
+        values[(firstItemIndex + currentSize++) % values.length] = value;
     }
 
     /**
@@ -177,7 +225,14 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public T removeFirst() {
         ++actualModCount;
 
-        return null;
+        T removedValue = null;
+        if(!isEmpty()) {
+            removedValue = values[firstItemIndex];
+            values[firstItemIndex] = null;
+            firstItemIndex = (firstItemIndex + 1) % values.length;
+            --currentSize;
+        }
+        return removedValue;
     }
 
     /**
@@ -185,9 +240,11 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @throws NoSuchElementException если циклический буфер пуст.
      */
     public T tryRemoveFirst() {
-        ++actualModCount;
+        if(isEmpty()) {
+            throw new NoSuchElementException("Fail to remove first item: ring buffer is empty.");
+        }
 
-        return null;
+        return removeFirst();
     }
 
     /**
@@ -195,13 +252,34 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     public void clear() {
         ++actualModCount;
+
+        for(int i = 0; i < values.length; ++i) values[i] = null;
+        currentSize = 0;
+        firstItemIndex = 0;
     }
 
     /**
      * Увеличивает максимальный размер ({@link #maxSize()}) циклического буфера на указанную величину.
+     * @throws NegativeSizeException если extraSize < 0
      */
+    @SuppressWarnings("unchecked")
     public void grow(int extraSize) {
         ++actualModCount;
+
+        if(extraSize > 0) {
+            T[] newValues = (T[]) new Object[values.length + extraSize];
+
+            if(currentSize > 0) {
+                int lengthBeforeWrap = values.length - firstItemIndex;
+                System.arraycopy(values, firstItemIndex, newValues, 0, lengthBeforeWrap);
+                System.arraycopy(values, 0, newValues, lengthBeforeWrap, values.length - lengthBeforeWrap);
+            }
+
+            values = newValues;
+            firstItemIndex = 0;
+        } else if(extraSize < 0) {
+            throw new NegativeSizeException("Expected: extraSize can't be negative. Actual: extraSize = " + extraSize);
+        }
     }
 
     /**
@@ -212,7 +290,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public T get(int index) {
-        return null;
+        assertInBound(index);
+
+        return unsafeGet(index);
     }
 
     /**
@@ -224,7 +304,11 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public T at(int index) {
-        return null;
+        assertInBoundByModulo(index);
+
+        return index < 0 ?
+                values[(firstItemIndex + currentSize + index) % values.length] :
+                unsafeGet(index);
     }
 
     /**
@@ -267,7 +351,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public int linearSearch(T value) {
-        return ReadableLinearStructure.super.linearSearch(value);
+        int index = 0;
+        while(index < currentSize && !Objects.equals(unsafeGet(index), value)) ++index;
+        return index >= currentSize ? -1 : index;
     }
 
     /**
@@ -279,7 +365,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public int linearSearch(Predicate<T> predicate) {
-        return ReadableLinearStructure.super.linearSearch(predicate);
+        int index = 0;
+        while(index < currentSize && !predicate.test(unsafeGet(index))) ++index;
+        return index >= currentSize ? -1 : index;
     }
 
     /**
@@ -291,7 +379,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public int linearSearchLast(Predicate<T> predicate) {
-        return ReadableLinearStructure.super.linearSearchLast(predicate);
+        int index = currentSize - 1;
+        while(index >= 0 && !predicate.test(unsafeGet(index))) --index;
+        return index;
     }
 
     /**
@@ -299,7 +389,13 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public int frequency(Predicate<T> predicate) {
-        return ReadableLinearStructure.super.frequency(predicate);
+        int result = 0;
+
+        for(int i = 0; i < currentSize; ++i) {
+            if(predicate.test(unsafeGet(i))) ++result;
+        }
+
+        return result;
     }
 
     /**
@@ -308,7 +404,7 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public IndexedIterator<T> iterator() {
-        return null;
+        return new IndexedIteratorImpl<>(actualModCount, currentSize);
     }
 
     /**
@@ -319,6 +415,174 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public void forEach(Consumer<? super T> action) {
-        ReadableLinearStructure.super.forEach(action);
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        for(int i = 0; i < currentSize; ++i) {
+            action.accept(unsafeGet(i));
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RingBuffer<?> buffer = (RingBuffer<?>) o;
+
+        boolean result = buffer.currentSize == currentSize;
+        for(int i = 0; i < currentSize && result; i++) {
+            result = Objects.equals(buffer.unsafeGet(i), unsafeGet(i));
+        }
+        return result;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = currentSize;
+        for(int i = 0; i < currentSize; i++) result = result * 31 + Objects.hashCode(unsafeGet(i));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        final int size = size();
+        StringBuilder valuesToString = new StringBuilder("[");
+        if(size > 0) {
+            valuesToString.append(unsafeGet(0));
+            for(int i = 1; i < size; ++i) valuesToString.append(',').append(unsafeGet(i));
+        }
+        valuesToString.append(']');
+
+        return "RingBuffer{currentSize=" + currentSize + ", " + valuesToString + '}';
+    }
+
+
+    protected T unsafeGet(int index) {
+        return values[(firstItemIndex + index) % values.length];
+    }
+
+    private void assertInBound(int index) {
+        if(index < 0 || index >= currentSize) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= 0 && index < currentSize. Actual: currentSize=" + currentSize + ", index=" + index
+            );
+        }
+    }
+
+    private void assertInBoundByModulo(int index) {
+        if(index < -currentSize || index >= currentSize) {
+            throw new IndexOutOfBoundsException(
+                    "Expected: index >= -currentSize && index < currentSize. Actual: currentSize=" + currentSize + ", index=" + index
+            );
+        }
+    }
+
+
+    private final class IndexedIteratorImpl<E> implements IndexedIterator<E> {
+
+        private final int expectedModCount;
+        private final int totalItems;
+        private int cursor;
+        private int recentIndex;
+
+        public IndexedIteratorImpl(int actualModCount, int itemsNumber) {
+            this.expectedModCount = actualModCount;
+            this.totalItems = itemsNumber;
+            this.cursor = - 1;
+            this.recentIndex = -1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor + 1 < totalItems;
+        }
+
+        @Override
+        public E next() {
+            assertLinearStructureWasNotBeenChanged();
+            assertHasNext();
+            recentIndex = ++cursor;
+            return (E) RingBuffer.this.unsafeGet(recentIndex);
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return cursor >= 0;
+        }
+
+        @Override
+        public E previous() {
+            assertLinearStructureWasNotBeenChanged();
+            assertHasPrevious();
+            recentIndex = cursor--;
+            return (E) RingBuffer.this.unsafeGet(recentIndex);
+        }
+
+        @Override
+        public boolean canJump(int itemsNumber) {
+            return cursor + itemsNumber >= 0 && cursor + itemsNumber < totalItems;
+        }
+
+        @Override
+        public E jump(int itemsNumber) {
+            assertLinearStructureWasNotBeenChanged();
+            assertCanJump(itemsNumber);
+            recentIndex = cursor += itemsNumber;
+            return (E) RingBuffer.this.unsafeGet(recentIndex);
+        }
+
+        @Override
+        public void beforeFirst() {
+            cursor = -1;
+            recentIndex = -1;
+        }
+
+        @Override
+        public void afterLast() {
+            cursor = totalItems - 1;
+            recentIndex = -1;
+        }
+
+        @Override
+        public int recentIndex() {
+            return recentIndex;
+        }
+
+
+        private void assertLinearStructureWasNotBeenChanged() {
+            if(actualModCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        private void assertCanJump(int itemsNumber) {
+            if(!canJump(itemsNumber)) {
+                throw new NoSuchElementException(
+                        "There is no item for jump. Detail: itemsNumber=%d, totalItems=%d, currentIndex=%d".
+                                formatted(itemsNumber, totalItems, cursor)
+                );
+            }
+        }
+
+        private void assertHasNext() {
+            if(!hasNext()) {
+                throw new NoSuchElementException(
+                        "There is no next item. Detail: totalItems=%d, currentIndex=%d".
+                                formatted(totalItems, cursor)
+                );
+            }
+        }
+
+        private void assertHasPrevious() {
+            if(!hasPrevious()) {
+                throw new NoSuchElementException(
+                        "There is no previous item. Detail: totalItems=%d, currentIndex=%d".
+                                formatted(totalItems, cursor)
+                );
+            }
+        }
+
     }
 }
