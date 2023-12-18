@@ -1,8 +1,10 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.exceptions.NegativeSizeException;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -132,11 +134,11 @@ public class RingBufferTest {
     void putLastOrReplace(RingBuffer<Integer> origin,
                           Integer addedValue,
                           RingBuffer<Integer> expected,
-                          Integer expectedValue) {
+                          Integer expectedReturnedValue) {
         Integer actualReturnedValue = origin.putLastOrReplace(addedValue);
 
         SoftAssertions assertions = new SoftAssertions();
-        assertions.assertThat(actualReturnedValue).isEqualTo(expectedValue);
+        assertions.assertThat(actualReturnedValue).isEqualTo(expectedReturnedValue);
         assertions.assertThat(origin).isEqualTo(expected);
         assertions.assertAll();
     }
@@ -152,11 +154,11 @@ public class RingBufferTest {
     void putAllOnLastOrReplace_iterable(RingBuffer<Integer> origin,
                                         Array<Integer> addedValues,
                                         RingBuffer<Integer> expected,
-                                        Array<Integer> expectedValues) {
+                                        Array<Integer> expectedReturnedValues) {
         Array<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
-        assertions.assertThat(actualReturnedValues).isEqualTo(expectedValues);
+        assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
         assertions.assertThat(origin).isEqualTo(expected);
         assertions.assertAll();
     }
@@ -172,13 +174,117 @@ public class RingBufferTest {
     void putAllOnLastOrReplace_array(RingBuffer<Integer> origin,
                                      Integer[] addedValues,
                                      RingBuffer<Integer> expected,
-                                     Array<Integer> expectedValues) {
+                                     Array<Integer> expectedReturnedValues) {
         Array<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
-        assertions.assertThat(actualReturnedValues).isEqualTo(expectedValues);
+        assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
         assertions.assertThat(origin).isEqualTo(expected);
         assertions.assertAll();
+    }
+
+    @DisplayName("putLastOrSkip(value):")
+    @ParameterizedTest(name = """
+             origin buffer is {0}
+             addedValue is {1}
+             => expected buffer is {2},
+                expected value is {3}
+            """)
+    @MethodSource("provideForPutLastOrSkip")
+    void putLastOrSkip(RingBuffer<Integer> origin,
+                       Integer addedValue,
+                       RingBuffer<Integer> expected,
+                       boolean expectedReturnedValue) {
+        boolean actualReturnedValue = origin.putLastOrSkip(addedValue);
+
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(actualReturnedValue).isEqualTo(expectedReturnedValue);
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertAll();
+    }
+
+    @DisplayName("putAllOnLastOrSkip(iterable):")
+    @ParameterizedTest(name = """
+             origin buffer is {0}
+             added values is {1}
+             => expected buffer is {2},
+                expected values is {3}
+            """)
+    @MethodSource("provideForPutAllOnLastOrSkip_iterable")
+    void putAllOnLastOrSkip_iterable(RingBuffer<Integer> origin,
+                                     Array<Integer> addedValues,
+                                     RingBuffer<Integer> expected,
+                                     int expectedReturnedValues) {
+        int actualReturnedValues = origin.putAllOnLastOrSkip(addedValues);
+
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertAll();
+    }
+
+    @DisplayName("putAllOnLastOrSkip(data):")
+    @ParameterizedTest(name = """
+             origin buffer is {0}
+             added values is {1}
+             => expected buffer is {2},
+                expected values is {3}
+            """)
+    @MethodSource("provideForPutAllOnLastOrSkip_array")
+    void putAllOnLastOrSkip_array(RingBuffer<Integer> origin,
+                                  Integer[] addedValues,
+                                  RingBuffer<Integer> expected,
+                                  int expectedReturnedValues) {
+        int actualReturnedValues = origin.putAllOnLastOrSkip(addedValues);
+
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertAll();
+    }
+
+    @DisplayName("removeFirst():")
+    @ParameterizedTest(name = """
+             origin buffer is {0}
+             => expected buffer is {1},
+                expected value is {2}
+            """)
+    @MethodSource("provideForRemoveFirst")
+    void removeFirst(RingBuffer<Integer> origin,
+                     RingBuffer<Integer> expected,
+                     Integer expectedReturnedValue) {
+        Integer actualReturnedValue = origin.removeFirst();
+
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertThat(actualReturnedValue).isEqualTo(expectedReturnedValue);
+        assertions.assertAll();
+    }
+
+    @DisplayName("grow(extraSize):")
+    @ParameterizedTest(name = """
+             origin buffer is {0}
+             extraSize is {1}
+             => expected buffer is {2}
+            """)
+    @MethodSource("provideForGrow")
+    void grow(RingBuffer<Integer> origin, int extraSize, RingBuffer<Integer> expected) {
+        origin.grow(extraSize);
+
+        Assertions.assertThat(origin).isEqualTo(expected);
+    }
+
+    @DisplayName("""
+            grow(extraSize):
+                extraSize < 0
+                => exception
+            """)
+    @Test
+    void grow_exception() {
+        RingBuffer<Integer> origin = RingBuffer.of(1, 2, 3, 4, 5);
+
+        Assertions.assertThatThrownBy(() -> origin.grow(-1))
+                .isInstanceOf(NegativeSizeException.class);
     }
 
 
@@ -303,103 +409,372 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForPutLastOrReplace() {
-        RingBuffer<Integer> notFilledBufferOrigin = new RingBuffer<>(10);
-        notFilledBufferOrigin.putAllOnLastOrSkip(1, 2, 3, 4, 5, 6);
-        RingBuffer<Integer> notFilledBufferExpected = new RingBuffer<>(10);
-        notFilledBufferExpected.putAllOnLastOrSkip(1, 2, 3, 4, 5, 6, 100);
-
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        100,
-                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 100),
+                        RingBuffer.of(),
+                        1,
+                        RingBuffer.of(),
                         1
                 ),
                 Arguments.of(
                         RingBuffer.of(1),
-                        100,
-                        RingBuffer.of(100),
+                        2,
+                        RingBuffer.of(2),
                         1
                 ),
                 Arguments.of(
-                        RingBuffer.of(),
-                        100,
-                        new RingBuffer<>(0),
-                        100
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        11,
+                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        1
                 ),
                 Arguments.of(
-                        notFilledBufferOrigin,
-                        100,
-                        notFilledBufferExpected,
+                        new RingBuffer<>(10),
+                        1,
+                        RingBuffer.of(1),
+                        null
+                ),
+                Arguments.of(
+                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        6,
+                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
                         null
                 )
         );
     }
 
     private static Stream<Arguments> provideForPutAllOnLastOrReplace_iterable() {
-        RingBuffer<Integer> notFilledBufferOrigin = new RingBuffer<>(10);
-        notFilledBufferOrigin.putAllOnLastOrSkip(1, 2, 3, 4, 5, 6);
-        RingBuffer<Integer> notFilledBufferExpected = new RingBuffer<>(10);
-        notFilledBufferExpected.putAllOnLastOrSkip(1, 2, 3, 4, 5, 6, 100);
-
         return Stream.of(
-                Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(100),
-                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 100),
-                        Array.of(1)
-                ),
-                Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(100, 200, 300, 400, 500),
-                        RingBuffer.of(6, 7, 8, 9, 10, 100, 200, 300, 400, 500),
-                        Array.of(1, 2, 3, 4, 5)
-                ),
-                Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500),
-                        RingBuffer.of(600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100, 200, 300, 400, 500)
-                ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         Array.of(),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         Array.of()
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of(11),
+                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        Array.of(1)
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of(11, 12, 13, 14, 15),
+                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        Array.of(1, 2, 3, 4, 5)
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        RingBuffer.of(16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        Array.of(1, 2, 3, 4, 5, 6),
+                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        Array.of()
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of()
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        Array.of(1, 2, 3, 4, 5)
+                ),
+                Arguments.of(
+                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        Array.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+                        RingBuffer.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                ),
+                Arguments.of(
+                        RingBuffer.of(),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
     }
 
     private static Stream<Arguments> provideForPutAllOnLastOrReplace_array() {
-        RingBuffer<Integer> notFilledBufferOrigin = new RingBuffer<>(10);
-        notFilledBufferOrigin.putAllOnLastOrSkip(1, 2, 3, 4, 5, 6);
-        RingBuffer<Integer> notFilledBufferExpected = new RingBuffer<>(10);
-        notFilledBufferExpected.putAllOnLastOrSkip(1, 2, 3, 4, 5, 6, 100);
-
         return Stream.of(
-                Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        new Integer[]{100},
-                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 100),
-                        Array.of(1)
-                ),
-                Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        new Integer[]{100, 200, 300, 400, 500},
-                        RingBuffer.of(6, 7, 8, 9, 10, 100, 200, 300, 400, 500),
-                        Array.of(1, 2, 3, 4, 5)
-                ),
-                Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        new Integer[]{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500},
-                        RingBuffer.of(600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100, 200, 300, 400, 500)
-                ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[0],
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         Array.of()
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        new Integer[]{11},
+                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        Array.of(1)
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        new Integer[]{11, 12, 13, 14, 15},
+                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        Array.of(1, 2, 3, 4, 5)
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        new Integer[]{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25},
+                        RingBuffer.of(16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        new Integer[]{1, 2, 3, 4, 5, 6},
+                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        Array.of()
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of()
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        Array.of(1, 2, 3, 4, 5)
+                ),
+                Arguments.of(
+                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        new Integer[]{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+                        RingBuffer.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                ),
+                Arguments.of(
+                        RingBuffer.of(),
+                        new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+                        RingBuffer.of(),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForPutLastOrSkip() {
+        return Stream.of(
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        11,
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        false
+                ),
+                Arguments.of(
+                        RingBuffer.of(1),
+                        2,
+                        RingBuffer.of(1),
+                        false
+                ),
+                Arguments.of(
+                        RingBuffer.of(),
+                        1,
+                        RingBuffer.of(),
+                        false
+                ),
+                Arguments.of(
+                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        6,
+                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        true
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        1,
+                        RingBuffer.of(1),
+                        true
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForPutAllOnLastOrSkip_iterable() {
+        return Stream.of(
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of(),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of(11),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of(11, 12, 13, 14, 15),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        Array.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        Array.of(1, 2, 3, 4, 5, 6),
+                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        6
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        10
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        10
+                ),
+                Arguments.of(
+                        RingBuffer.withExtraSize(6, 1, 2, 3, 4, 5),
+                        Array.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        6
+                ),
+                Arguments.of(
+                        RingBuffer.of(),
+                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(),
+                        0
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForPutAllOnLastOrSkip_array() {
+        return Stream.of(
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        new Integer[0],
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        new Integer[]{11},
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        new Integer[]{11, 12, 13, 14, 15},
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        new Integer[]{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25},
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        new Integer[]{1, 2, 3, 4, 5, 6},
+                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        6
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        10
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        10
+                ),
+                Arguments.of(
+                        RingBuffer.withExtraSize(6, 1, 2, 3, 4, 5),
+                        new Integer[]{6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        6
+                ),
+                Arguments.of(
+                        RingBuffer.of(),
+                        new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+                        RingBuffer.of(),
+                        0
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForRemoveFirst() {
+        return Stream.of(
+                Arguments.of(
+                        RingBuffer.of(),
+                        RingBuffer.of(),
+                        null
+                ),
+                Arguments.of(
+                        RingBuffer.of(1),
+                        new RingBuffer<>(1),
+                        1
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.withExtraSize(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        1
+                ),
+                Arguments.of(
+                        RingBuffer.of(new Integer[]{null}),
+                        new RingBuffer<>(1),
+                        null
+                ),
+                Arguments.of(
+                        RingBuffer.of(null, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.withExtraSize(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        null
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForGrow() {
+        return Stream.of(
+                Arguments.of(
+                        RingBuffer.of(),
+                        0,
+                        RingBuffer.of()
+                ),
+                Arguments.of(
+                        RingBuffer.of(),
+                        10,
+                        new RingBuffer<>(10)
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        0,
+                        new RingBuffer<>(10)
+                ),
+                Arguments.of(
+                        new RingBuffer<>(10),
+                        10,
+                        new RingBuffer<>(20)
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        0,
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        10,
+                        RingBuffer.withExtraSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
     }
