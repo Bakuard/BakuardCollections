@@ -35,8 +35,11 @@ public class DequeTest {
                 expectedCopy {2}
             """)
     @MethodSource("provideForDequeConstructor2")
-    void Deque_copy2(Deque<Integer> origin, Deque<Integer> expectedOrigin, Deque<Integer> expectedCopy,
-                     Consumer<Deque<Integer>> originMutator, Consumer<Deque<Integer>> copyMutator) {
+    void Deque_copy2(Deque<Integer> origin,
+                     Deque<Integer> expectedOrigin,
+                     Deque<Integer> expectedCopy,
+                     Consumer<Deque<Integer>> originMutator,
+                     Consumer<Deque<Integer>> copyMutator) {
         Deque<Integer> actualCopy = new Deque<>(origin);
 
         originMutator.accept(origin);
@@ -68,8 +71,11 @@ public class DequeTest {
                 expected queue {2}
             """)
     @MethodSource("provideForOf2")
-    void of2(Integer[] data, Integer[] expectedData, Deque<Integer> expectedQueue,
-             Consumer<Integer[]> dataMutator, Consumer<Deque<Integer>> queueMutator) {
+    void of2(Integer[] data,
+             Integer[] expectedData,
+             Deque<Integer> expectedQueue,
+             Consumer<Integer[]> dataMutator,
+             Consumer<Deque<Integer>> queueMutator) {
         Deque<Integer> actual = Deque.of(data);
 
         dataMutator.accept(data);

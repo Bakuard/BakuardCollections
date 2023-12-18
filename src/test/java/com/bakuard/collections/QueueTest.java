@@ -11,7 +11,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class QueueTest {
@@ -36,8 +35,11 @@ public class QueueTest {
                 expectedCopy {2}
             """)
     @MethodSource("provideForQueueConstructor2")
-    void Queue_copy2(Queue<Integer> origin, Queue<Integer> expectedOrigin, Queue<Integer> expectedCopy,
-                     Consumer<Queue<Integer>> originMutator, Consumer<Queue<Integer>> copyMutator) {
+    void Queue_copy2(Queue<Integer> origin,
+                     Queue<Integer> expectedOrigin,
+                     Queue<Integer> expectedCopy,
+                     Consumer<Queue<Integer>> originMutator,
+                     Consumer<Queue<Integer>> copyMutator) {
         Queue<Integer> actualCopy = new Queue<>(origin);
 
         originMutator.accept(origin);
@@ -69,8 +71,11 @@ public class QueueTest {
                 expected queue {2}
             """)
     @MethodSource("provideForOf2")
-    void of2(Integer[] data, Integer[] expectedData, Queue<Integer> expectedQueue,
-             Consumer<Integer[]> dataMutator, Consumer<Queue<Integer>> queueMutator) {
+    void of2(Integer[] data,
+             Integer[] expectedData,
+             Queue<Integer> expectedQueue,
+             Consumer<Integer[]> dataMutator,
+             Consumer<Queue<Integer>> queueMutator) {
         Queue<Integer> actual = Queue.of(data);
 
         dataMutator.accept(data);
@@ -86,7 +91,7 @@ public class QueueTest {
     @ParameterizedTest(name = """
              origin queue is {0}
              value is {1}
-             => expected queue {2}
+             => expected queue is {2}
             """)
     @MethodSource("provideForPutLast")
     void putLast(Queue<Integer> originQueue, Integer addedValue, Queue<Integer> expectedQueue) {
@@ -99,7 +104,7 @@ public class QueueTest {
     @ParameterizedTest(name = """
              origin queue is {0}
              iterable is {1}
-             => expected queue {2}
+             => expected queue is {2}
             """)
     @MethodSource("provideForPutAllOnLastIterable")
     void putAllOnLast_Iterable(Queue<Integer> originQueue, Iterable<Integer> iterable, Queue<Integer> expectedQueue) {
@@ -112,7 +117,7 @@ public class QueueTest {
     @ParameterizedTest(name = """
              origin queue is {0}
              data is {1}
-             => expected queue {2}
+             => expected queue is {2}
             """)
     @MethodSource("provideForPutAllOnLastData")
     void putAllOnLast_Data(Queue<Integer> originQueue, Integer[] data, Queue<Integer> expectedQueue) {
@@ -124,8 +129,8 @@ public class QueueTest {
     @DisplayName("removeFirst():")
     @ParameterizedTest(name = """
              origin queue is {0}
-             => expected queue {1}
-                returned item {2}
+             => expected queue is {1}
+                returned item is {2}
             """)
     @MethodSource("provideForRemoveFirst")
     void removeFirst(Queue<Integer> originQueue, Queue<Integer> expectedQueue, Integer expectedItem) {
@@ -140,8 +145,8 @@ public class QueueTest {
     @DisplayName("tryRemoveFirst():")
     @ParameterizedTest(name = """
              origin queue is {0}
-             => expected queue {1}
-                returned item {2}
+             => putLastOrReplace is {1}
+                returned item is {2}
             """)
     @MethodSource("provideForTryRemoveFirst")
     void tryRemoveFirst(Queue<Integer> originQueue, Queue<Integer> expectedQueue, Integer expectedItem) {
@@ -165,7 +170,7 @@ public class QueueTest {
     @DisplayName("clear():")
     @ParameterizedTest(name = """
              origin queue is {0}
-             => expected queue {1}
+             => putLastOrReplace is {1}
             """)
     @MethodSource("provideForClear")
     void clear(Queue<Integer> originQueue, Queue<Integer> expectedQueue) {

@@ -14,7 +14,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     /**
      * Создает и возвращает очередь содержащую указанные элементы в указанном порядке. Итоговая очередь будет содержать
      * копию передаваемого массива, а не сам массив. Длина создаваемого объекта ({@link #size()})
-     * будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит ни одного элемента -
+     * будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит ни одного элемента, то
      * создает пустую очередь.
      * @param data элементы включаемые в создаваемую очередь.
      * @throws NullPointerException если передаваемый массив элементов равен null.
@@ -64,13 +64,13 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         int currentSize = size();
         grow(currentSize, currentSize + 1);
         values[lastItemIndex] = value;
-        lastItemIndex = ++lastItemIndex % values.length;
+        lastItemIndex = (lastItemIndex + 1) % values.length;
     }
 
     /**
      * Добавляет каждый элемент из указанной перебираемой структуры данных в конец очереди. Элементы
      * добавляются в порядке их возвращения итератором.
-     * @param iterable структура данных, все элементы которого добавляются в текущую очередь.
+     * @param iterable структура данных, все элементы которой добавляются в текущую очередь.
      */
     public void putAllOnLast(Iterable<T> iterable) {
         for(T value: iterable) putLast(value);
@@ -88,12 +88,12 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         grow(currentSize, currentSize + data.length);
         for(T item : data) {
             values[lastItemIndex] = item;
-            lastItemIndex = ++lastItemIndex % values.length;
+            lastItemIndex = (lastItemIndex + 1) % values.length;
         }
     }
 
     /**
-     * Удаляет элемент из начала очереди и возвращает его. Если очередь пуста - возвращает null. <br/>
+     * Удаляет элемент из начала очереди и возвращает его. Если очередь пуста, то возвращает null. <br/>
      * <b>ВАЖНО!</b> Т.к. очередь допускает хранение null элементов, то возвращение данным методом
      * null в качестве результата не гарантирует, что очередь пуста. Для проверки наличия элементов
      * в очереди используйте методы {@link #size()} или {@link #isEmpty()}.
@@ -105,7 +105,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         if(!isEmpty()) {
             result = values[firstItemIndex];
             values[firstItemIndex] = null;
-            firstItemIndex = ++firstItemIndex % values.length;
+            firstItemIndex = (firstItemIndex + 1) % values.length;
         }
 
         return result;
@@ -138,7 +138,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
 
     /**
      * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
-     * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
+     * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
      * памяти занимаемый объектом Queue.
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
@@ -146,7 +146,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     public boolean trimToSize() {
         ++actualModCount;
 
-        int size = size();
+        int size = Math.max(MIN_CAPACITY - 1, size());
         boolean isTrim = size < values.length;
 
         if(isTrim) repackInnerArray(size, size + 1);
@@ -246,7 +246,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
 
     /**
      * Создает и возвращает итератор, позволяющий последовательно перебрать очередь в обоих направлениях.
-     * Сразу после создания, курсор итератора установлен перед элементом {@link #getFirst()}.
+     * Сразу после создания, курсор итератора установлен перед первым элементом.
      */
     @Override
     public IndexedIterator<T> iterator() {
@@ -254,8 +254,8 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     }
 
     /**
-     * Выполняет линейный перебор элементов очереди начиная с элемента {@link #getFirst()} в направлении
-     * элемента {@link #getLast()}. При этом для каждого элемента выполняется указанная операция action.
+     * Выполняет линейный перебор элементов очереди начиная с первого элемента в направлении
+     * последнего. При этом для каждого элемента выполняется указанная операция action.
      * @param action действие выполняемое для каждого элемента хранящегося в данной очереди.
      * @throws ConcurrentModificationException если очередь изменяется в момент выполнения этого метода.
      */
@@ -324,9 +324,9 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         if(firstItemIndex < lastItemIndex) {
             System.arraycopy(values, firstItemIndex, newValues, 0, currentSize);
         } else if(firstItemIndex > lastItemIndex) {
-            int firstHalfSize = values.length - firstItemIndex;
-            System.arraycopy(values, firstItemIndex, newValues, 0, firstHalfSize);
-            System.arraycopy(values, 0, newValues, firstHalfSize, lastItemIndex);
+            int lengthBeforeWrap = values.length - firstItemIndex;
+            System.arraycopy(values, firstItemIndex, newValues, 0, lengthBeforeWrap);
+            System.arraycopy(values, 0, newValues, lengthBeforeWrap, lastItemIndex);
         }
 
         values = newValues;
