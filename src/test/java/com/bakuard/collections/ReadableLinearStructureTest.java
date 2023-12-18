@@ -1,5 +1,7 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.testUtil.Mutator;
+import com.bakuard.collections.testUtil.StructAndMutator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -7,7 +9,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 class ReadableLinearStructureTest {
@@ -77,8 +78,8 @@ class ReadableLinearStructureTest {
             """)
     @MethodSource("provideForSizeMethod")
     void size(ReadableLinearStructure<Integer> linearStructure, Integer expected,
-              Consumer<ReadableLinearStructure<Integer>> mutator) {
-        mutator.accept(linearStructure);
+              Mutator<Integer, ReadableLinearStructure<Integer>> mutator) {
+        mutator.mutate(linearStructure);
 
         Integer actual = linearStructure.size();
 
@@ -92,8 +93,8 @@ class ReadableLinearStructureTest {
             """)
     @MethodSource("provideForEmptyMethod")
     void isEmpty(ReadableLinearStructure<Integer> linearStructure, boolean expected,
-                 Consumer<ReadableLinearStructure<Integer>> mutator) {
-        mutator.accept(linearStructure);
+                 Mutator<Integer, ReadableLinearStructure<Integer>> mutator) {
+        mutator.mutate(linearStructure);
 
         boolean actual = linearStructure.isEmpty();
 
@@ -209,476 +210,287 @@ class ReadableLinearStructureTest {
         return obj instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>)obj);
     }
 
+    private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
+        return Stream.of(
+                Array.of(data),
+                Stack.of(data),
+                Queue.of(data),
+                RingBuffer.of(data)
+        );
+    }
+
+    private static <T> Stream<StructAndMutator<T, ? extends ReadableLinearStructure<T>>> structuresWithMutators(
+            T[] data, int removedItemsNumber, T[] addedData) {
+        return Stream.of(
+                new StructAndMutator<>(
+                        Array.of(data),
+                        array -> {
+                            for(int i = 0; i < removedItemsNumber; i++) array.orderedRemove(0);
+                            for(T item : addedData) array.append(item);
+                        }
+                ),
+                new StructAndMutator<>(
+                        Stack.of(data),
+                        stack -> {
+                            for(int i = 0; i < removedItemsNumber; i++) stack.removeLast();
+                            for(T item : addedData) stack.putLast(item);
+                        }
+                ),
+                new StructAndMutator<>(
+                        Queue.of(data),
+                        queue -> {
+                            for(int i = 0; i < removedItemsNumber; i++) queue.removeFirst();
+                            for(T item : addedData) queue.putLast(item);
+                        }
+                ),
+                new StructAndMutator<>(
+                        RingBuffer.of(data),
+                        buffer -> {
+                            for(int i = 0; i < removedItemsNumber; i++) buffer.removeFirst();
+                            for(T item : addedData) buffer.putLastOrReplace(item);
+                        }
+                )
+        );
+    }
+
     private static Stream<Arguments> provideForGetMethod() {
         return Stream.of(
-                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        -1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        -1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        -1, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        10, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        10, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        10, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        11, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        11, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        11, IndexOutOfBoundsException.class),
+                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
+                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, 10, IndexOutOfBoundsException.class)),
+                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, 11, IndexOutOfBoundsException.class)),
 
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        0, 10),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        0, 10),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        0, 10),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        9, 100),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        9, 100),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        9, 100),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        5, 60),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        5, 60),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        5, 60),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        5, null),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        5, null),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        5, null),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 0, 10)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 9, 100)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 5, 60)),
+                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 5, null)),
 
-                Arguments.of(Array.of(), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(), 0, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(), 0, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(), 0, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(), 1, IndexOutOfBoundsException.class),
+                structures().map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
+                structures().map(struct -> Arguments.of(struct, 0, IndexOutOfBoundsException.class)),
+                structures().map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class)),
 
-                Arguments.of(Array.of(1000), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(1000), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(1000), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(1000), 0, 1000),
-                Arguments.of(Stack.of(1000), 0, 1000),
-                Arguments.of(Queue.of(1000), 0, 1000),
-                Arguments.of(Array.of(1000), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(1000), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(1000), 1, IndexOutOfBoundsException.class)
-        );
+                structures(1000).map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
+                structures(1000).map(struct -> Arguments.of(struct, 0, 1000)),
+                structures(1000).map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForAtMethod() {
         return Stream.of(
-                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        -11, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        -11, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        -11, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        10, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        10, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        10, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        11, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        11, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, null),
-                        11, IndexOutOfBoundsException.class),
+                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, -11, IndexOutOfBoundsException.class)),
+                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, 10, IndexOutOfBoundsException.class)),
+                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, 11, IndexOutOfBoundsException.class)),
 
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        0, 10),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        0, 10),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        0, 10),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        9, 100),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        9, 100),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        9, 100),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        5, 60),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        5, 60),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        5, 60),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        5, null),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        5, null),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        5, null),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        -1, 100),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        -1, 100),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        -1, 100),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        -10, 10),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        -10, 10),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, null, 70, 80, 90, 100),
-                        -10, 10),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        -5, 60),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        -5, 60),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),
-                        -5, 60),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 0, 10)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 9, 100)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 5, 60)),
+                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 5, null)),
+                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -1, 100)),
+                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -10, 10)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -5, 60)),
 
-                Arguments.of(Array.of(), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(), -1, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(), 0, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(), 0, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(), 0, IndexOutOfBoundsException.class),
-                Arguments.of(Array.of(), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(), 1, IndexOutOfBoundsException.class),
+                structures().map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
+                structures().map(struct -> Arguments.of(struct, 0, IndexOutOfBoundsException.class)),
+                structures().map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class)),
 
-                Arguments.of(Array.of(1000), -1, 1000),
-                Arguments.of(Stack.of(1000), -1, 1000),
-                Arguments.of(Queue.of(1000), -1, 1000),
-                Arguments.of(Array.of(1000), 0, 1000),
-                Arguments.of(Stack.of(1000), 0, 1000),
-                Arguments.of(Queue.of(1000), 0, 1000),
-                Arguments.of(Array.of(1000), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Stack.of(1000), 1, IndexOutOfBoundsException.class),
-                Arguments.of(Queue.of(1000), 1, IndexOutOfBoundsException.class)
-        );
+                structures(1000).map(struct -> Arguments.of(struct, -1, 1000)),
+                structures(1000).map(struct -> Arguments.of(struct, 0, 1000)),
+                structures(1000).map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForGetFirstMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), null),
-                Arguments.of(Stack.of(), null),
-                Arguments.of(Queue.of(), null),
-
-                Arguments.of(Array.of(1000), 1000),
-                Arguments.of(Stack.of(1000), 1000),
-                Arguments.of(Queue.of(1000), 1000),
-
-                Arguments.of(Array.of(null, 1, 2, 3, 4, null, 6 ,7 , null, 9), null),
-                Arguments.of(Stack.of(null, 1, 2, 3, 4, null, 6 ,7 , null, 9), null),
-                Arguments.of(Queue.of(null, 1, 2, 3, 4, null, 6 ,7 , null, 9), null),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10)
-        );
+                structures().
+                        map(struct -> Arguments.of(struct, null)),
+                structures(1000).
+                        map(struct -> Arguments.of(struct, 1000)),
+                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, 9).
+                        map(struct -> Arguments.of(struct, null)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 10))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForGetLastMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), null),
-                Arguments.of(Stack.of(), null),
-                Arguments.of(Queue.of(), null),
-
-                Arguments.of(Array.of(1000), 1000),
-                Arguments.of(Stack.of(1000), 1000),
-                Arguments.of(Queue.of(1000), 1000),
-
-                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), null),
-                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), null),
-                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), null),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 100),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 100),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 100)
-        );
+                structures().
+                        map(struct -> Arguments.of(struct, null)),
+                structures(1000).
+                        map(struct -> Arguments.of(struct, 1000)),
+                structures(0, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, null)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 100))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForSizeMethod() {
-        Consumer<ReadableLinearStructure<Integer>> mutator = readableLinearStructure -> {};
-
+        Mutator<Integer, ReadableLinearStructure<Integer>> mutator = struct -> {};
         return Stream.of(
-                Arguments.of(Array.of(), 0, mutator),
-                Arguments.of(Stack.of(), 0, mutator),
-                Arguments.of(Queue.of(), 0, mutator),
-
-                Arguments.of(Array.of(1000), 1, mutator),
-                Arguments.of(Stack.of(1000), 1, mutator),
-                Arguments.of(Queue.of(1000), 1, mutator),
-
-                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 10, mutator),
-                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 10, mutator),
-                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 10, mutator),
-
-                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6, 7, null, null), 7,
-                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
-                            Array<Integer> array = (Array<Integer>) structure;
-                            for(int i = 0; i < 7; i++) array.orderedRemove(0);
-                            for(int i = 0; i < 4; i++) array.append(100);
-                        }),
-                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 7,
-                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
-                            Stack<Integer> stack = (Stack<Integer>) structure;
-                            for(int i = 0; i < 7; i++) stack.removeLast();
-                            for(int i = 0; i < 4; i++) stack.putLast(1000);
-                        }),
-                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), 7,
-                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
-                            Queue<Integer> queue = (Queue<Integer>) structure;
-                            for(int i = 0; i < 7; i++) queue.removeFirst();
-                            for(int i = 0; i < 4; i++) queue.putLast(1000);
-                        })
-        );
+                structures().map(struct -> Arguments.of(struct, 0, mutator)),
+                structures(1000).map(struct -> Arguments.of(struct, 1, mutator)),
+                structures(0, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, 10, mutator)),
+                structuresWithMutators(new Integer[]{0, 1, 2, 3, 4, null, 6, 7, null, null},
+                        7,
+                        new Integer[] {100, 100, 100, 100}).
+                        map(structAndMutator -> Arguments.of(structAndMutator.struct(), 7, structAndMutator.mutator()))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForEmptyMethod() {
-        Consumer<ReadableLinearStructure<Integer>> mutator = readableLinearStructure -> {};
-
+        Mutator<Integer, ReadableLinearStructure<Integer>> mutator = struct -> {};
         return Stream.of(
-                Arguments.of(Array.of(), true, mutator),
-                Arguments.of(Stack.of(), true, mutator),
-                Arguments.of(Queue.of(), true, mutator),
-
-                Arguments.of(Array.of(1000), false, mutator),
-                Arguments.of(Stack.of(1000), false, mutator),
-                Arguments.of(Queue.of(1000), false, mutator),
-
-                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false, mutator),
-                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false, mutator),
-                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false, mutator),
-
-                Arguments.of(Array.of(0, 1, 2, 3, 4, null, 6, 7, null, null), false,
-                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
-                            Array<Integer> array = (Array<Integer>) structure;
-                            for(int i = 0; i < 10; i++) array.orderedRemove(0);
-                            for(int i = 0; i < 1; i++) array.append(100);
-                        }),
-                Arguments.of(Stack.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false,
-                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
-                            Stack<Integer> stack = (Stack<Integer>) structure;
-                            for(int i = 0; i < 10; i++) stack.removeLast();
-                            for(int i = 0; i < 1; i++) stack.putLast(1000);
-                        }),
-                Arguments.of(Queue.of(0, 1, 2, 3, 4, null, 6 ,7 , null, null), false,
-                        (Consumer<ReadableLinearStructure<Integer>>) structure -> {
-                            Queue<Integer> queue = (Queue<Integer>) structure;
-                            for(int i = 0; i < 10; i++) queue.removeFirst();
-                            for(int i = 0; i < 1; i++) queue.putLast(1000);
-                        })
-        );
+                structures().map(struct -> Arguments.of(struct, true, mutator)),
+                structures(1000).map(struct -> Arguments.of(struct, false, mutator)),
+                structures(0, 1, 2, 3, 4, null, 6 ,7 , null, null).
+                        map(struct -> Arguments.of(struct, false, mutator)),
+                structuresWithMutators(new Integer[]{0, 1, 2, 3, 4, null, 6, 7, null, null},
+                        7,
+                        new Integer[] {100, 100, 100, 100}).
+                        map(structAndMutator -> Arguments.of(structAndMutator.struct(), false, structAndMutator.mutator()))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForInBoundMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 0, false),
-                Arguments.of(Stack.of(), 0, false),
-                Arguments.of(Queue.of(), 0, false),
+                structures().map(struct -> Arguments.of(struct, 0, false)),
 
-                Arguments.of(Array.of(100), 0, true),
-                Arguments.of(Stack.of(100), 0, true),
-                Arguments.of(Queue.of(100), 0, true),
-                Arguments.of(Array.of(100), 1, false),
-                Arguments.of(Stack.of(100), 1, false),
-                Arguments.of(Queue.of(100), 1, false),
-                Arguments.of(Array.of(100), -1, false),
-                Arguments.of(Stack.of(100), -1, false),
-                Arguments.of(Queue.of(100), -1, false),
+                structures(100).map(struct -> Arguments.of(struct, 0, true)),
+                structures(100).map(struct -> Arguments.of(struct, 1, false)),
+                structures(100).map(struct -> Arguments.of(struct, -1, false)),
 
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, false),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true)
-        );
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -1, false)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 10, false)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 11, false)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 0, true)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 9, true)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 5, true))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForInBoundByModuloMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 0, false),
-                Arguments.of(Stack.of(), 0, false),
-                Arguments.of(Queue.of(), 0, false),
+                structures().map(struct -> Arguments.of(struct, 0, false)),
 
-                Arguments.of(Array.of(100), 0, true),
-                Arguments.of(Stack.of(100), 0, true),
-                Arguments.of(Queue.of(100), 0, true),
-                Arguments.of(Array.of(100), 1, false),
-                Arguments.of(Stack.of(100), 1, false),
-                Arguments.of(Queue.of(100), 1, false),
-                Arguments.of(Array.of(100), -1, true),
-                Arguments.of(Stack.of(100), -1, true),
-                Arguments.of(Queue.of(100), -1, true),
+                structures(100).map(struct -> Arguments.of(struct, 0, true)),
+                structures(100).map(struct -> Arguments.of(struct, 1, false)),
+                structures(100).map(struct -> Arguments.of(struct, -1, true)),
 
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -1, true),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -10, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -10, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -10, true),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -5, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -5, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -5, true),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -11, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -11, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), -11, false),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -1, true)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -10, true)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -5, true)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, -11, false)),
 
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 10, false),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 11, false),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 0, true),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 9, true),
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 5, true)
-        );
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 10, false)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 11, false)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 0, true)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 9, true)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 5, true))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForLinearSearchMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 1000, -1),
-                Arguments.of(Stack.of(), 1000, -1),
-                Arguments.of(Queue.of(), 1000, -1),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
-
-                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
-                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
-                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3)
-        );
+                structures().map(struct -> Arguments.of(struct, 1000, -1)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 1000, -1)),
+                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, 40, 3)),
+                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, null, 3))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForLinearSearchWithPredicateMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 1000, -1),
-                Arguments.of(Stack.of(), 1000, -1),
-                Arguments.of(Queue.of(), 1000, -1),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 3),
-
-                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
-                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3),
-                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 3)
-        );
+                structures().map(struct -> Arguments.of(struct, 1000, -1)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 1000, -1)),
+                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, 40, 3)),
+                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, null, 3))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForLinearSearchLastMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 1000, -1),
-                Arguments.of(Stack.of(), 1000, -1),
-                Arguments.of(Queue.of(), 1000, -1),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, -1),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 6),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 6),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 6),
-
-                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 6),
-                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 6),
-                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 6)
-        );
+                structures().map(struct -> Arguments.of(struct, 1000, -1)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 1000, -1)),
+                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, 40, 6)),
+                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, null, 6))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForContainsMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 1000, false),
-                Arguments.of(Stack.of(), 1000, false),
-                Arguments.of(Queue.of(), 1000, false),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
-
-                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
-                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
-                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true)
-        );
+                structures().map(struct -> Arguments.of(struct, 1000, false)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 1000, false)),
+                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, 40, true)),
+                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, null, true))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForContainsWithPredicateMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 1000, false),
-                Arguments.of(Stack.of(), 1000, false),
-                Arguments.of(Queue.of(), 1000, false),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, false),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, true),
-
-                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
-                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true),
-                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, true)
-        );
+                structures().map(struct -> Arguments.of(struct, 1000, false)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 1000, false)),
+                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, 40, true)),
+                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, null, true))
+        ).flatMap(stream -> stream);
     }
 
     private static Stream<Arguments> provideForFrequencyMethod() {
         return Stream.of(
-                Arguments.of(Array.of(), 1000, 0),
-                Arguments.of(Stack.of(), 1000, 0),
-                Arguments.of(Queue.of(), 1000, 0),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, 0),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, 0),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 1000, 0),
-
-                Arguments.of(Array.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 2),
-                Arguments.of(Stack.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 2),
-                Arguments.of(Queue.of(10, 20, 30, 40, 50, 50, 40, 30, 20, 10), 40, 2),
-
-                Arguments.of(Array.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 2),
-                Arguments.of(Stack.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 2),
-                Arguments.of(Queue.of(10, 20, 30, null, 50, 50, null, 30, 20, 10), null, 2)
-        );
+                structures().map(struct -> Arguments.of(struct, 1000, 0)),
+                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
+                        map(struct -> Arguments.of(struct, 1000, 0)),
+                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, 40, 2)),
+                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
+                        map(struct -> Arguments.of(struct, null, 2))
+        ).flatMap(stream -> stream);
     }
-
 }

@@ -70,7 +70,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     /**
      * Добавляет каждый элемент из указанной перебираемой структуры данных в конец очереди. Элементы
      * добавляются в порядке их возвращения итератором.
-     * @param iterable структура данных, все элементы которого добавляются в текущую очередь.
+     * @param iterable структура данных, все элементы которой добавляются в текущую очередь.
      */
     public void putAllOnLast(Iterable<T> iterable) {
         for(T value: iterable) putLast(value);

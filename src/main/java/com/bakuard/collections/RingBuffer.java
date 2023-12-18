@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.exceptions.MaxSizeExceededException;
+import com.bakuard.collections.exceptions.NotPositiveSizeException;
 import com.bakuard.collections.exceptions.NegativeSizeException;
 
 import java.util.*;
@@ -21,7 +22,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @throws NullPointerException если передаваемый массив элементов равен null.
      */
     public static <T> RingBuffer<T> of(T... data) {
-        if(data == null) throw new NullPointerException("data[] can not be null.");
+        if(data == null) {
+            throw new NullPointerException("data[] can not be null.");
+        }
 
         RingBuffer<T> result = new RingBuffer<>(data.length);
         result.putAllOnLastOrSkip(data);
@@ -42,7 +45,7 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     @SuppressWarnings("unchecked")
     public RingBuffer(int maxSize) {
         if(maxSize < 0) {
-            throw new NegativeSizeException("Expected: maxSize can't be less then zero. Actual: maxSize=" + maxSize);
+            throw new NegativeSizeException("Expected: maxSize must be greater then zero. Actual: maxSize=" + maxSize);
         }
         values = (T[]) new Object[maxSize];
     }
@@ -63,38 +66,51 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param iterable структура данных, элементы которой копируются в новый буфер.
      */
     public RingBuffer(Iterable<T> iterable) {
-        this(0);
-
         Array<T> tempBuffer = new Array<>();
         tempBuffer.appendAll(iterable);
 
-        if(!tempBuffer.isEmpty()) {
-            values = tempBuffer.toArray();
-            currentSize = tempBuffer.size();
-        }
+        values = tempBuffer.toArray();
+        currentSize = tempBuffer.size();
     }
 
     /**
-     * Добавляет элемент в конец циклического буфера. Если на момент вызова этого метода циклический буфер полон
-     * (см. {@link #isFull()}), то первый элемент будет перезаписан, а его исходное значение возращено данным методом.
-     * В противном случае текущий размер буфера будет увеличен на единицу, а данный метод вернет null.
+     * Добавляет элемент в конец циклического буфера. <br/>
+     * 1. Если {@link #maxSize()} > 0 и {@link #hasAvailableSpace()} == false, перезаписывает первый элемент
+     *    делая его последним. Возвращает предыдущее значение перезаписанного элемента. <br/>
+     * 2. Если {@link #maxSize()} > 0 и {@link #hasAvailableSpace()} == true, добавляет элемент в конец циклического
+     *    буфера и возвращает null. <br/>
+     * 3. Если {@link #maxSize()} == 0, сразу-же возвращает добавляемый элемент.
      * <br/><br/>
+     * Пример ({@link #maxSize()} > 0 и {@link #hasAvailableSpace()} == false):
+     * <pre>
+     * {@code
+     *      RingBuffer<Integer> buffer = RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+     *
+     *      Integer oldValue = buffer.putLastOrReplace(100);
+     *
+     *      System.out.println(oldValue); // 1
+     *      System.out.println(buffer): // RingBuffer{currentSize=10, [2,3,4,5,6,7,8,9,10,100]}
+     *      System.out.println(buffer.getFirst()); // 2
+     * }
+     * </pre>
      * <b>ВАЖНО!</b> Т.к. циклический буфер допускает хранение null элементов, то возвращение данным методом
      * null в качестве результата не гарантирует, что буфер НЕ заполнен. Для проверки текущего размера буфера, а также
      * заполнен он или же является пустым, используйте методы {@link #size()}, {@link #maxSize()}, {@link #isEmpty()}
-     * или {@link #isFull()}.
+     * или {@link #hasAvailableSpace()}.
      * @param value добавляемый элемент.
      */
     public T putLastOrReplace(T value) {
         ++actualModCount;
 
         T rewritingValue = null;
-        if(isFull()) {
+        if(maxSize() == 0) {
+            rewritingValue = value;
+        } else if(hasAvailableSpace()) {
+            values[(firstItemIndex + currentSize++) % values.length] = value;
+        } else {
             rewritingValue = values[firstItemIndex];
             values[firstItemIndex] = value;
             firstItemIndex = (firstItemIndex + 1) % values.length;
-        } else {
-            values[(firstItemIndex + currentSize++) % values.length] = value;
         }
 
         return rewritingValue;
@@ -102,9 +118,15 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
 
     /**
      * Добавляет в конец циклического буфера все элементы возвращаемые итератором. Порядок добавления элементов
-     * соответствует порядку их возвращения итератором. Для каждого добавляемого элемента выполняется порядок
-     * действий описанный для метода {@link #putLastOrReplace(Object)}. Возвращает все перезаписанные элементы.
-     * @param iterable структура данных, все элементы которого добавляются в текущий циклический буфер.
+     * соответствует порядку их возвращения итератором. Для каждого добавляемого элемента, в момент его добавления,
+     * выполняется один из следующих сценариев: <br/>
+     * 1. Если {@link #maxSize()} > 0 и {@link #hasAvailableSpace()} == false, перезаписывает первый элемент
+     *    циклического буфера делая его последним. Предыдущее значение перезаписанного элемента добавляет к
+     *    возвращаемому результату. <br/>
+     * 2. Если {@link #maxSize()} > 0 и {@link #hasAvailableSpace()} == true, добавляет элемент в конец циклического
+     *    буфера. Ничего не добавляет к возвращаемому результату. <br/>
+     * 3. Если {@link #maxSize()} == 0, сразу-же добавляет элемент к возвращаемому результату.
+     * @param iterable структура данных, все элементы которой добавляются в текущий циклический буфер.
      * @return все перезаписанные элементы.
      */
     public Array<T> putAllOnLastOrReplace(Iterable<T> iterable) {
@@ -112,7 +134,7 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
 
         Array<T> rewritingValues = new Array<>();
         for(T value : iterable) {
-            boolean valueWasRewriting = isFull();
+            boolean valueWasRewriting = !hasAvailableSpace();
             T rewritingValue = putLastOrReplace(value);
             if(valueWasRewriting) rewritingValues.append(rewritingValue);
         }
@@ -121,9 +143,15 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Добавляет в конец циклического буфера все элементы из массива data. Порядок добавления соответствует порядку
-     * следования элементов в массиве. Для каждого добавляемого элемента выполняется порядок действий описанный
-     * для метода {@link #putLastOrReplace(Object)}. Возвращает все перезаписанные элементы.
+     * Добавляет в конец циклического буфера все элементы массива data. Порядок добавления элементов
+     * соответствует порядку их следования в массиве. Для каждого добавляемого элемента, в момент его добавления,
+     * выполняется один из следующих сценариев: <br/>
+     * 1. Если {@link #maxSize()} > 0 и {@link #hasAvailableSpace()} == false, перезаписывает первый элемент
+     *    циклического буфера делая его последним. Предыдущее значение перезаписанного элемента добавляет к
+     *    возвращаемому результату. <br/>
+     * 2. Если {@link #maxSize()} > 0 и {@link #hasAvailableSpace()} == true, добавляет элемент в конец циклического
+     *    буфера. Ничего не добавляет к возвращаемому результату. <br/>
+     * 3. Если {@link #maxSize()} == 0, сразу-же добавляет элемент к возвращаемому результату.
      * @param data массив, все элементы которого добавляются в текущий циклический буфер.
      * @return все перезаписанные элементы.
      */
@@ -132,7 +160,7 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
 
         Array<T> rewritingValues = new Array<>();
         for(T value : data) {
-            boolean valueWasRewriting = isFull();
+            boolean valueWasRewriting = !hasAvailableSpace();
             T rewritingValue = putLastOrReplace(value);
             if(valueWasRewriting) rewritingValues.append(rewritingValue);
         }
@@ -141,16 +169,17 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Пробует добавить элемент в конец циклического буфера. Если на момент вызова этого метода циклический буфер полон
-     * (см. {@link #isFull()}), то элемент не будет добавлен, а метод вернет false. В противном случае элемент будет
-     * добавлен в конец циклического буфера, текущий размер буфера будет увеличен на единицу, а данный метод вернет true.
+     * Пробует добавить элемент в конец циклического буфера. Если на момент вызова этого метода
+     * {@link #hasAvailableSpace()} возвращает false, то элемент не будет добавлен, а метод вернет false.
+     * В противном случае элемент будет добавлен в конец циклического буфера, текущий размер буфера будет увеличен на
+     * единицу, а данный метод вернет true.
      * @param value добавляемый элемент.
      * @return true - если удалось добавить элемент, иначе - false.
      */
     public boolean putLastOrSkip(T value) {
         ++actualModCount;
 
-        boolean canBeAdded = !isFull();
+        boolean canBeAdded = hasAvailableSpace();
         if(canBeAdded) values[(firstItemIndex + currentSize++) % values.length] = value;
         return canBeAdded;
     }
@@ -188,26 +217,29 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     public int putAllOnLastOrSkip(T... data) {
         ++actualModCount;
 
-        final int addedValuesNumber = values.length - currentSize;
-        for(int i = 0; i < addedValuesNumber && i < data.length; i++) {
-            putLastOrSkip(data[i]);
+        final int addedValuesNumber = Math.min(values.length - currentSize, data.length);
+        if(addedValuesNumber > 0) {
+            final int startIndex = (firstItemIndex + currentSize) % values.length;
+            System.arraycopy(data, 0, values, startIndex, addedValuesNumber);
+            currentSize += addedValuesNumber;
         }
 
-        return Math.min(addedValuesNumber, data.length);
+        return addedValuesNumber;
     }
 
     /**
-     * Добавляет элемент в конец циклического буфера. Если циклический буфер полон ({@link #isFull()}),
-     * то выбрасывает исключение.
+     * Добавляет элемент в конец циклического буфера. Если в циклическом буфере нет свободного места для добавления
+     * этого элемента ({@link #hasAvailableSpace()} равен false), то выбрасывает исключение.
      * @param value добавляемый элемент.
-     * @throws com.bakuard.collections.exceptions.MaxSizeExceededException если циклический буфер полон.
+     * @throws com.bakuard.collections.exceptions.MaxSizeExceededException если в циклическом буфере нет свободного
+     *                                                                     места для добавления этого элемента.
      */
     public void tryPutLast(T value) {
         ++actualModCount;
 
-        if(isFull()) {
+        if(!hasAvailableSpace()) {
             throw new MaxSizeExceededException(
-                    "Adding items to a filled RingBuffer with the 'tryPutLast' method is prohibited. MaxSize: " +
+                    "There is not enough available space to add this value. MaxSize: " +
                             maxSize() + ", added item: " + value
             );
         }
@@ -218,9 +250,9 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * Удаляет элемент из начала циклического буфера и возвращает его. Если циклический буфер пуст, то возвращает null.
      * <br/><br/>
      * <b>ВАЖНО!</b> Т.к. циклический буфер допускает хранение null элементов, то возвращение данным методом
-     * null в качестве результата не гарантирует, что буфер не пуст. Для проверки текущего размера буфера, а также
+     * null в качестве результата не гарантирует, что буфер пуст. Для проверки текущего размера буфера, а также
      * заполнен он или же является пустым, используйте методы {@link #size()}, {@link #maxSize()}, {@link #isEmpty()}
-     * или {@link #isFull()}.
+     * или {@link #hasAvailableSpace()}.
      */
     public T removeFirst() {
         ++actualModCount;
@@ -335,11 +367,10 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Возвращает true, если текущее кол-во элементов (см. {@link #size()}) равно максимально возможному
-     * (см. {@link #maxSize()}). Иначе возвращает false.
+     * Проверяет, выполняется ли условие {@link #size()} < {@link #maxSize()}.
      */
-    public boolean isFull() {
-        return currentSize == values.length;
+    public boolean hasAvailableSpace() {
+        return currentSize < values.length;
     }
 
     /**
@@ -447,11 +478,10 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
 
     @Override
     public String toString() {
-        final int size = size();
         StringBuilder valuesToString = new StringBuilder("[");
-        if(size > 0) {
+        if(currentSize > 0) {
             valuesToString.append(unsafeGet(0));
-            for(int i = 1; i < size; ++i) valuesToString.append(',').append(unsafeGet(i));
+            for(int i = 1; i < currentSize; ++i) valuesToString.append(',').append(unsafeGet(i));
         }
         valuesToString.append(']');
 
