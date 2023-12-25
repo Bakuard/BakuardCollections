@@ -1,5 +1,7 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.exceptions.NegativeSizeException;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -8,9 +10,36 @@ import java.util.Objects;
  * операции над множеством битов - and, or, not, xor, а также комбинировать эти операции. Также позволяет проверять
  * отношение между множествами такие как включение, строгое включение, пересечение, эквивалентность и
  * линейный порядок. Используется как аналог boolean массивов расходующий меньше памяти (на одно значение - один
- * бит). В отличие от массива может менять свой размер путем явного вызова методов expandTo() и compressTo().
+ * бит). В отличие от массива может менять свой размер путем явного вызова методов {@link #growTo(int)} и
+ * {@link #compressTo(int)}.
  */
 public final class Bits implements Comparable<Bits> {
+
+    /**
+     * Создает и возвращает новый объект Bits зарезервированный для хранения указанного кол-ва бит. Все биты
+     * данного объекта будут установлены в единицу.
+     * @param numberBits емкость создаваемого объекта Bits.
+     */
+    public static Bits filled(int numberBits) {
+        Bits result = new Bits(numberBits);
+        result.setAll();
+        return result;
+    }
+
+    /**
+     * Создает и возвращает новый объект Bits зарезервированный для хранения указанного кол-ва бит. Все биты индексы
+     * которых указаны в массиве indexes, будут установлены в единицу. Значение остальных бит будет установленно в ноль.
+     * @param numberBits емкость создаваемого объекта Bits.
+     * @param indexes индексы бит устанавливаемых в единицу.
+     * @throws NegativeSizeException  если numberBits меньше нуля.
+     * @throws IndexOutOfBoundsException если хотя бы для одного из индексов выполняется условие:
+     *                                   index < 0 || index >= numberBits
+     */
+    public static Bits of(int numberBits, int... indexes) {
+        Bits result = new Bits(numberBits);
+        result.setAll(indexes);
+        return result;
+    }
 
     private long[] words = {0L};
     private int size;
@@ -29,7 +58,7 @@ public final class Bits implements Comparable<Bits> {
     public Bits(int numberBits) {
         if(numberBits < 0)
             throw new IndexOutOfBoundsException("numberBits must be greater or equal 0. numberBits = " + numberBits);
-        expandTo(numberBits);
+        growToIndexOrDoNothing(numberBits - 1);
     }
 
     /**
@@ -38,8 +67,7 @@ public final class Bits implements Comparable<Bits> {
      */
     public Bits(Bits other) {
         size = other.size;
-        words = new long[other.words.length];
-        System.arraycopy(other.words, 0, words, 0, other.words.length);
+        words = other.words.clone();
     }
 
     /**
@@ -65,34 +93,22 @@ public final class Bits implements Comparable<Bits> {
     }
 
     /**
-     * Устанавливает бит с указанным индексом в единицу. Позволяет устанавливать биты находящееся за
-     * верхней границей текущего объекта Bits. При этом будет выполнено автоматическое увеличение размера
-     * данного объекта.
-     * @param index индекс бита устанавливаемого в единицу.
-     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0
-     */
-    public void setWithoutBound(int index) throws IndexOutOfBoundsException {
-        assertNotNegative(index);
-
-        expandTo(index + 1);
-        words[index >>> 6] |= 1L << index;
-    }
-
-    /**
      * Устанавливает значение для каждого бита, индекс которого указан в параметре indexes, в единицу. Если хотя
      * бы один из индексов не соответствует условию index >= 0 && index < {@link #size()}, выполнения метода
      * будет прервано и ни один из указанных бит не будет изменен. Если метод вызывается без аргументов - он не
      * вносит никаких изменений.
+     * @return ссылку на этот же объект.
      * @param indexes индексы бит устанавливаемых в единицу.
      * @throws IndexOutOfBoundsException если для одного из указанных индексов не выполняется
      *                                   условие index >= 0 && index < {@link #size()}.
      */
-    public void setAll(int... indexes) throws IndexOutOfBoundsException {
+    public Bits setAll(int... indexes) throws IndexOutOfBoundsException {
         for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
         for(int i = 0; i < indexes.length; i++) {
             int index = indexes[i];
             words[index >>> 6] |= 1L << index;
         }
+        return this;
     }
 
     /**
@@ -100,12 +116,14 @@ public final class Bits implements Comparable<Bits> {
      * не делает никаких изменений.
      * @param fromIndex индекс задающий начало заполняемого диапазонна.
      * @param toIndex индекс задающий конец заполняемого диапазонна.
+     * @return ссылку на этот же объект.
      * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев: <br/>
      *                                   1. Если fromIndex > toIndex; <br/>
      *                                   2. Если fromIndex < 0; <br/>
      *                                   3. Если toIndex > {@link #size()}.
+     *
      */
-    public void setRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
+    public Bits setRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
         if(fromIndex > toIndex || fromIndex < 0 || toIndex > size) {
             throw new IndexOutOfBoundsException("Incorrect interval [fromIndex=" + fromIndex +
                     ", toIndex=" + toIndex + ')');
@@ -114,14 +132,19 @@ public final class Bits implements Comparable<Bits> {
             words[fromIndex >>> 6] |= 1L << fromIndex;
             ++fromIndex;
         }
+        return this;
     }
 
     /**
      * Устанавливает все биты в единицу, при этом размер объекта Bits не изменяется.
+     * @return ссылку на этот же объект.
      */
-    public void setAll() {
-        Arrays.fill(words, -1L);
-        words[words.length - 1] &= -1L >>> (64 - size);
+    public Bits setAll() {
+        if(size > 0) {
+            Arrays.fill(words, -1L);
+            words[words.length - 1] &= -1L >>> (64 - size);
+        }
+        return this;
     }
 
     /**
@@ -140,15 +163,17 @@ public final class Bits implements Comparable<Bits> {
      * прервано и ни один из указанных бит не будет изменен. Если метод вызывается без аргументов - он не вносит
      * никаких изменений.
      * @param indexes индексы бит устанавливаемых в ноль.
+     * @return ссылку на этот же объект.
      * @throws IndexOutOfBoundsException если для одного из переданных индексов не выполняется
      *                                   условие index >= 0 && index < {@link #size()}.
      */
-    public void clearAll(int... indexes) throws IndexOutOfBoundsException {
+    public Bits clearAll(int... indexes) throws IndexOutOfBoundsException {
         for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
         for(int i = 0; i < indexes.length; i++) {
             int index = indexes[i];
             words[index >>> 6] &= ~(1L << index);
         }
+        return this;
     }
 
     /**
@@ -156,12 +181,13 @@ public final class Bits implements Comparable<Bits> {
      * не делает никаких изменений.
      * @param fromIndex индекс задающий начало заполняемого диапазонна.
      * @param toIndex индекс задающий конец заполняемого диапазонно.
+     * @return ссылку на этот же объект.
      * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев: <br/>
      *                                   1. Если fromIndex > toIndex; <br/>
      *                                   2. Если fromIndex < 0; <br/>
      *                                   3. Если toIndex > {@link #size()}.
      */
-    public void clearRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
+    public Bits clearRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
         if(fromIndex > toIndex || fromIndex < 0 || toIndex > size) {
             throw new IndexOutOfBoundsException("Incorrect interval [fromIndex=" + fromIndex +
                     ", toIndex=" + toIndex + ')');
@@ -170,18 +196,21 @@ public final class Bits implements Comparable<Bits> {
             words[fromIndex >>> 6] &= ~(1L << fromIndex);
             ++fromIndex;
         }
+        return this;
     }
 
     /**
      * Устанавливает значение всех бит в ноль, при этом размер объекта Bits не изменяется.
+     * @return ссылку на этот же объект.
      */
-    public void clearAll() {
+    public Bits clearAll() {
         Arrays.fill(words, 0L);
+        return this;
     }
 
     /**
      * Выполняет операцию пересечения двух множеств. Метод записывает результат операции в объект Bits, у которого
-     * был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда выступает объект
+     * был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда выступает объект,
      * у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве аргумента. Если
      * операнды имеют разный размер, то операция выполняется таким образом, как будто недостающие биты более
      * короткого операнда заполнены нулями.
@@ -197,7 +226,7 @@ public final class Bits implements Comparable<Bits> {
 
     /**
      * Выполняет операцию объединения двух множеств. Метод записывает результат операции в объект Bits, у которого
-     * был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда выступает объект
+     * был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда выступает объект,
      * у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве аргумента. Если размер
      * объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его размер увеличивается до
      * размера other. Если размер передаваемого объекта меньше, то операция выполняется таким образом, как будто
@@ -206,7 +235,7 @@ public final class Bits implements Comparable<Bits> {
      * @return объект, у которого был вызван данный метод.
      */
     public Bits or(Bits other) {
-        expandTo(other.size);
+        growToIndexOrDoNothing(other.size - 1);
         int commonWords = Math.min(words.length, other.words.length);
         for(int i = 0; i < commonWords; ++i) words[i] |= other.words[i];
         return this;
@@ -215,7 +244,7 @@ public final class Bits implements Comparable<Bits> {
     /**
      * Выполняет операцию симметричной разности двух множеств. Метод записывает результат операции в объект Bits,
      * у которого был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда
-     * выступает объект у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве
+     * выступает объект, у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве
      * аргумента. Если размер объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его
      * размер увеличивается до размера other. Если размер передаваемого объекта меньше, то операция выполняется
      * таким образом, как будто недостающие биты второго операнда заполнены нулями.
@@ -223,7 +252,7 @@ public final class Bits implements Comparable<Bits> {
      * @return объект, у которого был вызван данный метод.
      */
     public Bits xor(Bits other) {
-        expandTo(other.size);
+        growToIndexOrDoNothing(other.size - 1);
         int commonWords = Math.min(words.length, other.words.length);
         for(int i = 0; i < commonWords; ++i) words[i] ^= other.words[i];
         return this;
@@ -232,7 +261,7 @@ public final class Bits implements Comparable<Bits> {
     /**
      * Выполняет операцию вычитания двух множеств. Метод записывает результат операции в объект Bits,
      * у которого был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда
-     * выступает объект у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве
+     * выступает объект, у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве
      * аргумента. Если операнды имеют разный размер, то операция выполняется таким образом, как будто недостающие
      * биты более короткого операнда заполнены нулями.
      * @param other второй операнд для операции разности множеств.
@@ -250,8 +279,10 @@ public final class Bits implements Comparable<Bits> {
      * @return объект, у которого был вызван данный метод.
      */
     public Bits not() {
-        for(int i = 0; i < words.length; ++i) words[i] = ~words[i];
-        words[words.length - 1] &= -1L >>> (64 - size);
+        if(size > 0) {
+            for (int i = 0; i < words.length; ++i) words[i] = ~words[i];
+            words[words.length - 1] &= -1L >>> (64 - size);
+        }
         return this;
     }
 
@@ -261,8 +292,8 @@ public final class Bits implements Comparable<Bits> {
      * @param src объект Bits, состояние которого копируется.
      * @return объект, у которого был вызван данный метод.
      */
-    public Bits copyAll(Bits src) {
-        if(words.length != src.words.length) words = Arrays.copyOf(src.words, src.words.length);
+    public Bits copyFullStateFrom(Bits src) {
+        if(words.length != src.words.length) words = src.words.clone();
         else System.arraycopy(src.words, 0, words, 0, src.words.length);
         size = src.size;
         return this;
@@ -276,16 +307,17 @@ public final class Bits implements Comparable<Bits> {
      * Особые случаи:<br/>
      * 1. Если length равен нулю - метод не вносит никаких изменений.<br/>
      * 2. Если length больше чем максимальный возможный размер копируемой области (с учетом srcPos), то
-     *    в качестве размера копируемой области будет взято максимальное доступное значение. В таком случае,
-     *    область вставки целевого объекта будет иметь тот же размер, что и копируемая область.<br/>
+     * в качестве размера копируемой области будет взято максимальное доступное значение. В таком случае,
+     * область вставки целевого объекта будет иметь тот же размер, что и копируемая область.<br/>
      * 3. Если копируемая область не помещается целиком в заменяемую область вставки целевого объекта, то все
-     *    биты для которых не хватило места будут отброшены.
-     * @param src объект Bits из которого копируется заданный диапазон бит.
-     * @param srcPos индекс задающий начало копируемого диапазона.
-     * @param length кол-во копируемых бит.
-     * @param destPos индекс задающий область целевого объекта, которая будет заменена копируемым диапазонном.
+     * биты для которых не хватило места будут отброшены.
+     *
+     * @param src     объект Bits из которого копируется заданный диапазон бит.
+     * @param srcPos  индекс задающий начало копируемого диапазона из объекта src.
+     * @param destPos индекс задающий начало заменяемого диапазона в текущем объекте.
+     * @param length  кол-во копируемых бит.
      * @return кол-во перезаписанных бит у объекта вызвавшего данный метод (целевого объекта).
-     * @throws NullPointerException если src имеет значение null.
+     * @throws NullPointerException      если src имеет значение null.
      * @throws IndexOutOfBoundsException если выполняется хотя бы одно из следующих условий:<br/>
      *                                   1. srcPos < 0 <br/>
      *                                   2. srcPos >= src.{@link #size()} <br/>
@@ -293,7 +325,7 @@ public final class Bits implements Comparable<Bits> {
      *                                   4. destPos >= this.{@link #size()} <br/>
      *                                   5. length < 0
      */
-    public int copyRange(Bits src, int srcPos, int length, int destPos) {
+    public int copyRangeFrom(Bits src, int srcPos, int destPos, int length) {
         Objects.requireNonNull(src, "src can not be null.");
 
         if(srcPos < 0 || destPos < 0 || srcPos >= src.size() || destPos >= size() || length < 0) {
@@ -336,28 +368,17 @@ public final class Bits implements Comparable<Bits> {
     }
 
     /**
-     * Увеличивает емкость текущего объекта Bits до указанного кол-ва бит. Если передаваемый аргумент меньше или
-     * равен текущему кол-ву бит - не оказывает никакого эффекта. Все старшие биты добавленные в результате
-     * вызова этого метода будут установленны в 0.
-     * @param newSize кол-во бит до которого нужно расширить текущий объект Bits.
-     * @return true - передаваемый аргумент больше текущего размера Bits ({@link #size()}) и, как следствие,
-     *                вызов метода изменил размер Bits, иначе - false.
+     * Увеличивает емкость текущего объекта Bits таким образом, чтобы индекс самого старшего бита был равен index.
+     * Если index >= 0 и при этом меньше {@link #size()}, то метод ничего не делает.
+     * Все старшие биты добавленные в результате вызова этого метода будут установленны в 0.
+     * @param index индекс бита, до которого нужно увеличить емкость текущего объекта Bits.
+     * @return ссылку на этот же объект Bits.
+     * @throws IndexOutOfBoundsException если index меньше нуля.
      */
-    public boolean expandTo(int newSize) {
-        boolean isExpand = newSize > size;
-
-        if(isExpand) {
-            size = newSize;
-
-            int numberWords = (newSize >>> 6) + 1;
-            if(numberWords > words.length) {
-                long[] newWords = new long[numberWords];
-                System.arraycopy(words, 0, newWords, 0, words.length);
-                words = newWords;
-            }
-        }
-
-        return isExpand;
+    public Bits growTo(int index) {
+        assertNotNegative(index);
+        growToIndexOrDoNothing(index);
+        return this;
     }
 
     /**
@@ -415,15 +436,15 @@ public final class Bits implements Comparable<Bits> {
     }
 
     /**
-     * Возвращает true, если для всех значений начиная с индекса 0 и заканчивая индексом
-     * {@link #size()} - 1 метод {@link #get(int)} возвращает false.
-     * @return true - если Bits не содержит ни одной единицы, false - в противном случае.
+     * Проверяет, что данный объект Bits не содержит ни одного бита установленного в единицу.
+     * @return true - если Bits не содержит ни одного бита установленного в единицу, false - в противном случае.
      */
-    public boolean isClean() {
-        for(int i = 0; i < words.length; i++) {
-            if(words[i] != 0L) return false;
+    public boolean isClear() {
+        boolean result = true;
+        for(int i = 0; i < words.length && result; i++) {
+            result = words[i] == 0L;
         }
-        return true;
+        return result;
     }
 
     /**
@@ -572,7 +593,7 @@ public final class Bits implements Comparable<Bits> {
 
     /**
      * Выполняет упорядочивающее сравнение двух объектов Bits. Сперва сравниваются размеры обоих объектов Bits,
-     * и если их размеры равны, тогда два объекта сравниваются как два беззнаковых целых числа.
+     * и если их размеры равны, тогда два объекта сравниваются как два без знаковых целых числа.
      * @param o объект Bits с которым производится сравнение.
      * @return отрицательное число, ноль или положительное число, если объект у которого вызывается
      *         данный метод меньше, равен или больше указанного соответственно.
@@ -623,8 +644,9 @@ public final class Bits implements Comparable<Bits> {
     @Override
     public String toString() {
         StringBuilder array = new StringBuilder();
-        for(int i = 0; i < words.length; i++) array.append(Long.toBinaryString(words[i])).append(',');
-        return "Bits {size=" + size + ", count words=" + words.length + ", words=" + array + '}';
+        array.append(Bits.toBinaryString(words[0]));
+        for(int i = 1; i < words.length; i++) array.append(',').append(Bits.toBinaryString(words[i]));
+        return "Bits {size=" + size + ", count words=" + words.length + ", words=[" + array + "]}";
     }
 
     /**
@@ -640,8 +662,7 @@ public final class Bits implements Comparable<Bits> {
             }
 
             for(int i = words.length - 2; i >= 0; --i) {
-                long word = words[i];
-                for(int j = 63; j >= 0; --j) result.append((word >> j) & 1L);
+                result.append(Bits.toBinaryString(words[i]));
             }
         }
 
@@ -659,6 +680,27 @@ public final class Bits implements Comparable<Bits> {
         if(index < 0) {
             throw new IndexOutOfBoundsException("Expected: index >= 0; Actual: index=" + index);
         }
+    }
+
+    private void growToIndexOrDoNothing(int index) {
+        if(index >= size) {
+            size = index + 1;
+
+            int numberWords = (index >>> 6) + 1;
+            if(numberWords > words.length) {
+                long[] newWords = new long[numberWords];
+                System.arraycopy(words, 0, newWords, 0, words.length);
+                words = newWords;
+            }
+        }
+    }
+    
+    private static String toBinaryString(long value) {
+        char[] chars = new char[64];
+        for(int i = 0; i < 64; i++) {
+            chars[63 - i] = (char)(((value >> i) & 1L) + '0');
+        }
+        return new String(chars);
     }
 
 }
