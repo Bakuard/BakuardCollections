@@ -1,5 +1,6 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.exceptions.NegativeSizeException;
 import com.bakuard.collections.testUtil.BitsMutator;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
@@ -12,6 +13,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -190,7 +192,7 @@ class BitsTest {
         Bits actual = new Bits(140);
 
         actual.setAll();
-        actual.growTo(1000);
+        actual.growToIndex(1000);
 
         for(int i = 0; i < actual.size(); i++) {
             if(i >= 140) Assertions.assertThat(actual.get(i)).isFalse();
@@ -527,13 +529,14 @@ class BitsTest {
 
     @DisplayName("copyRangeFrom(src, srcPos, destPos, length): src != dest")
     @ParameterizedTest(name = """
-             note: {6},
+             note: {7},
              srcPos is {2},
              destPos is {3},
              length is {4},
              origin is {0},
              src is {1}
-             => expected is {5}
+             => expected is {5},
+                expectedReturnedResult is {6}
             """)
     @MethodSource("provideForCopyRangeFrom_SrcIsNotDest")
     void copyRangeFrom_srcIsNotDest(Bits origin,
@@ -542,20 +545,25 @@ class BitsTest {
                                     int destPos,
                                     int length,
                                     Bits expected,
+                                    int expectedReturnedResult,
                                     String note) {
-        origin.copyRangeFrom(src, srcPos, destPos, length);
+        int rewritedBits = origin.copyRangeFrom(src, srcPos, destPos, length);
 
-        Assertions.assertThat(origin).isEqualTo(expected);
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertThat(rewritedBits).isEqualTo(expectedReturnedResult);
+        assertions.assertAll();
     }
 
     @DisplayName("copyRangeFrom(src, srcPos, destPos, length): src == dest")
     @ParameterizedTest(name = """
-             note: {5},
+             note: {6},
              srcPos is {1},
              destPos is {2},
              length is {3},
              origin is {0},
-             => expected is {4}
+             => expected is {4},
+                expectedReturnedResult is {5}
             """)
     @MethodSource("provideForCopyRangeFrom_SrcIsDest")
     void copyRangeFrom_srcIsDest(Bits origin,
@@ -563,205 +571,14 @@ class BitsTest {
                                  int destPos,
                                  int length,
                                  Bits expected,
+                                 int expectedReturnedResult,
                                  String note) {
-        origin.copyRangeFrom(origin, srcPos, destPos, length);
+        int rewritedBits = origin.copyRangeFrom(origin, srcPos, destPos, length);
 
-        Assertions.assertThat(origin).isEqualTo(expected);
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are different objects,
-             length == 0
-             => return 0
-            """)
-    void copyRange31() {
-        Bits dest = new Bits(500);
-        dest.setRange(50,250);
-        Bits src = new Bits(500);
-        src.setRange(350, 450);
-
-        int actual = dest.copyRangeFrom(src, 350, 300, 0);
-
-        Assertions.assertThat(actual).isZero();
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are different objects,
-             src range is within src,
-             dest range is within dest
-             => return correct result
-            """)
-    void copyRange32() {
-        Bits dest = new Bits(500);
-        dest.setRange(50,250);
-        Bits src = new Bits(500);
-        src.setRange(350, 450);
-
-        int actual = dest.copyRangeFrom(src, 350, 300, 100);
-
-        Assertions.assertThat(actual).isEqualTo(100);
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are different objects,
-             src range is out of src,
-             dest range is within dest
-             => return correct result
-            """)
-    void copyRange33() {
-        Bits dest = new Bits(500);
-        dest.setRange(250, 350);
-        Bits src = new Bits(500);
-        src.setRange(450, 500);
-
-        int actual = dest.copyRangeFrom(src, 499, 0, 100);
-
-        Assertions.assertThat(actual).isOne();
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are different objects,
-             src range is within src,
-             dest range is out of dest
-             => return correct result
-            """)
-    void copyRange34() {
-        Bits dest = new Bits(500);
-        dest.setRange(250, 350);
-        Bits src = new Bits(500);
-        src.setRange(450, 500);
-
-        int actual = dest.copyRangeFrom(src, 450, 499, 10);
-
-        Assertions.assertThat(actual).isOne();
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are different objects,
-             src range is out of src,
-             dest range is out of dest,
-             src range < dest range
-             => return correct result
-            """)
-    void copyRange35() {
-        Bits dest = new Bits(500);
-        dest.setRange(350, 450);
-        Bits src = new Bits(500);
-        src.setRange(400, 500);
-
-        int actual = dest.copyRangeFrom(src, 499, 495, 10);
-
-        Assertions.assertThat(actual).isOne();
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are different objects,
-             src range is out of src,
-             dest range is out of dest,
-             src range == dest range
-             => return correct result
-            """)
-    void copyRange36() {
-        Bits dest = new Bits(500);
-        dest.setRange(350, 450);
-        Bits src = new Bits(500);
-        src.setRange(400, 500);
-
-        int actual = dest.copyRangeFrom(src, 499, 499, 10);
-
-        Assertions.assertThat(actual).isOne();
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are different objects,
-             src range is out of src,
-             dest range is out of dest,
-             src range > dest range
-             => return correct result
-            """)
-    void copyRange37() {
-        Bits dest = new Bits(500);
-        dest.setRange(350, 450);
-        Bits src = new Bits(500);
-        src.setRange(400, 500);
-
-        int actual = dest.copyRangeFrom(src, 480, 499, 50);
-
-        Assertions.assertThat(actual).isOne();
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are same object,
-             src range cross dest range,
-             src range before dest range
-             => correct result
-            """)
-    void copyRange38() {
-        Bits dest = new Bits(500);
-        dest.setRange(50, 100);
-        Bits expected = new Bits(500);
-        expected.setRange(100, 150);
-
-        dest.copyRangeFrom(dest, 0, 50, 100);
-
-        Assertions.assertThat(dest).isEqualTo(expected);
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are same object,
-             src range cross dest range,
-             src range equal dest range,
-             src and dest range is within object,
-             => result equal dest
-            """)
-    void copyRange39() {
-        Bits dest = new Bits(500);
-        dest.setRange(50, 100);
-        Bits expected = new Bits(dest);
-
-        dest.copyRangeFrom(dest, 50, 50, 100);
-
-        Assertions.assertThat(dest).isEqualTo(expected);
-    }
-
-    @Test
-    @DisplayName("""
-            copyRange(src, srcPos, length, destPos):
-             dest and src are same object,
-             src range cross dest range,
-             src range after dest range
-             => result equal dest
-            """)
-    void copyRange40() {
-        Bits dest = new Bits(500);
-        dest.setRange(50, 100);
-        dest.setRange(150, 200);
-        Bits expected = new Bits(500);
-        expected.setRange(25, 50);
-        expected.setRange(100, 125);
-        expected.setRange(150, 200);
-
-        dest.copyRangeFrom(dest, 75, 25, 100);
-
-        Assertions.assertThat(dest).isEqualTo(expected);
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertThat(rewritedBits).isEqualTo(expectedReturnedResult);
+        assertions.assertAll();
     }
 
     @DisplayName("growTo(index):")
@@ -772,7 +589,7 @@ class BitsTest {
             """)
     @MethodSource("provideForGrowTo")
     void growTo(Bits origin, int index, Bits expected) {
-        origin.growTo(index);
+        origin.growToIndex(index);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
@@ -783,1481 +600,399 @@ class BitsTest {
              index is {1}
              => exception
             """)
-    @MethodSource("provideForGrowTo_ExceptionCase")
+    @MethodSource("provideForCheckingIndexForNegative_ExceptionCase")
     void growTo_exception(Bits origin, int index) {
         Bits expected = new Bits(origin);
 
         SoftAssertions assertions = new SoftAssertions();
-        assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> origin.growTo(index));
+        assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> origin.growToIndex(index));
         assertions.assertThat(origin).isEqualTo(expected);
         assertions.assertAll();
     }
 
-    @Test
-    @DisplayName("compressTo(newSize): newSize > bits size => return false")
-    void compressTo1() {
-        Bits actual = new Bits(500);
-        actual.setRange(230, 490);
+    @DisplayName("truncateTo(index):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             index is {1}
+             => expected bits is {2},
+                expectedHighBits is {3}
+            """)
+    @MethodSource("provideForTruncateTo")
+    void truncateTo(Bits origin, int index, Bits expected, Bits expectedHighBits) {
+        origin.truncateToSize(index);
 
-        Assertions.assertThat(actual.compressTo(501)).isFalse();
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertThat(origin).usingComparator(Bits::compareIgnoreSize).isEqualTo(expectedHighBits);
+        assertions.assertAll();
     }
 
-    @Test
-    @DisplayName("compressTo(newSize): newSize == bits size => return false")
-    void compressTo2() {
-        Bits actual = new Bits(500);
-        actual.setRange(230, 490);
+    @DisplayName("truncateTo(index):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             index is {1}
+             => exception
+            """)
+    @MethodSource("provideForCheckingIndexForNegative_ExceptionCase")
+    void truncateTo_exception(Bits origin, int index) {
+        Bits expected = new Bits(origin);
 
-        Assertions.assertThat(actual.compressTo(500)).isFalse();
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThatThrownBy(() -> origin.truncateToSize(index)).isInstanceOf(NegativeSizeException.class);
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertAll();
     }
 
-    @Test
-    @DisplayName("compressTo(newSize): newSize < bits size => return true")
-    void compressTo3() {
-        Bits actual = new Bits(500);
-        actual.setRange(230, 490);
-
-        Assertions.assertThat(actual.compressTo(499)).isTrue();
-    }
-
-    @Test
-    @DisplayName("compressTo(newSize): newSize > bits size => don't change target object")
-    void compressTo4() {
-        Bits actual = new Bits(500);
-        actual.setRange(150, 405);
-        Bits expected = new Bits(actual);
-
-        actual.compressTo(501);
+    @DisplayName("cardinality():")
+    @ParameterizedTest(name = """
+             origin is {0}
+             => expected is {1}
+            """)
+    @MethodSource("provideForCardinality")
+    void cardinality(Bits origin, int expected) {
+        int actual = origin.cardinality();
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("compressTo(newSize): newSize == bits size => don't change target object")
-    void compressTo5() {
-        Bits actual = new Bits(500);
-        actual.setRange(150, 405);
-        Bits expected = new Bits(actual);
+    @DisplayName("getHighBitIndex():")
+    @ParameterizedTest(name = """
+             origin is {0}
+             => expectedIndex is {1}
+            """)
+    @MethodSource("provideForGetHighBitIndex")
+    void getHighBitIndex(Bits origin, int expectedIndex) {
+        int actual = origin.getHighBitIndex();
 
-        actual.compressTo(500);
+        Assertions.assertThat(actual).isEqualTo(expectedIndex);
+    }
+
+    @DisplayName("isClear():")
+    @ParameterizedTest(name = """
+             origin is {0}
+             => expected is {1}
+            """)
+    @MethodSource("provideForIsClear")
+    void isClear(Bits origin, boolean expected) {
+        boolean actual = origin.isClear();
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("compressTo(newSize): newSize < bits size => compress target object")
-    void compressTo6() {
-        Bits actual = new Bits(500);
-        actual.setRange(150, 405);
-        Bits expected = new Bits(499);
-        expected.setRange(150, 405);
+    @DisplayName("nextSetBit(fromIndex):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             fromIndex is {1}
+             => exception
+            """)
+    @MethodSource("provideForCheckingIndexForNegative_ExceptionCase")
+    void nextSetBit_exception(Bits origin, int fromIndex) {
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> origin.nextSetBit(fromIndex));
+    }
 
-        actual.compressTo(499);
+    @DisplayName("nextSetBit(fromIndex):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             fromIndex is {1}
+             => expectedIndexSequence is {2}
+            """)
+    @MethodSource("provideForNextSetBit")
+    void nextSetBit(Bits origin, int fromIndex, List<Integer> expectedIndexSequence) {
+        List<Integer> actualIndexSequence = IntStream
+                .concat(
+                        IntStream.iterate(origin.nextSetBit(fromIndex),
+                                index -> index != -1,
+                                index -> origin.nextSetBit(index + 1)),
+                        IntStream.of(-1)
+                )
+                .boxed()
+                .toList();
+
+        Assertions.assertThat(actualIndexSequence).isEqualTo(expectedIndexSequence);
+    }
+
+    @DisplayName("nextClearBit(fromIndex):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             fromIndex is {1}
+             => exception
+            """)
+    @MethodSource("provideForCheckingIndexForNegative_ExceptionCase")
+    void nextClearBit_exception(Bits origin, int fromIndex) {
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> origin.nextClearBit(fromIndex));
+    }
+
+    @DisplayName("nextClearBit(fromIndex):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             fromIndex is {1}
+             => expectedIndexSequence is {2}
+            """)
+    @MethodSource("provideForNextClearBit")
+    void nextClearBit(Bits origin, int fromIndex, List<Integer> expectedIndexSequence) {
+        List<Integer> actualIndexSequence = IntStream
+                .concat(
+                        IntStream.iterate(origin.nextClearBit(fromIndex),
+                                index -> index != -1,
+                                index -> origin.nextClearBit(index + 1)),
+                        IntStream.of(-1)
+                )
+                .boxed()
+                .toList();
+
+        Assertions.assertThat(actualIndexSequence).isEqualTo(expectedIndexSequence);
+    }
+
+    @DisplayName("contains(other):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             other is {1}
+             => expected is {2}
+            """)
+    @MethodSource("provideForContains")
+    void contains(Bits origin, Bits other, boolean expected) {
+        boolean actual = origin.contains(other);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("compressTo(newSize): newSize < bits size => clear all bits out of new range")
-    void compressTo7() {
-        Bits actual = new Bits(500);
-        actual.setAll();
-
-        actual.compressTo(70);
-        actual.growTo(500);
-
-        for(int i = 70; i < 500; i++) {
-            Assertions.assertThat(actual.get(i)).isFalse();
-        }
-    }
-
-    @Test
-    @DisplayName("compressTo(newSize): newSize == 0 => result is empty")
-    void compressTo8() {
-        Bits actual = new Bits(500);
-        actual.setAll();
-        Bits empty = new Bits();
-
-        actual.compressTo(0);
-
-        Assertions.assertThat(actual).isEqualTo(empty);
-    }
-
-    @Test
-    @DisplayName("compressTo(newSize): newSize == 0 => clear all bits out of new range")
-    void compressTo9() {
-        Bits actual = new Bits(500);
-        actual.setAll();
-
-        actual.compressTo(0);
-        actual.growTo(500);
-
-        for(int i = 0; i < 500; i++) {
-            Assertions.assertThat(actual.get(i)).isFalse();
-        }
-    }
-
-    @Test
-    @DisplayName("compressTo(newSize): newSize < 0 => return false")
-    void compressTo10() {
-        Bits actual = new Bits(500);
-        actual.setRange(150, 450);
-
-        Assertions.assertThat(actual.compressTo(-1)).isFalse();
-    }
-
-    @Test
-    @DisplayName("compressTo(newSize): newSize < 0 => don't change target object")
-    void compressTo11() {
-        Bits actual = new Bits(500);
-        actual.setRange(150, 450);
-        Bits expected = new Bits(actual);
-
-        actual.compressTo(-1);
+    @DisplayName("intersect(other):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             other is {1}
+             => expected is {2}
+            """)
+    @MethodSource("provideForIntersect")
+    void intersect(Bits origin, Bits other, boolean expected) {
+        boolean actual = origin.intersect(other);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("cardinality(): empty bits => return 0")
-    void cardinality1() {
-        Bits empty = new Bits(500);
-        
-        Assertions.assertThat(empty.cardinality()).isZero();
-    }
-
-    @Test
-    @DisplayName("cardinality(): one word, is not empty => correct result")
-    void cardinality2() {
-        Bits actual = new Bits(63);
-        actual.setAll(0, 15, 16, 17, 18, 19, 45, 46, 55);
-
-        Assertions.assertThat(actual.cardinality()).isEqualTo(9);
-    }
-
-    @Test
-    @DisplayName("cardinality(): several word, is not empty => correct result")
-    void cardinality3() {
-        Bits actual = new Bits(500);
-        actual.setAll(0, 12, 56, 123, 124);
-        actual.setRange(250, 500);
-
-        Assertions.assertThat(actual.cardinality()).isEqualTo(255);
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): bits is empty, size == 0 => return -1")
-    void getHighBitIndex1() {
-        Bits empty = new Bits();
-
-        Assertions.assertThat(empty.getHighBitIndex()).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): bits is empty, size > 0 => return -1")
-    void getHighBitIndex2() {
-        Bits actual = new Bits(500);
-
-        Assertions.assertThat(actual.getHighBitIndex()).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): one word, first bit is high => return 0")
-    void getHighBitIndex3() {
-        Bits actual = new Bits(63);
-        actual.set(0);
-
-        Assertions.assertThat(actual.getHighBitIndex()).isZero();
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): one word, high bit in middle => return correct result")
-    void getHighBitIndex4() {
-        Bits actual = new Bits(63);
-        actual.setAll(0, 2, 12, 24, 25, 30, 31, 32, 33);
-
-        Assertions.assertThat(actual.getHighBitIndex()).isEqualTo(33);
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): one word, high bit is last => return last bit")
-    void getHighBitIndex5() {
-        Bits actual = new Bits(63);
-        actual.setAll(0, 13, 14, 15, 16, 23, 24, 25, 26, 54, 62);
-
-        Assertions.assertThat(actual.getHighBitIndex()).isEqualTo(62);
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): several word, first bit is high => return 0")
-    void getHighBitIndex6() {
-        Bits actual = new Bits(500);
-        actual.set(0);
-
-        Assertions.assertThat(actual.getHighBitIndex()).isZero();
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): several word, high bit in middle => return correct result")
-    void getHighBitIndex7() {
-        Bits actual = new Bits(500);
-        actual.setRange(12, 256);
-
-        Assertions.assertThat(actual.getHighBitIndex()).isEqualTo(255);
-    }
-
-    @Test
-    @DisplayName("getHighBitIndex(): several word, high bit is last => return last bit")
-    void getHighBitIndex8() {
-        Bits actual = new Bits(500);
-        actual.setRange(12, 300);
-        actual.setAll(456, 457, 499);
-
-        Assertions.assertThat(actual.getHighBitIndex()).isEqualTo(499);
-    }
-
-    @Test
-    @DisplayName("isClean(): bits is empty, size == 0 => return true")
-    void isClean1() {
-        Bits empty = new Bits();
-
-        Assertions.assertThat(empty.isClear()).isTrue();
-    }
-
-    @Test
-    @DisplayName("isClean(): bits is empty, size > 0 => return true")
-    void isClean2() {
-        Bits empty = new Bits(500);
-
-        Assertions.assertThat(empty.isClear()).isTrue();
-    }
-
-    @Test
-    @DisplayName("isClean(): one bit is set, first bit is set => return false")
-    void isClean3() {
-        Bits actual = new Bits(500);
-        actual.set(0);
-
-        Assertions.assertThat(actual.isClear()).isFalse();
-    }
-
-    @Test
-    @DisplayName("isClean(): one bit is set, unit bit in middle => return false")
-    void isClean4() {
-        Bits actual = new Bits(500);
-        actual.set(300);
-
-        Assertions.assertThat(actual.isClear()).isFalse();
-    }
-
-    @Test
-    @DisplayName("isClean(): one bit is set, high bit is set => return false")
-    void isClean5() {
-        Bits actual = new Bits(500);
-        actual.set(499);
-
-        Assertions.assertThat(actual.isClear()).isFalse();
-    }
-
-    @Test
-    @DisplayName("nextSetBit(fromIndex): bits is empty => return -1")
-    void nextSetBit1() {
-        Bits empty = new Bits(500);
-
-        Assertions.assertThat(empty.nextSetBit(0)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("nextSetBit(fromIndex): fromIndex bigger than high one bit => return -1")
-    void nextSetBit2() {
-        Bits actual = new Bits(500);
-        actual.setRange(23, 355);
-
-        Assertions.assertThat(actual.nextSetBit(355)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("nextSetBit(fromIndex): fromIndex is one bit => return fromIndex")
-    void nextSetBit3() {
-        Bits actual = new Bits(500);
-        actual.setRange(100, 250);
-
-        Assertions.assertThat(actual.nextSetBit(100)).isEqualTo(100);
-    }
-
-    @Test
-    @DisplayName("nextSetBit(fromIndex): bits contains several one bits => correct iteration")
-    void nextSetBit4() {
-        Bits bits = new Bits(500);
-        bits.setAll(12, 50, 51, 52, 53, 54, 100, 250, 251, 400, 495, 499);
-        List<Integer> actual = new ArrayList<>();
-        List<Integer> expected = List.of(12, 50, 51, 52, 53, 54, 100, 250, 251, 400, 495, 499);
-
-        int index = bits.nextSetBit(0);
-        while(index != -1) {
-            actual.add(index);
-            index = bits.nextSetBit(index + 1);
-        }
+    @DisplayName("equals(other):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             other is {1}
+             => expected is {2}
+            """)
+    @MethodSource("provideForEquals")
+    void equals(Bits origin, Bits other, boolean expected) {
+        boolean actual = origin.equals(other);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("nextSetBit(fromIndex): fromIndex < 0 => exception")
-    void nextSetBit5() {
-        Bits actual = new Bits(500);
-        actual.setRange(100, 200);
-
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> actual.nextSetBit(-1));
-    }
-
-    @Test
-    @DisplayName("nextSetBit(fromIndex): fromIndex == size => return -1")
-    void nextSetBit6() {
-        Bits actual = new Bits(500);
-        actual.setRange(100, 200);
-
-        Assertions.assertThat(actual.nextSetBit(500)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("nextSetBit(fromIndex): fromIndex > size => return -1")
-    void nextSetBit7() {
-        Bits actual = new Bits(500);
-        actual.setRange(100, 200);
-
-        Assertions.assertThat(actual.nextSetBit(501)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("nextClearBit(fromIndex): bits is full => return -1")
-    void nextClearBit1() {
-        Bits full = new Bits(500);
-        full.setAll();
-
-        Assertions.assertThat(full.nextClearBit(0)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("nextClearBit(fromIndex): fromIndex bigger than high zero bit => return -1")
-    void nextClearBit2() {
-        Bits actual = new Bits(500);
-        actual.setAll();
-        actual.clearRange(0, 355);
-
-        Assertions.assertThat(actual.nextClearBit(355)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("nextClearBit(fromIndex): fromIndex is zero bit => fromIndex")
-    void nextClearBit3() {
-        Bits actual = new Bits(500);
-        actual.setAll();
-        actual.clearRange(250, 500);
-
-        Assertions.assertThat(actual.nextClearBit(250)).isEqualTo(250);
-    }
-
-    @Test
-    @DisplayName("nextClearBit(fromIndex): bits contains several zero bits => correct iteration")
-    void nextClearBit4() {
-        Bits bits = new Bits(500);
-        bits.setAll();
-        bits.clearAll(12, 50, 51, 52, 53, 54, 100, 250, 251, 400, 495, 499);
-        List<Integer> actual = new ArrayList<>();
-        List<Integer> expected = List.of(12, 50, 51, 52, 53, 54, 100, 250, 251, 400, 495, 499);
-
-        int index = bits.nextClearBit(0);
-        while(index != -1) {
-            actual.add(index);
-            index = bits.nextClearBit(index + 1);
-        }
-
-        Assertions.assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    @DisplayName("nextClearBit(fromIndex): fromIndex < 0 => exception")
-    void nextClearBit5() {
-        Bits actual = new Bits(500);
-
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> actual.nextClearBit(-1));
-    }
-
-    @Test
-    @DisplayName("nextClearBit(fromIndex): fromIndex == size => return -1")
-    void nextClearBit6() {
-        Bits actual = new Bits(500);
-
-        Assertions.assertThat(actual.nextClearBit(500)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("nextClearBit(fromIndex): fromIndex > size => return -1")
-    void nextClearBit7() {
-        Bits actual = new Bits(500);
-
-        Assertions.assertThat(actual.nextClearBit(501)).isEqualTo(-1);
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first and second operand are empty,
-             first operand size == 0,
-             second operand size == 0
-             => return true
-            """)
-    void contains1() {
-        Bits firstOperand = new Bits();
-        Bits secondOperand = new Bits();
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first and second operand are empty,
-             first operand size == 0,
-             second operand size > 0
-             => return true
-            """)
-    void contains2() {
-        Bits firstOperand = new Bits();
-        Bits secondOperand = new Bits(500);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first and second operand are empty,
-             first operand size > 0,
-             second operand size == 0
-             => return true
-            """)
-    void contains3() {
-        Bits firstOperand = new Bits(500);
-        Bits secondOperand = new Bits();
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first and second operand are empty,
-             first operand > 0,
-             second operand > 0,
-             => return true
-            """)
-    void contains4() {
-        Bits firstOperand = new Bits(500);
-        Bits secondOperand = new Bits(500);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is empty,
-             first operand size > second operand size
-             => return true
-            """)
-    void contains5() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 470);
-        Bits secondOperand = new Bits();
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is empty,
-             first operand size == second operand size
-             => return true
-            """)
-    void contains6() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 477);
-        Bits secondOperand = new Bits(500);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             secondOperand is emtpy,
-             first operand size > second operand size
-             => return true
-            """)
-    void contains7() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(127, 399);
-        Bits secondOperand = new Bits(700);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is not empty,
-             first operand contains second,
-             first operand size > second operand size
-             => return true
-            """)
-    void contains8() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(107, 423);
-        Bits secondOperand = new Bits(200);
-        secondOperand.setRange(107, 189);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is not empty,
-             first operand contains second,
-             first operand size == second operand size
-             => return true
-            """)
-    void contains9() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(107, 405);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(107, 370);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is not empty,
-             first operand contains second,
-             first operand size < second operand size
-             => return true
-            """)
-    void contains10() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(110, 401);
-        Bits secondOperand = new Bits(600);
-        secondOperand.setRange(110, 383);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is not empty,
-             first operand doesn't contain second,
-             first operand size > second operand size
-             => return false
-            """)
-    void contains11() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(95, 404);
-        Bits secondOperand = new Bits(300);
-        secondOperand.setRange(90, 300);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is not empty,
-             first operand doesn't contain second,
-             first operand size == second operand size
-             => return false
-            """)
-    void contains12() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(150, 450);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first operand is not empty,
-             second operand is not empty,
-             first operand doesn't contain second,
-             first operand size < second operand size
-             => return false
-            """)
-    void contains13() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 350);
-        Bits secondOperand = new Bits(600);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.contains(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            contains(other):
-             first and same operand is same object,
-             => return true
-            """)
-    void contains14() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(77, 451);
-
-        Assertions.assertThat(firstOperand.contains(firstOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            intersect(other):
-             first operand size < second operand size,
-             first operand doesn't intersect second
-             => return false
-            """)
-    void intersect1() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 240);
-        Bits secondOperand = new Bits(600);
-        secondOperand.setRange(240, 500);
-
-        Assertions.assertThat(firstOperand.intersect(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            intersect(other):
-             first operand size < second operand size,
-             first operand intersect second
-             => return true
-            """)
-    void intersect2() {
-        Bits firstOperand = new Bits(300);
-        firstOperand.setRange(150, 300);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(299, 500);
-
-        Assertions.assertThat(firstOperand.intersect(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            intersect(other):
-             first operand size == second operand size,
-             first operand doesn't intersect second
-             => return false
-            """)
-    void intersect3() {
-        Bits firstOperand = new Bits(300);
-        firstOperand.setRange(10, 150);
-        Bits secondOperand = new Bits(300);
-        secondOperand.setRange(150, 300);
-
-        Assertions.assertThat(firstOperand.intersect(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            intersect(other):
-             first operand size == second operand size,
-             first operand intersect second
-             => return true
-            """)
-    void intersect4() {
-        Bits firstOperand = new Bits(300);
-        firstOperand.setRange(10, 150);
-        Bits secondOperand = new Bits(300);
-        secondOperand.setRange(149, 300);
-
-        Assertions.assertThat(firstOperand.intersect(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            intersect(other):
-             first operand size > second operand size,
-             first operand doesn't intersect second
-             => return false
-            """)
-    void intersect5() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 456);
-        Bits secondOperand = new Bits(300);
-        secondOperand.setRange(0, 120);
-
-        Assertions.assertThat(firstOperand.intersect(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            intersect(other):
-             first and second operand are same object
-             => return true
-            """)
-    void intersect6() {
-        Bits firstOperand = new Bits(400);
-        firstOperand.setRange(120, 370);
-
-        Assertions.assertThat(firstOperand.intersect(firstOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            intersect(other):
-             second operand is empty,
-             second operand size == 0
-             => return false
-            """)
-    void intersect7() {
-        Bits firstOperand = new Bits(400);
-        firstOperand.setRange(100, 394);
-        Bits secondOperand = new Bits();
-
-        Assertions.assertThat(firstOperand.intersect(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            equals(Object o):
-             first operand size != second operand size,
-             first operand bits don't equal second operand bits
-             => return false
-            """)
-    void equals1() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 450);
-        Bits secondOperand = new Bits(450);
-        secondOperand.setRange(200, 401);
-
-        Assertions.assertThat(firstOperand).isNotEqualTo(secondOperand);
-        Assertions.assertThat(firstOperand).isNotEqualTo(secondOperand);
-    }
-
-    @Test
-    @DisplayName("""
-            equals(Object o):
-             first operand size != second operand size,
-             first operand bits equal second operand bits
-             => return false
-            """)
-    void equals2() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 436);
-        Bits secondOperand = new Bits(501);
-        secondOperand.setRange(120, 436);
-
-        Assertions.assertThat(firstOperand).isNotEqualTo(secondOperand);
-    }
-
-    @Test
-    @DisplayName("""
-            equals(Object o):
-             first operand size == second operand size,
-             first operand bits don't equal second operand bits
-             => return false
-            """)
-    void equals3() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 468);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(119, 467);
-
-        Assertions.assertThat(firstOperand).isNotEqualTo(secondOperand);
-    }
-
-    @Test
-    @DisplayName("""
-            equals(Object o):
-             first operand size == second operand size,
-             first operand bits equal second operand bits
-             => return true
-            """)
-    void equals4() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(120, 455);
-        secondOperand.clearAll(134, 233, 236, 400, 425);
-
-        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
-    }
-
-    @Test
     @DisplayName("equals(Object o): idempotence property")
-    void equals5() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
+    @Test
+    void equals_idempotence() {
+        Bits origin = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
 
-        Assertions.assertThat(firstOperand).isEqualTo(firstOperand);
+        Assertions.assertThat(origin.equals(origin)).isTrue();
     }
 
-    @Test
     @DisplayName("equals(Object o): commutative property")
-    void equals6() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(120, 455);
-        secondOperand.clearAll(134, 233, 236, 400, 425);
+    @Test
+    void equals_commutative() {
+        Bits first = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
+        Bits second = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
 
-        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
-        Assertions.assertThat(secondOperand).isEqualTo(firstOperand);
+        Assertions.assertThat(first.equals(second) == second.equals(first)).isTrue();
     }
 
-    @Test
     @DisplayName("equals(Object o): transitive property")
-    void equals7() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(120, 455);
-        secondOperand.clearAll(134, 233, 236, 400, 425);
-        Bits threadOperand = new Bits(500);
-        threadOperand.setRange(120, 455);
-        threadOperand.clearAll(134, 233, 236, 400, 425);
+    @Test
+    void equals_transitive() {
+        Bits first = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
+        Bits second = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
+        Bits third = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
 
-        Assertions.assertThat(firstOperand).isEqualTo(secondOperand);
-        Assertions.assertThat(secondOperand).isEqualTo(threadOperand);
-        Assertions.assertThat(firstOperand).isEqualTo(threadOperand);
+        Assertions.assertThat(first.equals(second) == second.equals(third) == first.equals(third))
+                .isTrue();
     }
 
-    @Test
-    @DisplayName("""
-            equalsIgnoreSize(Object o):
-             first operand size != second operand size,
-             first operand bits don't equal second operand bits
-             => return false
+    @DisplayName("equalsIgnoreSize(other):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             other is {1}
+             => expected is {2}
             """)
-    void equalsIgnoreSize1() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 450);
-        Bits secondOperand = new Bits(450);
-        secondOperand.setRange(200, 401);
+    @MethodSource("provideForEqualsIgnoreSize")
+    void equalsIgnoreSize(Bits origin, Bits other, boolean expected) {
+        boolean actual = origin.equalsIgnoreSize(other);
 
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(secondOperand)).isFalse();
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("""
-            equalsIgnoreSize(Object o):
-             first operand size != second operand size,
-             first operand bits equal second operand bits
-             => return true
-            """)
-    void equalsIgnoreSize2() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 436);
-        Bits secondOperand = new Bits(501);
-        secondOperand.setRange(120, 436);
-
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(secondOperand)).isTrue();
-    }
-
-    @Test
-    @DisplayName("""
-            equalsIgnoreSize(Object o):
-             first operand size == second operand size,
-             first operand bits don't equal second operand bits
-             => return false
-            """)
-    void equalsIgnoreSize3() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 468);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(119, 467);
-
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(secondOperand)).isFalse();
-    }
-
-    @Test
-    @DisplayName("""
-            equalsIgnoreSize(Object o):
-             first operand size == second operand size,
-             first operand bits equal second operand bits
-             => return true
-            """)
-    void equalsIgnoreSize4() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(120, 455);
-        secondOperand.clearAll(134, 233, 236, 400, 425);
-        
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(secondOperand)).isTrue();
-    }
-
-    @Test
     @DisplayName("equalsIgnoreSize(Object o): idempotence property => return true")
-    void equalsIgnoreSize5() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
+    @Test
+    void equalsIgnoreSize_idempotence() {
+        Bits origin = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
 
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(firstOperand)).isTrue();
+        Assertions.assertThat(origin.equalsIgnoreSize(origin)).isTrue();
     }
 
-    @Test
     @DisplayName("equalsIgnoreSize(Object o): commutative property => return true")
-    void equalsIgnoreSize6() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(120, 455);
-        secondOperand.clearAll(134, 233, 236, 400, 425);
+    @Test
+    void equalsIgnoreSize_commutative() {
+        Bits first = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
+        Bits second = new Bits(600)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
 
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(secondOperand)).isTrue();
-        Assertions.assertThat(secondOperand.equalsIgnoreSize(firstOperand)).isTrue();
+        Assertions.assertThat(first.equalsIgnoreSize(second) == second.equalsIgnoreSize(first)).isTrue();
     }
 
-    @Test
     @DisplayName("equalsIgnoreSize(Object o): transitive property")
-    void equalsIgnoreSize7() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(120, 455);
-        firstOperand.clearAll(134, 233, 236, 400, 425);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(120, 455);
-        secondOperand.clearAll(134, 233, 236, 400, 425);
-        Bits threadOperand = new Bits(500);
-        threadOperand.setRange(120, 455);
-        threadOperand.clearAll(134, 233, 236, 400, 425);
+    @Test
+    void equalsIgnoreSize_transitive() {
+        Bits first = new Bits(500)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
+        Bits second = new Bits(600)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
+        Bits third = new Bits(550)
+                .setRange(120, 455)
+                .clearAll(134, 233, 236, 400, 425);
 
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(secondOperand)).isTrue();
-        Assertions.assertThat(secondOperand.equalsIgnoreSize(threadOperand)).isTrue();
-        Assertions.assertThat(firstOperand.equalsIgnoreSize(threadOperand)).isTrue();
+        Assertions.assertThat(first.equalsIgnoreSize(second) == second.equalsIgnoreSize(third)
+                        == first.equalsIgnoreSize(third))
+                .isTrue();
     }
 
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size > second operand size,
-             first operand bits > second operand bits as unsigned number
-             => return positive number
+    @DisplayName("compareTo(other):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             other is {1}
+             => expected is {2}
             """)
-    void compareTo1() {
-         Bits firstOperand = new Bits(500);
-         firstOperand.setRange(100, 400);
-         Bits secondOperand = new Bits(400);
-         secondOperand.setRange(100, 399);
+    @MethodSource("provideForCompareTo")
+    void compareTo(Bits origin, Bits other, int expected) {
+        int actual = origin.compareTo(other);
 
-         Assertions.assertThat(firstOperand.compareTo(secondOperand)).isGreaterThan(0);
+        Assertions.assertThat(Integer.compare(actual, 0)).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size > second operand size,
-             first operand bits == second operand bits as unsigned number
-             => return positive number
-            """)
-    void compareTo2() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(400);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isGreaterThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size > second operand size,
-             first operand bits < second operand bits as unsigned number
-             => return positive number
-            """)
-    void compareTo3() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 399);
-        Bits secondOperand = new Bits(400);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isGreaterThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size < second operand size,
-             first operand bits > second operand bits as unsigned number
-             => return negative number
-            """)
-    void compareTo4() {
-        Bits firstOperand = new Bits(400);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(100, 399);
-        
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isLessThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size < second operand size,
-             first operand bits == second operand bits as unsigned number
-             => return negative number
-            """)
-    void compareTo5() {
-        Bits firstOperand = new Bits(400);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isLessThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size < second operand size,
-             first operand bits < second operand bits as unsigned number
-             => return negative number
-            """)
-    void compareTo6() {
-        Bits firstOperand = new Bits(400);
-        firstOperand.setRange(100, 399);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isLessThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size == second operand size,
-             first operand bits < second operand bits as unsigned number
-             => return negative value
-            """)
-    void compareTo7() {
-        Bits firstOperand = new Bits(400);
-        firstOperand.setRange(100, 399);
-        Bits secondOperand = new Bits(400);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isLessThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size == second operand size,
-             first operand bits == second operand bits as unsigned number
-             => return 0
-            """)
-    void compareTo8() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isZero();
-    }
-
-    @Test
-    @DisplayName("""
-            compareTo(Bits o):
-             first operand size == second operand size,
-             first operand bits > second operand bits as unsigned number
-             => return positive number
-            """)
-    void compareTo9() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(101, 400);
-
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isGreaterThan(0);
-    }
-
-    @Test
     @DisplayName("""
             compareTo(Bits o):
              x.compareTo(y) == 0
              => x.compareTo(z) == y.compareTo(z)
             """)
-    void compareTo10() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(firstOperand);
-        Bits threadOperand = new Bits(450);
-        threadOperand.setRange(100, 450);
+    @Test
+    void compareTo_chain() {
+        Bits first = new Bits(500).setRange(100, 400);
+        Bits second = new Bits(500).setRange(100, 400);
+        Bits third = new Bits(450).setRange(100, 450);
 
-        Assertions.assertThat(firstOperand.compareTo(threadOperand)).
-                isEqualTo(secondOperand.compareTo(threadOperand));
+        Assertions.assertThat(first.compareTo(third )== second.compareTo(third)).isTrue();
     }
 
-    @Test
     @DisplayName("""
             compareTo(Bits o):
              transitive property
             """)
-    void compareTo11() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(95, 400);
-        Bits threadOperand = new Bits(505);
-        threadOperand.setRange(100, 450);
+    @Test
+    void compareTo_transitive() {
+        Bits first = new Bits(500).setRange(100, 400);
+        Bits second = new Bits(500).setRange(95, 400);
+        Bits third = new Bits(505).setRange(100, 450);
 
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).isLessThan(0);
-        Assertions.assertThat(secondOperand.compareTo(threadOperand)).isLessThan(0);
-        Assertions.assertThat(firstOperand.compareTo(threadOperand)).isLessThan(0);
+        Assertions.assertThat(first.compareTo(second) < 0 && second.compareTo(third) < 0 &&
+                first.compareTo(third) < 0).isTrue();
     }
 
-    @Test
     @DisplayName("""
             compareTo(Bits o):
              x.compareTo(y) == -y.compareTo(x)
             """)
-    void compareTo12() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(95, 400);
+    @Test
+    void compareTo_asymmetry() {
+        Bits first = new Bits(500).setRange(100, 400);
+        Bits second = new Bits(500).setRange(95, 400);
 
-        Assertions.assertThat(firstOperand.compareTo(secondOperand)).
-                isEqualTo(-secondOperand.compareTo(firstOperand));
+        Assertions.assertThat(first.compareTo(second) == -second.compareTo(first)).isTrue();
     }
 
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size > second operand size,
-             first operand bits > second operand bits as unsigned number
-             => return positive number
+    @DisplayName("compareIgnoreSize(other):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             other is {1}
+             => expected is {2}
             """)
-    void compareIgnoreSize1() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(400);
-        secondOperand.setRange(101, 399);
-        
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).
-                isGreaterThan(0);
+    @MethodSource("provideForCompareIgnoreSize")
+    void compareIgnoreSize(Bits origin, Bits other, int expected) {
+        int actual = origin.compareIgnoreSize(other);
+
+        Assertions.assertThat(Integer.compare(actual, 0)).isEqualTo(expected);
     }
 
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size > second operand size,
-             first operand bits == second operand bits as unsigned number
-             => return 0
-            """)
-    void compareIgnoreSize2() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(400);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).isZero();
-    }
-
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size > second operand size,
-             first operand bits < second operand bits as unsigned number
-             => return negative number
-            """)
-    void compareIgnoreSize3() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 340);
-        Bits secondOperand = new Bits(400);
-        secondOperand.setRange(95, 340);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).isLessThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size < second operand size,
-             first operand bits > second operand bits as unsigned number
-             => return positive number
-            """)
-    void compareIgnoreSize4() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 450);
-        Bits secondOperand = new Bits(600);
-        secondOperand.setRange(100, 440);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).
-                isGreaterThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size < second operand size,
-             first operand bits == second operand bits as unsigned number
-             => return 0
-            """)
-    void compareIgnoreSize5() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(600);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).isZero();
-    }
-
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size < second operand size,
-             first operand bits < second operand bits as unsigned number
-             => return negative value
-            """)
-    void compareIgnoreSize6() {
-        Bits firstOperand = new Bits(400);
-        firstOperand.setRange(100, 390);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(90, 390);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).isLessThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size == second operand size,
-             first operand bits > second operand bits as unsigned number
-             => return positive number
-            """)
-    void compareIgnoreSize7() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(140, 400);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).
-                isGreaterThan(0);
-    }
-
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size == second operand size,
-             first operand bits == second operand bits as unsigned number
-             => return 0
-            """)
-    void compareIgnoreSize8() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(100, 400);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).isZero();
-    }
-
-    @Test
-    @DisplayName("""
-            compareIgnoreSize(Bits o):
-             first operand size == second operand size,
-             first operand bits < second operand bits as unsigned number
-             => return negative number
-            """)
-    void compareIgnoreSize9() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(100, 401);
-
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).isLessThan(0);
-    }
-
-    @Test
     @DisplayName("""
             compareIgnoreSize(Bits o):
              x.compareTo(y) == 0
              => x.compareTo(z) == y.compareTo(z)
             """)
-    void compareIgnoreSize10() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 430);
-        Bits secondOperand = new Bits(firstOperand);
-        Bits thirdOperand = new Bits(500);
-        thirdOperand.setRange(80, 430);
+    @Test
+    void compareIgnoreSize_chain() {
+        Bits first = new Bits(500).setRange(100, 400);
+        Bits second = new Bits(700).setRange(100, 400);
+        Bits third = new Bits(450).setRange(100, 450);
 
-        Assertions.assertThat(firstOperand.compareIgnoreSize(thirdOperand)).
-                isEqualTo(secondOperand.compareIgnoreSize(thirdOperand));
+        Assertions.assertThat(first.compareIgnoreSize(third) == second.compareIgnoreSize(third)).isTrue();
     }
 
-    @Test
     @DisplayName("""
             compareIgnoreSize(Bits o):
              transitive property
             """)
-    void compareIgnoreSize11() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(95, 400);
-        Bits threadOperand = new Bits(500);
-        threadOperand.setRange(100, 450);
+    @Test
+    void compareIgnoreSize_transitive() {
+        Bits first = new Bits(500).setRange(100, 400);
+        Bits second = new Bits(600).setRange(95, 400);
+        Bits third = new Bits(700).setRange(100, 450);
 
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).isLessThan(0);
-        Assertions.assertThat(secondOperand.compareIgnoreSize(threadOperand)).isLessThan(0);
-        Assertions.assertThat(firstOperand.compareIgnoreSize(threadOperand)).isLessThan(0);
+        Assertions.assertThat(first.compareIgnoreSize(second) < 0 &&
+                second.compareIgnoreSize(third) < 0 &&
+                first.compareIgnoreSize(third) < 0).isTrue();
     }
 
-    @Test
     @DisplayName("""
             compareIgnoreSize(Bits o):
              x.compareTo(y) == -y.compareTo(x)
             """)
-    void compareIgnoreSize12() {
-        Bits firstOperand = new Bits(500);
-        firstOperand.setRange(100, 400);
-        Bits secondOperand = new Bits(500);
-        secondOperand.setRange(95, 400);
+    @Test
+    void compareIgnoreSize_asymmetry() {
+        Bits first = new Bits(500).setRange(100, 400);
+        Bits second = new Bits(600).setRange(95, 400);
 
-        Assertions.assertThat(firstOperand.compareIgnoreSize(secondOperand)).
-                isEqualTo(-secondOperand.compareIgnoreSize(firstOperand));
+        Assertions.assertThat(first.compareTo(second) == -second.compareTo(first)).isTrue();
     }
 
-    @Test
-    @DisplayName("toBinaryString(): size == 0 => return empty String")
-    void toBinaryString1() {
-        Bits bits = new Bits();
-
-        Assertions.assertThat(bits.toBinaryString()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("""
-            toBinaryString():
-             size > 0
-             => return a string with length = Bits.size
+    @DisplayName("toBinaryString():")
+    @ParameterizedTest(name = """
+             origin is {0}
+             => expected is {1}
             """)
-    void toBinaryString2() {
-        Bits bits = new Bits(1017);
-        bits.setRange(230, 543);
+    @MethodSource("provideForToBinaryString")
+    void toBinaryString(Bits origin, String expected) {
+        String actual = origin.toBinaryString();
 
-        String actual = bits.toBinaryString();
-
-        Assertions.assertThat(actual).hasSize(1017);
-    }
-
-    @Test
-    @DisplayName("""
-            toBinaryString():
-             size > 0,
-             there are not bits set to one
-             => return a string containing only zeros
-            """)
-    void toBinaryString3() {
-        Bits bits = new Bits(1017);
-
-        String actual = bits.toBinaryString();
-
-        Assertions.assertThat(actual).
-                hasSize(1017).
-                containsPattern("^0+$");
-    }
-
-    @Test
-    @DisplayName("""
-            toBinaryString():
-             size > 0,
-             all bits set to one
-             => return a string containing only ones
-            """)
-    void toBinaryString4() {
-        Bits bits = new Bits(1017);
-        bits.setAll();
-
-        String actual = bits.toBinaryString();
-
-        Assertions.assertThat(actual).
-                hasSize(1017).
-                containsPattern("^1+$");
-    }
-
-    @Test
-    @DisplayName("""
-            toBinaryString():
-             size > 0 && size < 64,
-             there are bits set to one and set to zero,
-             => return correct result
-            """)
-    void toBinaryString5() {
-        Bits bits = new Bits(57);
-        bits.setAll(0, 8, 16, 23, 24, 25, 26, 27, 42, 44, 50);
-
-        String actual = bits.toBinaryString();
-
-        Assertions.assertThat(actual).
-                isEqualTo("000000100000101000000000000001111100000010000000100000001");
-    }
-
-    @Test
-    @DisplayName("""
-            toBinaryString():
-             size > 64,
-             there are bits set to one and set to zero,
-             => return correct result
-            """)
-    void toBinaryString6() {
-        Bits bits = new Bits(94);
-        bits.setAll(0, 2, 3, 4, 5, 7, 9, 13, 16, 18,
-                19, 20, 22, 23, 27, 28, 29, 33, 34, 36,
-                37, 38, 40, 41, 49, 54, 55, 56, 57, 58,
-                61, 63, 64, 66, 67, 70, 73, 74, 76, 77,
-                80, 81, 85, 88, 89, 91, 92, 93);
-
-        String actual = bits.toBinaryString();
-
-        Assertions.assertThat(actual).
-                isEqualTo("1110110010001100110110010011011010011111000010000000110111011000111000110111010010001010111101");
-    }
-
-    @Test
-    @DisplayName("""
-            toBinaryString():
-             size > 64,
-             leading bits are zeros
-             => return correct result
-            """)
-    void toBinaryString7() {
-        Bits bits = new Bits(96);
-        bits.setAll(0, 2, 3, 4, 5, 7, 9, 13, 16, 18,
-                19, 20, 22, 23, 27, 28, 29, 33, 34, 36,
-                37, 38, 40, 41, 49, 54, 55, 56, 57, 58);
-
-        String actual = bits.toBinaryString();
-
-        Assertions.assertThat(actual).
-                isEqualTo("000000000000000000000000000000000000011111000010000000110111011000111000110111010010001010111101");
+        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
 
@@ -2888,7 +1623,7 @@ class BitsTest {
         );
     }
 
-    private static Stream<Arguments> provideForGrowTo_ExceptionCase() {
+    private static Stream<Arguments> provideForCheckingIndexForNegative_ExceptionCase() {
         return Stream.of(
                 Arguments.of(new Bits(0), -1),
                 Arguments.of(new Bits(1), -1),
@@ -2961,6 +1696,7 @@ class BitsTest {
                         new Bits(500).setRange(0, 200),
                         0, 0, 100,
                         new Bits(500).setRange(0, 250),
+                        100,
                         "srcPos + length <= src.size(), destPos + length <= dest.size()"
                 ),
                 Arguments.of(
@@ -2968,6 +1704,7 @@ class BitsTest {
                         new Bits(500).setRange(50, 200),
                         0, 400, 100,
                         new Bits(500).setRange(50, 250).setRange(450, 500),
+                        100,
                         "srcPos + length <= src.size(), destPos + length <= dest.size()"
                 ),
                 Arguments.of(
@@ -2975,6 +1712,7 @@ class BitsTest {
                         new Bits(500).setRange(400, 450),
                         400, 0, 100,
                         new Bits(500).setRange(0, 50).setRange(100, 250),
+                        100,
                         "srcPos + length <= src.size(), destPos + length <= dest.size()"
                 ),
                 Arguments.of(
@@ -2982,6 +1720,7 @@ class BitsTest {
                         new Bits(500).setRange(450, 500),
                         400, 400, 100,
                         new Bits(500).setRange(50, 250).setRange(450, 500),
+                        100,
                         "srcPos + length <= src.size(), destPos + length <= dest.size()"
                 ),
                 Arguments.of(
@@ -2989,6 +1728,7 @@ class BitsTest {
                         new Bits(500).setRange(450, 500),
                         300, 400, 0,
                         new Bits(500).setRange(10, 250),
+                        0,
                         "srcPos + length <= src.size(), destPos + length <= dest.size()"
                 ),
                 Arguments.of(
@@ -2996,6 +1736,7 @@ class BitsTest {
                         new Bits(500).setRange(350, 500),
                         499, 0, 100,
                         new Bits(500).setRange(50, 250).setAll(0),
+                        1,
                         "srcPos + length >= src.size(), destPos + length <= dest.size()"
                 ),
                 Arguments.of(
@@ -3003,6 +1744,7 @@ class BitsTest {
                         new Bits(500).setRange(350, 500),
                         490, 0, 100,
                         new Bits(500).setRange(0, 10).setRange(50, 250).setRange(450, 500),
+                        10,
                         "srcPos + length >= src.size(), destPos + length <= dest.size()"
                 ),
                 Arguments.of(
@@ -3010,6 +1752,7 @@ class BitsTest {
                         new Bits(500).setRange(300, 450),
                         400, 499, 100,
                         new Bits(500).setRange(50, 250).setAll(499),
+                        1,
                         "srcPos + length <= src.size(), destPos + length >= dest.size()"
                 ),
                 Arguments.of(
@@ -3017,6 +1760,7 @@ class BitsTest {
                         new Bits(500).setRange(300, 450),
                         400, 450, 100,
                         new Bits(500).setRange(50, 250).setRange(450, 500),
+                        50,
                         "srcPos + length <= src.size(), destPos + length >= dest.size()"
                 ),
                 Arguments.of(
@@ -3024,6 +1768,7 @@ class BitsTest {
                         new Bits(500).setRange(350, 500),
                         450, 499, 100,
                         new Bits(500).setRange(50, 250).setAll(499),
+                        1,
                         "srcPos + length >= src.size(), destPos + length >= dest.size()"
                 ),
                 Arguments.of(
@@ -3031,6 +1776,7 @@ class BitsTest {
                         new Bits(500).setRange(350, 500),
                         450, 450, 100,
                         new Bits(500).setRange(50, 250).setRange(450, 500),
+                        50,
                         "srcPos + length >= src.size(), destPos + length >= dest.size(), src range == dest range"
                 ),
                 Arguments.of(
@@ -3038,6 +1784,7 @@ class BitsTest {
                         new Bits(500).setRange(350, 500),
                         499, 450, 100,
                         new Bits(500).setRange(50, 250).setAll(450),
+                        1,
                         "srcPos + length >= src.size(), destPos + length >= dest.size(), src range > dest range"
                 )
         );
@@ -3049,74 +1796,405 @@ class BitsTest {
                         new Bits(500).setRange(50, 250),
                         0, 0, 100,
                         new Bits(500).setRange(50, 250),
+                        100,
                         "srcPos + length <= origin.size(), destPos + length <= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 250),
                         0, 400, 100,
                         new Bits(500).setRange(50, 250).setRange(450, 500),
+                        100,
                         "srcPos + length <= origin.size(), destPos + length <= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(450, 500),
                         400, 0, 100,
                         new Bits(500).setRange(50, 100).setRange(450, 500),
+                        100,
                         "srcPos + length <= origin.size(), destPos + length <= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(450, 500),
                         400, 400, 100,
                         new Bits(500).setRange(450, 500),
+                        100,
                         "srcPos + length <= origin.size(), destPos + length <= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 250),
                         45, 450, 0,
                         new Bits(500).setRange(50, 250),
+                        0,
                         "srcPos + length <= origin.size(), destPos + length <= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 400),
                         499, 50, 100,
                         new Bits(500).setRange(51, 400),
+                        1,
                         "srcPos + length >= origin.size(), destPos + length <= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 250).setRange(450, 500),
                         440, 50, 100,
                         new Bits(500).setRange(60, 250).setRange(450, 500),
+                        60,
                         "srcPos + length >= origin.size(), destPos + length <= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 250),
                         200, 499, 100,
                         new Bits(500).setRange(50, 250).setAll(499),
+                        1,
                         "srcPos + length <= origin.size(), destPos + length >= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 250),
                         200, 450, 100,
                         new Bits(500).setRange(50, 250).setRange(450, 500),
+                        50,
                         "srcPos + length <= origin.size(), destPos + length >= origin.size()"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 250),
                         200, 499, 400,
                         new Bits(500).setRange(50, 250).setAll(499),
+                        1,
                         "srcPos + length >= origin.size(), destPos + length >= origin.size(), dest range < src range"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 250),
                         200, 200, 400,
                         new Bits(500).setRange(50, 250),
+                        300,
                         "srcPos + length >= origin.size(), destPos + length >= origin.size(), dest range == src range"
                 ),
                 Arguments.of(
                         new Bits(500).setRange(50, 500),
                         499, 0, 1000,
                         new Bits(500).setRange(50, 500).setAll(0),
+                        1,
                         "srcPos + length >= origin.size(), destPos + length >= origin.size(), dest range > src range"
                 )
+        );
+    }
+
+    private static Stream<Arguments> provideForTruncateTo() {
+        return Stream.of(
+                Arguments.of(
+                        Bits.filled(65),
+                        64,
+                        Bits.filled(64),
+                        new Bits(128).setRange(0, 64)
+                ),
+                Arguments.of(
+                        Bits.filled(65),
+                        63,
+                        Bits.filled(63),
+                        new Bits(128).setRange(0, 63)
+                ),
+                Arguments.of(
+                        Bits.filled(129),
+                        128,
+                        Bits.filled(128),
+                        new Bits(256).setRange(0, 128)
+                ),
+                Arguments.of(
+                        new Bits(500).setRange(230, 500),
+                        501,
+                        new Bits(500).setRange(230, 500),
+                        new Bits(600).setRange(230, 500)
+                ),
+                Arguments.of(
+                        new Bits(500).setRange(230, 500),
+                        500,
+                        new Bits(500).setRange(230, 500),
+                        new Bits(600).setRange(230, 500)
+                ),
+                Arguments.of(
+                        new Bits(500).setRange(230, 500),
+                        499,
+                        new Bits(499).setRange(230, 499),
+                        new Bits(600).setRange(230, 499)
+                ),
+                Arguments.of(
+                        new Bits(500).setRange(0, 50).setRange(230, 500),
+                        1,
+                        Bits.filled(1),
+                        new Bits(600).setAll(0)
+                ),
+                Arguments.of(
+                        new Bits(500).setRange(230, 500),
+                        0,
+                        new Bits(0),
+                        new Bits(600)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForCardinality() {
+        return Stream.of(
+                Arguments.of(new Bits(0), 0),
+                Arguments.of(new Bits(1), 0),
+                Arguments.of(new Bits(64), 0),
+                Arguments.of(new Bits(128), 0),
+                Arguments.of(new Bits(129), 0),
+                Arguments.of(new Bits(500), 0),
+                Arguments.of(Bits.filled(1), 1),
+                Arguments.of(Bits.filled(64), 64),
+                Arguments.of(Bits.filled(128), 128),
+                Arguments.of(Bits.filled(129), 129),
+                Arguments.of(Bits.filled(500), 500),
+                Arguments.of(new Bits(500).setRange(0, 50), 50),
+                Arguments.of(new Bits(500).setRange(63, 163).setAll(200, 241, 307, 344), 104)
+        );
+    }
+
+    private static Stream<Arguments> provideForGetHighBitIndex() {
+        return Stream.of(
+                Arguments.of(new Bits(0), -1),
+                Arguments.of(new Bits(500), -1),
+                Arguments.of(Bits.filled(1), 0),
+                Arguments.of(Bits.of(64, 0, 2, 12, 24, 25, 30, 31, 32, 33), 33),
+                Arguments.of(Bits.of(64, 0, 13, 14, 15, 16, 23, 24, 25, 26, 54, 63), 63),
+                Arguments.of(Bits.of(500, 0), 0),
+                Arguments.of(new Bits(500).setRange(120, 256), 255),
+                Arguments.of(new Bits(500).setRange(120, 256).setAll(456, 457, 499), 499)
+        );
+    }
+
+    private static Stream<Arguments> provideForIsClear() {
+        return Stream.of(
+                Arguments.of(new Bits(0), true),
+                Arguments.of(new Bits(500), true),
+                Arguments.of(Bits.of(500, 1), false),
+                Arguments.of(Bits.of(500, 300), false),
+                Arguments.of(Bits.of(500, 499), false)
+        );
+    }
+
+    private static Stream<Arguments> provideForNextSetBit() {
+        return Stream.of(
+                Arguments.of(new Bits(500), 0, List.of(-1)),
+                Arguments.of(new Bits(500).setRange(250, 340), 340, List.of(-1)),
+                Arguments.of(new Bits(500).setRange(250, 255), 250,
+                        List.of(250, 251, 252, 253, 254, -1)),
+                Arguments.of(new Bits(500).setRange(250, 500), 500, List.of(-1)),
+                Arguments.of(new Bits(500).setRange(250, 500), 501, List.of(-1)),
+                Arguments.of(
+                        Bits.of(500, 0,7,12,22,23,27,30,50,51,52,53,54,100,250,251,400,495,499),
+                        36,
+                        List.of(50, 51, 52, 53, 54, 100, 250, 251, 400, 495, 499, -1)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForNextClearBit() {
+        return Stream.of(
+                Arguments.of(Bits.filled(500), 0, List.of(-1)),
+                Arguments.of(Bits.filled(500).clearRange(150, 307), 307, List.of(-1)),
+                Arguments.of(Bits.filled(500).clearRange(250, 255), 250,
+                        List.of(250, 251, 252, 253, 254, -1)),
+                Arguments.of(Bits.filled(500).clearRange(250, 500), 500, List.of(-1)),
+                Arguments.of(Bits.filled(500).clearRange(250, 500), 501, List.of(-1)),
+                Arguments.of(
+                        Bits.filled(500)
+                                .clearAll(0,7,12,22,23,27,30,50,51,52,53,54,100,250,251,400,495,499),
+                        36,
+                        List.of(50, 51, 52, 53, 54, 100, 250, 251, 400, 495, 499, -1)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForContains() {
+        Bits theSameObject = new Bits(500).setRange(47, 300).setAll(0, 42, 43, 317, 404);
+
+        return Stream.of(
+                Arguments.of(new Bits(0), new Bits(0), true),
+                Arguments.of(new Bits(0), new Bits(500), true),
+                Arguments.of(new Bits(500), new Bits(0), true),
+                Arguments.of(new Bits(500), new Bits(500), true),
+                Arguments.of(new Bits(500).setRange(150, 230), new Bits(0), true),
+                Arguments.of(new Bits(500).setRange(150, 230), new Bits(500), true),
+                Arguments.of(new Bits(500).setRange(150, 230), new Bits(700), true),
+                Arguments.of(new Bits(500).setRange(150, 230),
+                        new Bits(300).setRange(177, 212),
+                        true),
+                Arguments.of(new Bits(500).setRange(150, 230),
+                        new Bits(500).setRange(177, 212),
+                        true),
+                Arguments.of(new Bits(500).setRange(150, 230),
+                        new Bits(700).setRange(177, 212),
+                        true),
+                Arguments.of(new Bits(500).setRange(150, 230),
+                        new Bits(300).setRange(149, 229),
+                        false),
+                Arguments.of(new Bits(500).setRange(150, 230),
+                        new Bits(500).setRange(149, 229),
+                        false),
+                Arguments.of(new Bits(500).setRange(150, 230),
+                        new Bits(700).setRange(149, 229),
+                        false),
+                Arguments.of(theSameObject, theSameObject, true)
+        );
+    }
+
+    private static Stream<Arguments> provideForIntersect() {
+        Bits theSameObject = new Bits(500).setRange(47, 300).setAll(0, 42, 43, 317, 404);
+
+        return Stream.of(
+                Arguments.of(new Bits(300).setRange(40, 233),
+                        new Bits(500).setRange(233, 414),
+                        false),
+                Arguments.of(new Bits(300).setRange(40, 233),
+                        new Bits(500).setRange(232, 414),
+                        true),
+                Arguments.of(new Bits(500).setRange(40, 233),
+                        new Bits(500).setRange(233, 414),
+                        false),
+                Arguments.of(new Bits(500).setRange(40, 233),
+                        new Bits(500).setRange(232, 414),
+                        true),
+                Arguments.of(new Bits(700).setRange(40, 233),
+                        new Bits(500).setRange(233, 414),
+                        false),
+                Arguments.of(new Bits(700).setRange(40, 233),
+                        new Bits(500).setRange(232, 414),
+                        true),
+                Arguments.of(theSameObject, theSameObject, true),
+                Arguments.of(new Bits(700).setRange(40, 233), new Bits(0), false),
+                Arguments.of(new Bits(700).setRange(40, 233), new Bits(500), false),
+                Arguments.of(new Bits(700).setRange(40, 233), new Bits(700), false)
+        );
+    }
+
+    private static Stream<Arguments> provideForEquals() {
+        return Stream.of(
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(400).setRange(169, 389).setAll(0, 47, 50, 101),
+                        false),
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(400).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        false),
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(500).setRange(169, 389).setAll(0, 47, 50, 101),
+                        false),
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        true)
+        );
+    }
+
+    private static Stream<Arguments> provideForEqualsIgnoreSize() {
+        return Stream.of(
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(400).setRange(169, 389).setAll(0, 47, 50, 101),
+                        false),
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(400).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        true),
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(500).setRange(169, 389).setAll(0, 47, 50, 101),
+                        false),
+                Arguments.of(new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        new Bits(500).setRange(170, 390).setAll(0, 47, 51, 91, 101),
+                        true)
+        );
+    }
+
+    private static Stream<Arguments> provideForCompareTo() {
+        return Stream.of(
+                Arguments.of(new Bits(500).setRange(170, 301),
+                        new Bits(400).setRange(170, 300),
+                        1),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(400).setRange(170, 300),
+                        1),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(400).setRange(170, 301),
+                        1),
+                Arguments.of(new Bits(400).setRange(170, 301),
+                        new Bits(500).setRange(170, 300),
+                        -1),
+                Arguments.of(new Bits(400).setRange(170, 300),
+                        new Bits(500).setRange(170, 300),
+                        -1),
+                Arguments.of(new Bits(400).setRange(170, 300),
+                        new Bits(500).setRange(170, 301),
+                        -1),
+                Arguments.of(new Bits(500).setRange(170, 301),
+                        new Bits(500).setRange(170, 300),
+                        1),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(500).setRange(170, 300),
+                        0),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(500).setRange(170, 301),
+                        -1)
+        );
+    }
+
+    private static Stream<Arguments> provideForCompareIgnoreSize() {
+        return Stream.of(
+                Arguments.of(new Bits(500).setRange(170, 301),
+                        new Bits(400).setRange(170, 300),
+                        1),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(400).setRange(170, 300),
+                        0),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(400).setRange(170, 301),
+                        -1),
+                Arguments.of(new Bits(400).setRange(170, 301),
+                        new Bits(500).setRange(170, 300),
+                        1),
+                Arguments.of(new Bits(400).setRange(170, 300),
+                        new Bits(500).setRange(170, 300),
+                        0),
+                Arguments.of(new Bits(400).setRange(170, 300),
+                        new Bits(500).setRange(170, 301),
+                        -1),
+                Arguments.of(new Bits(500).setRange(170, 301),
+                        new Bits(500).setRange(170, 300),
+                        1),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(500).setRange(170, 300),
+                        0),
+                Arguments.of(new Bits(500).setRange(170, 300),
+                        new Bits(500).setRange(170, 301),
+                        -1)
+        );
+    }
+
+    private static Stream<Arguments> provideForToBinaryString() {
+        return Stream.of(
+                Arguments.of(new Bits(0), ""),
+                Arguments.of(new Bits(1), "0"),
+                Arguments.of(Bits.filled(1), "1"),
+                Arguments.of(new Bits(64),
+                        "0000000000000000000000000000000000000000000000000000000000000000"),
+                Arguments.of(Bits.filled(64),
+                        "1111111111111111111111111111111111111111111111111111111111111111"),
+                Arguments.of(new Bits(65),
+                        "00000000000000000000000000000000000000000000000000000000000000000"),
+                Arguments.of(Bits.filled(65),
+                        "11111111111111111111111111111111111111111111111111111111111111111"),
+                Arguments.of(new Bits(128),
+                        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                Arguments.of(Bits.filled(128),
+                        "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"),
+                Arguments.of(Bits.of(57, 0, 8, 16, 23, 24, 25, 26, 27, 42, 44, 50),
+                        "000000100000101000000000000001111100000010000000100000001"),
+                Arguments.of(Bits.of(94, 0, 2, 3, 4, 5, 7, 9, 13, 16, 18,
+                                19, 20, 22, 23, 27, 28, 29, 33, 34, 36,
+                                37, 38, 40, 41, 49, 54, 55, 56, 57, 58,
+                                61, 63, 64, 66, 67, 70, 73, 74, 76, 77,
+                                80, 81, 85, 88, 89, 91, 92, 93),
+                        "1110110010001100110110010011011010011111000010000000110111011000111000110111010010001010111101"),
+                Arguments.of(Bits.of(96, 0, 2, 3, 4, 5, 7, 9, 13, 16, 18,
+                                19, 20, 22, 23, 27, 28, 29, 33, 34, 36,
+                                37, 38, 40, 41, 49, 54, 55, 56, 57, 58),
+                        "000000000000000000000000000000000000011111000010000000110111011000111000110111010010001010111101")
         );
     }
 }

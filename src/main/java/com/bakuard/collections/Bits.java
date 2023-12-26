@@ -10,8 +10,8 @@ import java.util.Objects;
  * операции над множеством битов - and, or, not, xor, а также комбинировать эти операции. Также позволяет проверять
  * отношение между множествами такие как включение, строгое включение, пересечение, эквивалентность и
  * линейный порядок. Используется как аналог boolean массивов расходующий меньше памяти (на одно значение - один
- * бит). В отличие от массива может менять свой размер путем явного вызова методов {@link #growTo(int)} и
- * {@link #compressTo(int)}.
+ * бит). В отличие от массива может менять свой размер путем явного вызова методов {@link #growToIndex(int)} и
+ * {@link #truncateToSize(int)}.
  */
 public final class Bits implements Comparable<Bits> {
 
@@ -375,39 +375,37 @@ public final class Bits implements Comparable<Bits> {
      * @return ссылку на этот же объект Bits.
      * @throws IndexOutOfBoundsException если index меньше нуля.
      */
-    public Bits growTo(int index) {
-        assertNotNegative(index);
+    public Bits growToIndex(int index) {
+        assertNotNegativeIndex(index);
         growToIndexOrDoNothing(index);
         return this;
     }
 
     /**
-     * Уменьшает емкость текущего объекта Bits до указанного кол-ва бит. Вызов данного метода может привести к
-     * уменьшению объема памяти, занимаемому данным объектом. Если передаваемый аргумент больше или равен текущему
-     * кол-ву бит, или меньше нуля - не оказывает никакого эффекта.
-     * @param newSize кол-во бит до которого нужно сузить текущий объект Bits.
-     * @return true - передаваемый аргумент меньше текущего размера Bits ({@link #size()}) и вызов метода
-     *                изменил размер Bits, иначе - false.
+     * Обрезает текущий объект Bits до указанного кол-ва бит. Если передаваемый аргумент больше или равен текущему
+     * кол-ву бит - не оказывает никакого эффекта.
+     * @param newSize кол-во бит, до которого нужно обрезать емкость текущего объекта Bits.
+     * @return ссылку на этот же объект.
+     * @throws NegativeSizeException если newSize меньше нуля.
      */
-    public boolean compressTo(int newSize) {
-        boolean isCompress = newSize < size && newSize >= 0;
+    public Bits truncateToSize(int newSize) {
+        assertNotNegativeSize(newSize);
 
-        if(isCompress) {
+        if(newSize < size) {
             size = newSize;
 
-            int numberWords = (newSize >>> 6) + 1;
+            int numberWords = (Math.max(newSize - 1, 0) >>> 6) + 1;
             if(numberWords < words.length) {
                 long[] newWords = new long[numberWords];
                 System.arraycopy(words, 0, newWords, 0, numberWords);
                 words = newWords;
             }
 
-            int indexBitInWord = (newSize - 1) % 64;
-            if(newSize > 0) words[newSize >>> 6] &= -1L >>> (63 - indexBitInWord);
+            if(newSize > 0) words[words.length - 1] &= -1L >>> (64 - newSize);
             else words[0] = 0L;
         }
 
-        return isCompress;
+        return this;
     }
 
     /**
@@ -467,19 +465,21 @@ public final class Bits implements Comparable<Bits> {
      * @throws IndexOutOfBoundsException если fromIndex < 0.
      */
     public int nextSetBit(int fromIndex) {
-        if(fromIndex < 0) {
-            throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-        } else if(fromIndex < size) {
-            int indexWord = fromIndex >>> 6;
-            long word = words[indexWord] >>> fromIndex;
+        assertNotNegativeIndex(fromIndex);
+
+        if(fromIndex < size) {
+            int wordIndex = fromIndex >>> 6;
+            long word = words[wordIndex] >>> fromIndex;
             if(word != 0) return fromIndex + Long.numberOfTrailingZeros(word);
 
-            indexWord += 1;
-            for(; indexWord < words.length; ++indexWord) {
-                word = words[indexWord];
-                if(word != 0) return (indexWord << 6) + Long.numberOfTrailingZeros(word);
+            wordIndex += 1;
+            while(wordIndex < words.length && words[wordIndex] == 0) ++wordIndex;
+
+            if(wordIndex < words.length) {
+                return (wordIndex << 6) + Long.numberOfTrailingZeros(words[wordIndex]);
             }
         }
+
         return -1;
     }
 
@@ -493,30 +493,29 @@ public final class Bits implements Comparable<Bits> {
      * @throws IndexOutOfBoundsException если fromIndex < 0.
      */
     public int nextClearBit(int fromIndex) {
-        if(fromIndex < 0) {
-            throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-        } else if(fromIndex < size) {
-            int indexWord = fromIndex >>> 6;
-            long word = ~(words[indexWord] >> fromIndex);
+        assertNotNegativeIndex(fromIndex);
+
+        if(fromIndex < size) {
+            int wordIndex = fromIndex >>> 6;
+            long word = ~(words[wordIndex] >> fromIndex);
             if(word != 0) return fromIndex + Long.numberOfTrailingZeros(word);
 
-            indexWord += 1;
-            while(indexWord < words.length && ~words[indexWord] == 0) {
-                ++indexWord;
-            }
+            wordIndex += 1;
+            while(wordIndex < words.length && ~words[wordIndex] == 0) ++wordIndex;
 
-            word = ~words[indexWord];
-            if(word != 0) {
-                int result = (indexWord << 6) + Long.numberOfTrailingZeros(word);
+            if(wordIndex < words.length) {
+                int result = (wordIndex << 6) + Long.numberOfTrailingZeros(~words[wordIndex]);
                 if(result < size) return result;
             }
         }
+
         return -1;
     }
 
     /**
      * Проверяет - является ли множество other не строгим подмножеством данного множества бит. Все нулевые биты
-     * идущие за самым старшим единичным битом у обоих операндов - не участвуют в проверке выполняемой этим методом.
+     * идущие за самым старшим единичным битом у обоих операндов - не участвуют в проверке условия выполняемой
+     * этим методом.
      * @param other объект Bits для которого проверяется - является ли он не строгим подмножеством текущего объекта.
      * @return true, если other является не строгим подмножеством текущего объекта, иначе возвращает false.
      */
@@ -644,25 +643,24 @@ public final class Bits implements Comparable<Bits> {
     @Override
     public String toString() {
         StringBuilder array = new StringBuilder();
-        array.append(Bits.toBinaryString(words[0]));
-        for(int i = 1; i < words.length; i++) array.append(',').append(Bits.toBinaryString(words[i]));
+        array.append(Bits.toBinaryString(words[0], 64));
+        for(int i = 1; i < words.length; i++) array.append(',').append(Bits.toBinaryString(words[i], 64));
         return "Bits {size=" + size + ", count words=" + words.length + ", words=[" + array + "]}";
     }
 
     /**
-     * Возвращает двоичное представление данного объекта Bits.
+     * Возвращает строковое представление данного объекта Bits в виде последовательности символов '1' и '0'.
      */
     public String toBinaryString() {
         StringBuilder result = new StringBuilder();
 
         if(size > 0) {
             long lastWord = words[words.length - 1];
-            for(int i = (size & 63) - 1; i >= 0; --i) {
-                result.append((lastWord >> i) & 1L);
-            }
+            int lastWordBitsNumber = (size & 63) == 0 ? 64 : size & 63;
+            result.append(Bits.toBinaryString(lastWord, lastWordBitsNumber));
 
             for(int i = words.length - 2; i >= 0; --i) {
-                result.append(Bits.toBinaryString(words[i]));
+                result.append(Bits.toBinaryString(words[i], 64));
             }
         }
 
@@ -676,9 +674,15 @@ public final class Bits implements Comparable<Bits> {
                     "Expected: index >= 0 && index < size; Actual: index=" + index + ", size=" + size);
     }
 
-    private void assertNotNegative(int index) {
+    private void assertNotNegativeIndex(int index) {
         if(index < 0) {
             throw new IndexOutOfBoundsException("Expected: index >= 0; Actual: index=" + index);
+        }
+    }
+
+    private void assertNotNegativeSize(int size) {
+        if(size < 0) {
+            throw new NegativeSizeException("Expected: size >= 0; Actual: size=" + size);
         }
     }
 
@@ -695,12 +699,11 @@ public final class Bits implements Comparable<Bits> {
         }
     }
     
-    private static String toBinaryString(long value) {
-        char[] chars = new char[64];
-        for(int i = 0; i < 64; i++) {
-            chars[63 - i] = (char)(((value >> i) & 1L) + '0');
+    private static String toBinaryString(long value, final int bitsNumber) {
+        char[] chars = new char[bitsNumber];
+        for(int i = 0; i < bitsNumber; i++) {
+            chars[bitsNumber - 1 - i] = (char)(((value >> i) & 1L) + '0');
         }
         return new String(chars);
     }
-
 }
