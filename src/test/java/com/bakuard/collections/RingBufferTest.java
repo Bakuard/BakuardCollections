@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.testUtil.Fabric;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ public class RingBufferTest {
              => expected {1}
             """)
     @MethodSource("provideForCopyConstructor1")
-    void RingBuffer_copy1(RingBuffer<Integer> origin, RingBuffer<Integer> expected) {
+    void RingBuffer_copy(RingBuffer<Integer> origin, RingBuffer<Integer> expected) {
         RingBuffer<Integer> actual = new RingBuffer<>(origin);
 
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -35,11 +36,11 @@ public class RingBufferTest {
                 expectedCopy {2}
             """)
     @MethodSource("provideForCopyConstructor2")
-    void RingBuffer_copy2(RingBuffer<Integer> origin,
-                          RingBuffer<Integer> expectedOrigin,
-                          RingBuffer<Integer> expectedCopy,
-                          Consumer<RingBuffer<Integer>> originMutator,
-                          Consumer<RingBuffer<Integer>> copyMutator) {
+    void RingBuffer_copy_doNotChangeOrigin(RingBuffer<Integer> origin,
+                                           RingBuffer<Integer> expectedOrigin,
+                                           RingBuffer<Integer> expectedCopy,
+                                           Consumer<RingBuffer<Integer>> originMutator,
+                                           Consumer<RingBuffer<Integer>> copyMutator) {
         RingBuffer<Integer> actualCopy = new RingBuffer<>(origin);
 
         originMutator.accept(origin);
@@ -93,7 +94,7 @@ public class RingBufferTest {
              => expected {1}
             """)
     @MethodSource("provideForOf1")
-    void of1(Integer[] data, RingBuffer<Integer> expected) {
+    void of(Integer[] data, RingBuffer<Integer> expected) {
         RingBuffer<Integer> actual = RingBuffer.of(data);
 
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -107,11 +108,11 @@ public class RingBufferTest {
                 expected ring buffer {2}
             """)
     @MethodSource("provideForOf2")
-    void of2(Integer[] data,
-             Integer[] expectedData,
-             RingBuffer<Integer> expectedBuffer,
-             Consumer<Integer[]> dataMutator,
-             Consumer<RingBuffer<Integer>> bufferMutator) {
+    void of_doNotChangeOrigin(Integer[] data,
+                              Integer[] expectedData,
+                              RingBuffer<Integer> expectedBuffer,
+                              Consumer<Integer[]> dataMutator,
+                              Consumer<RingBuffer<Integer>> bufferMutator) {
         RingBuffer<Integer> actual = RingBuffer.of(data);
 
         dataMutator.accept(data);
@@ -369,14 +370,20 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
+        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+            for(Integer value : data) buffer.putLastOrSkip(value);
+            return buffer;
+        };
+
         return Stream.of(
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         new Integer[]{1},
-                        RingBuffer.of(1)
+                        fabric.create(1)
                 ),
                 Arguments.of(
                         new Integer[0],
@@ -386,11 +393,17 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
+        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+            for(Integer value : data) buffer.putLastOrSkip(value);
+            return buffer;
+        };
+
         return Stream.of(
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{null, null, null, null, null, 6, 7, 8, 9, 10},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {
                             for(int i = 0; i < 5; i++) data[i] = null;
                         },
@@ -399,7 +412,7 @@ public class RingBufferTest {
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        RingBuffer.of(6, 7, 8, 9, 10),
+                        fabric.create(6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {},
                         (Consumer<RingBuffer<Integer>>) buffer -> {
                             for(int i = 0; i < 5; i++) buffer.removeFirst();
@@ -562,23 +575,29 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForPutLastOrSkip() {
+        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+            for(Integer value : data) buffer.putLastOrReplace(value);
+            return buffer;
+        };
+
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         11,
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         false
                 ),
                 Arguments.of(
-                        RingBuffer.of(1),
+                        fabric.create(1),
                         2,
-                        RingBuffer.of(1),
+                        fabric.create(1),
                         false
                 ),
                 Arguments.of(
-                        RingBuffer.of(),
+                        fabric.create(),
                         1,
-                        RingBuffer.of(),
+                        fabric.create(),
                         false
                 ),
                 Arguments.of(
@@ -590,7 +609,7 @@ public class RingBufferTest {
                 Arguments.of(
                         new RingBuffer<>(10),
                         1,
-                        RingBuffer.of(1),
+                        fabric.create(1),
                         true
                 )
         );
@@ -656,29 +675,35 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForPutAllOnLastOrSkip_array() {
+        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+            for(Integer value : data) buffer.putLastOrSkip(value);
+            return buffer;
+        };
+
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[0],
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
@@ -690,25 +715,25 @@ public class RingBufferTest {
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
                         RingBuffer.withExtraSize(6, 1, 2, 3, 4, 5),
                         new Integer[]{6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
                         6
                 ),
                 Arguments.of(
-                        RingBuffer.of(),
+                        fabric.create(),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        RingBuffer.of(),
+                        fabric.create(),
                         0
                 )
         );
