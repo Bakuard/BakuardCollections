@@ -1,5 +1,6 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.testUtil.Fabric;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ public class QueueTest {
              => expected {1}
             """)
     @MethodSource("provideForQueueConstructor1")
-    void Queue_copy1(Queue<Integer> origin, Queue<Integer> expected) {
+    void Queue_copy(Queue<Integer> origin, Queue<Integer> expected) {
         Queue<Integer> actual = new Queue<>(origin);
 
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -35,11 +36,11 @@ public class QueueTest {
                 expectedCopy {2}
             """)
     @MethodSource("provideForQueueConstructor2")
-    void Queue_copy2(Queue<Integer> origin,
-                     Queue<Integer> expectedOrigin,
-                     Queue<Integer> expectedCopy,
-                     Consumer<Queue<Integer>> originMutator,
-                     Consumer<Queue<Integer>> copyMutator) {
+    void Queue_copy_doNotChangeOrigin(Queue<Integer> origin,
+                                      Queue<Integer> expectedOrigin,
+                                      Queue<Integer> expectedCopy,
+                                      Consumer<Queue<Integer>> originMutator,
+                                      Consumer<Queue<Integer>> copyMutator) {
         Queue<Integer> actualCopy = new Queue<>(origin);
 
         originMutator.accept(origin);
@@ -57,7 +58,7 @@ public class QueueTest {
              => expected {1}
             """)
     @MethodSource("provideForOf1")
-    void of1(Integer[] data, Queue<Integer> expected) {
+    void of(Integer[] data, Queue<Integer> expected) {
         Queue<Integer> actual = Queue.of(data);
 
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -71,11 +72,11 @@ public class QueueTest {
                 expected queue {2}
             """)
     @MethodSource("provideForOf2")
-    void of2(Integer[] data,
-             Integer[] expectedData,
-             Queue<Integer> expectedQueue,
-             Consumer<Integer[]> dataMutator,
-             Consumer<Queue<Integer>> queueMutator) {
+    void of_doNotChangeOrigin(Integer[] data,
+                              Integer[] expectedData,
+                              Queue<Integer> expectedQueue,
+                              Consumer<Integer[]> dataMutator,
+                              Consumer<Queue<Integer>> queueMutator) {
         Queue<Integer> actual = Queue.of(data);
 
         dataMutator.accept(data);
@@ -216,8 +217,7 @@ public class QueueTest {
         Queue<Integer> second = Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
         Queue<Integer> third = Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-        Assertions.assertThat(first.equals(second) == second.equals(third) == first.equals(third)).
-                isTrue();
+        Assertions.assertThat(first.equals(second) == second.equals(third) == first.equals(third)).isTrue();
     }
 
 
@@ -262,14 +262,20 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
+        Fabric<Integer, Queue<Integer>> fabric = data -> {
+            Queue<Integer> queue = new Queue<>();
+            for(Integer value : data) queue.putLast(value);
+            return queue;
+        };
+
         return Stream.of(
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        Queue.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         new Integer[]{1},
-                        Queue.of(1)
+                        fabric.create(1)
                 ),
                 Arguments.of(
                         new Integer[0],
@@ -279,11 +285,17 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
+        Fabric<Integer, Queue<Integer>> fabric = data -> {
+            Queue<Integer> queue = new Queue<>();
+            for(Integer value : data) queue.putLast(value);
+            return queue;
+        };
+
         return Stream.of(
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{null, null, null, null, null, 6, 7, 8, 9, 10},
-                        Queue.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {
                             for(int i = 0; i < 5; i++) data[i] = null;
                         },
@@ -292,7 +304,7 @@ public class QueueTest {
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        Queue.of(6, 7, 8, 9, 10),
+                        fabric.create(6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {},
                         (Consumer<Queue<Integer>>) queue -> {
                             for(int i = 0; i < 5; i++) queue.removeFirst();
@@ -370,6 +382,12 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForPutAllOnLastData() {
+        Fabric<Integer, Queue<Integer>> fabric = data -> {
+            Queue<Integer> queue = new Queue<>();
+            for(Integer value : data) queue.putLast(value);
+            return queue;
+        };
+
         return Stream.of(
                 Arguments.of(
                         new Queue<>(),
@@ -379,17 +397,17 @@ public class QueueTest {
                 Arguments.of(
                         new Queue<>(),
                         new Integer[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-                        Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+                        fabric.create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
                 ),
                 Arguments.of(
-                        Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+                        fabric.create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
                         new Integer[0],
-                        Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+                        fabric.create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
                 ),
                 Arguments.of(
-                        Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+                        fabric.create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
                         new Integer[]{10, 11, 12, 13, 14},
-                        Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+                        fabric.create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
                 )
         );
     }

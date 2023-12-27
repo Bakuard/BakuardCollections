@@ -121,7 +121,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
         ++actualModCount;
 
-        expandTo(index + 1);
+        growToSize(index + 1);
         T oldValue = values[index];
         values[index] = value;
         return oldValue;
@@ -135,7 +135,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int lastIndex = size;
-        expandTo(size + 1);
+        growToSize(size + 1);
         values[lastIndex] = value;
     }
 
@@ -149,7 +149,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
             ++actualModCount;
 
             int lastIndex = size;
-            expandTo(size + data.length);
+            growToSize(size + data.length);
             System.arraycopy(data, 0, this.values, lastIndex, data.length);
         }
     }
@@ -176,7 +176,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int oldSize = size;
-        expandTo(size + 1);
+        growToSize(size + 1);
         if(index < oldSize) {
             System.arraycopy(values, index, values, index + 1, oldSize - index);
         }
@@ -223,7 +223,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Меняет местами два элемента.
      * @param firstIndex индекс первого элемента
      * @param secondIndex индекс второго элемента
-     * @throws IndexOutOfBoundsException если хотя бы для одного зи индексов не соблюдается
+     * @throws IndexOutOfBoundsException если хотя бы для одного из индексов не соблюдается
      *                                   условие index >= 0 && index <= size
      */
     public void swap(int firstIndex, int secondIndex) {
@@ -235,21 +235,6 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         T first = values[firstIndex];
         values[firstIndex] = values[secondIndex];
         values[secondIndex] = first;
-    }
-
-    /**
-     * Добавляет все переданные элементы в конец массива увеличивая его длину на кол-во переданных элементов.
-     * Порядок, в котором элементы передаются методу, сохраняется.
-     * @param array добавляемые элементы.
-     */
-    public void concat(Array<T> array) {
-        if(array.size() > 0) {
-            ++actualModCount;
-
-            int lastIndex = size;
-            expandTo(size + array.size());
-            System.arraycopy(array.values, 0, this.values, lastIndex, array.size());
-        }
     }
 
     /**
@@ -395,7 +380,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * @param newSize новая длина массива.
      * @return true - передаваемый аргумент больше длины массива {@link #size()}, иначе - false.
      */
-    public boolean expandTo(int newSize) {
+    public boolean growToSize(int newSize) {
         boolean isExpand = newSize > size;
 
         if(isExpand) {

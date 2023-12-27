@@ -1,5 +1,6 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.testUtil.Fabric;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ public class DequeTest {
              => expected {1}
             """)
     @MethodSource("provideForDequeConstructor1")
-    void Deque_copy1(Deque<Integer> origin, Deque<Integer> expected) {
+    void Deque_copy(Deque<Integer> origin, Deque<Integer> expected) {
         Deque<Integer> actual = new Deque<>(origin);
 
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -35,11 +36,11 @@ public class DequeTest {
                 expectedCopy {2}
             """)
     @MethodSource("provideForDequeConstructor2")
-    void Deque_copy2(Deque<Integer> origin,
-                     Deque<Integer> expectedOrigin,
-                     Deque<Integer> expectedCopy,
-                     Consumer<Deque<Integer>> originMutator,
-                     Consumer<Deque<Integer>> copyMutator) {
+    void Deque_copy_doNotChangeOrigin(Deque<Integer> origin,
+                                      Deque<Integer> expectedOrigin,
+                                      Deque<Integer> expectedCopy,
+                                      Consumer<Deque<Integer>> originMutator,
+                                      Consumer<Deque<Integer>> copyMutator) {
         Deque<Integer> actualCopy = new Deque<>(origin);
 
         originMutator.accept(origin);
@@ -57,7 +58,7 @@ public class DequeTest {
              => expected {1}
             """)
     @MethodSource("provideForOf1")
-    void of1(Integer[] data, Deque<Integer> expected) {
+    void of(Integer[] data, Deque<Integer> expected) {
         Deque<Integer> actual = Deque.of(data);
 
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -71,11 +72,11 @@ public class DequeTest {
                 expected queue {2}
             """)
     @MethodSource("provideForOf2")
-    void of2(Integer[] data,
-             Integer[] expectedData,
-             Deque<Integer> expectedQueue,
-             Consumer<Integer[]> dataMutator,
-             Consumer<Deque<Integer>> queueMutator) {
+    void of_doNotChangeOrigin(Integer[] data,
+                              Integer[] expectedData,
+                              Deque<Integer> expectedQueue,
+                              Consumer<Integer[]> dataMutator,
+                              Consumer<Deque<Integer>> queueMutator) {
         Deque<Integer> actual = Deque.of(data);
 
         dataMutator.accept(data);
@@ -211,14 +212,20 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
+        Fabric<Integer, Deque<Integer>> fabric = data -> {
+            Deque<Integer> deque = new Deque<>();
+            for(Integer value : data) deque.putLast(value);
+            return deque;
+        };
+
         return Stream.of(
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        Deque.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         new Integer[]{1},
-                        Deque.of(1)
+                        fabric.create(1)
                 ),
                 Arguments.of(
                         new Integer[0],
@@ -228,11 +235,17 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
+        Fabric<Integer, Deque<Integer>> fabric = data -> {
+            Deque<Integer> deque = new Deque<>();
+            for(Integer value : data) deque.putLast(value);
+            return deque;
+        };
+
         return Stream.of(
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{null, null, null, null, null, 6, 7, 8, 9, 10},
-                        Deque.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {
                             for(int i = 0; i < 5; i++) data[i] = null;
                         },
@@ -241,7 +254,7 @@ public class DequeTest {
                 Arguments.of(
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        Deque.of(6, 7, 8, 9, 10),
+                        fabric.create(6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {},
                         (Consumer<Deque<Integer>>) deque -> {
                             for(int i = 0; i < 5; i++) deque.removeFirst();

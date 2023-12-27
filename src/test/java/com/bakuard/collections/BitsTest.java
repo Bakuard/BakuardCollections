@@ -10,10 +10,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -25,7 +23,7 @@ class BitsTest {
              => expected {1}
             """)
     @MethodSource("provideForCopyConstructor1")
-    void Bits_copy1(Bits origin, Bits expected) {
+    void Bits_copy(Bits origin, Bits expected) {
         Bits actual = new Bits(origin);
 
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -37,11 +35,11 @@ class BitsTest {
              => expected {1}
             """)
     @MethodSource("provideForCopyConstructor2")
-    void Bits_copy2(Bits origin,
-                    Bits expectedOrigin,
-                    Bits expectedCopy,
-                    BitsMutator originMutator,
-                    BitsMutator expectedMutator) {
+    void Bits_copy_doNotChangeOrigin(Bits origin,
+                                     Bits expectedOrigin,
+                                     Bits expectedCopy,
+                                     BitsMutator originMutator,
+                                     BitsMutator expectedMutator) {
         Bits actualCopy = new Bits(origin);
 
         originMutator.mutate(origin);
@@ -581,14 +579,14 @@ class BitsTest {
         assertions.assertAll();
     }
 
-    @DisplayName("growTo(index):")
+    @DisplayName("growToIndex(index):")
     @ParameterizedTest(name = """
              origin is {0},
              index is {1}
              => expected bits {2}
             """)
-    @MethodSource("provideForGrowTo")
-    void growTo(Bits origin, int index, Bits expected) {
+    @MethodSource("provideForGrowToIndex")
+    void growToIndex(Bits origin, int index, Bits expected) {
         origin.growToIndex(index);
 
         Assertions.assertThat(origin).isEqualTo(expected);
@@ -818,8 +816,7 @@ class BitsTest {
                 .setRange(120, 455)
                 .clearAll(134, 233, 236, 400, 425);
 
-        Assertions.assertThat(first.equals(second) == second.equals(third) == first.equals(third))
-                .isTrue();
+        Assertions.assertThat(first.equals(second) == second.equals(third) == first.equals(third)).isTrue();
     }
 
     @DisplayName("equalsIgnoreSize(other):")
@@ -1611,7 +1608,7 @@ class BitsTest {
         );
     }
 
-    private static Stream<Arguments> provideForGrowTo() {
+    private static Stream<Arguments> provideForGrowToIndex() {
         return Stream.of(
                 Arguments.of(new Bits(0), 0, new Bits(1)),
                 Arguments.of(new Bits(1), 0, new Bits(1)),
