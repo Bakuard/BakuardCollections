@@ -31,8 +31,10 @@ class BitsTest {
 
     @DisplayName("Bits(other): origin and copy must be independent of each other")
     @ParameterizedTest(name = """
-             origin is {0}
-             => expected {1}
+             origin is {0},
+             change origin and copy after creation
+             => expectedOrigin {1},
+                expectedCopy {2}
             """)
     @MethodSource("provideForCopyConstructor2")
     void Bits_copy_doNotChangeOrigin(Bits origin,

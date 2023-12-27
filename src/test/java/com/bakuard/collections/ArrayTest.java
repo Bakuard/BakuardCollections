@@ -46,11 +46,10 @@ class ArrayTest {
         assertions.assertAll();
     }
 
-    @DisplayName("Array(size):")
+    @DisplayName("Array(other):")
     @ParameterizedTest(name = """
-             size is {0}
-             => expectedSize {1},
-                all items is null
+             origin is {0}
+             => expected {1}
             """)
     @MethodSource("provideForCopyConstructor1")
     public void Array_copy(Array<Integer> origin, Array<Integer> expected) {
@@ -59,11 +58,12 @@ class ArrayTest {
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @DisplayName("Array(size):")
+    @DisplayName("Array(other): origin and copy must be independent of each other")
     @ParameterizedTest(name = """
-             size is {0}
-             => expectedSize {1},
-                all items is null
+             origin is {0},
+             change origin and copy after creation
+             => expectedSize is {1},
+                expectedCopy is {2}
             """)
     @MethodSource("provideForCopyConstructor2")
     public void Array_copy_doNotChangeOrigin(Array<Integer> origin,
@@ -387,7 +387,7 @@ class ArrayTest {
         assertions.assertAll();
     }
 
-    @DisplayName("equals(object):")
+    @DisplayName("equals(Object o):")
     @ParameterizedTest(name = """
              origin is {0},
              other is {1}
@@ -438,10 +438,10 @@ class ArrayTest {
 
     private static Stream<Arguments> provideForCopyConstructor1() {
         return Stream.of(
-                Arguments.of(new Array(), new Array()),
-                Arguments.of(new Array(1), new Array(1)),
+                Arguments.of(new Array<>(), new Array<>()),
+                Arguments.of(new Array<>(1), new Array<>(1)),
                 Arguments.of(Array.of(100), Array.of(100)),
-                Arguments.of(new Array(100), new Array(100)),
+                Arguments.of(new Array<>(100), new Array<>(100)),
                 Arguments.of(
                         Array.of(0,1,2,5,null,9,10,13,14,22,null,null,27,34),
                         Array.of(0,1,2,5,null,9,10,13,14,22,null,null,27,34)
@@ -453,7 +453,7 @@ class ArrayTest {
         return Stream.of(
                 Arguments.of(
                         Array.of(0, 1, 2, 23, 24, 212, 604, null, 15),
-                        new Array(),
+                        new Array<>(),
                         Array.of(0, 1, 2, 23, 24, 212, 604, null, 15),
                         (Mutator<Integer, Array<Integer>>) Array::clear,
                         (Mutator<Integer, Array<Integer>>) array -> {}
@@ -461,7 +461,7 @@ class ArrayTest {
                 Arguments.of(
                         Array.of(0, 1, 2, 23, 24, 212, 604, null, 15),
                         Array.of(0, 1, 2, 23, 24, 212, 604, null, 15),
-                        new Array(),
+                        new Array<>(),
                         (Mutator<Integer, Array<Integer>>) array -> {},
                         (Mutator<Integer, Array<Integer>>) Array::clear
                 )
