@@ -56,7 +56,7 @@ class BitsTest {
     @Test
     @DisplayName("Bits(numberBits): numberBits < 0 => exception")
     void Bits_numberBits_exception() {
-        Assertions.assertThatExceptionOfType(IndexOutOfBoundsException.class).
+        Assertions.assertThatExceptionOfType(NegativeSizeException.class).
                 isThrownBy(() -> new Bits(-1));
     }
 

@@ -45,15 +45,14 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         values = (T[]) new Object[MIN_CAPACITY];
     }
 
-    /**
+     /**
      * Создает пустой массив указанной длины.
      * @param size длина массива.
-     * @throws IllegalArgumentException если указанная длина меньше нуля.
+     * @throws NegativeSizeException если указанная длина меньше нуля.
      */
     @SuppressWarnings("unchecked")
     public DynamicArray(int size){
-        if(size < 0)
-            throw new IllegalArgumentException("Длина массива не может быть отрицательной.");
+        assertNotNegativeSize(size);
 
         this.size = size;
         values = (T[]) new Object[Math.max(calculateCapacity(size), MIN_CAPACITY)];

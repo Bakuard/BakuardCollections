@@ -61,9 +61,7 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @SuppressWarnings("unchecked")
     public RingBuffer(int maxSize) {
-        if(maxSize < 0) {
-            throw new NegativeSizeException("Expected: maxSize must be greater then zero. Actual: maxSize=" + maxSize);
-        }
+        assertNotNegativeSize(maxSize);
         values = (T[]) new Object[maxSize];
     }
 

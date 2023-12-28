@@ -24,8 +24,8 @@ class DynamicArrayTest {
     @Test
     @DisplayName("DynamicArray(size): negative size => exception")
     public void DynamicArray_size_exception() {
-        Assertions.assertThatIllegalArgumentException().
-                isThrownBy(() -> new DynamicArray<>(-1));
+        Assertions.assertThatThrownBy(() -> new DynamicArray<>(-1))
+                .isInstanceOf(NegativeSizeException.class);
     }
 
     @DisplayName("DynamicArray(size):")

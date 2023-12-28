@@ -53,11 +53,10 @@ public final class Bits implements Comparable<Bits> {
      * Создает объект Bits зарезервированный для хранения указанного кол-ва бит. Значение любого бита в заданном
      * диапазоне, после вызова этого конструктора, будет равняться 0.
      * @param numberBits емкость создаваемого объекта Bits.
-     * @throws IndexOutOfBoundsException если numberBits меньше нуля.
+     * @throws NegativeSizeException если numberBits меньше нуля.
      */
     public Bits(int numberBits) {
-        if(numberBits < 0)
-            throw new IndexOutOfBoundsException("numberBits must be greater or equal 0. numberBits = " + numberBits);
+        assertNotNegativeSize(numberBits);
         growToIndexOrDoNothing(numberBits - 1);
     }
 
