@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
+import java.util.random.RandomGenerator;
 
 /**
  * Реализация динамического массива с объектами произвольного типа.
@@ -102,9 +103,9 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T replace(int index, T value) {
-        ++actualModCount;
-
         assertInBound(index);
+
+        ++actualModCount;
 
         T oldValue = values[index];
         values[index] = value;
@@ -122,8 +123,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
      */
     public T setWithoutBound(int index, T value) {
-        ++actualModCount;
         if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
+        ++actualModCount;
 
         growToSizeOrDoNothing(index + 1);
         T oldValue = values[index];
@@ -175,9 +176,9 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index <= size
      */
     public void insert(int index, T value) {
-        ++actualModCount;
-
         assertInClosedBound(index);
+
+        ++actualModCount;
 
         int oldSize = size;
         growToSizeOrDoNothing(size + 1);
@@ -231,14 +232,12 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      *                                   условие index >= 0 && index <= size
      */
     public void swap(int firstIndex, int secondIndex) {
-        ++actualModCount;
-
         assertInBound(firstIndex);
         assertInBound(secondIndex);
 
-        T first = values[firstIndex];
-        values[firstIndex] = values[secondIndex];
-        values[secondIndex] = first;
+        ++actualModCount;
+
+        swapAtUncheckedIndexes(firstIndex, secondIndex);
     }
 
     /**
@@ -253,9 +252,9 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T quickRemove(int index) {
-        ++actualModCount;
-
         assertInBound(index);
+
+        ++actualModCount;
 
         T removableItem = values[index];
         values[index] = values[--size];
@@ -274,9 +273,10 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T orderedRemove(int index) {
+        assertInBound(index);
+
         ++actualModCount;
 
-        assertInBound(index);
         return orderedRemoveAtUncheckedIndex(index);
     }
 
@@ -337,6 +337,18 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         Arrays.sort(values, 0, size, comparator);
+    }
+
+    /**
+     * Случайным образом меняет элементы местами друг с другом. Использует для выбора новых позиций элементов
+     * переданный генератор случайных или псевдослучайных чисел.
+     * @param randomGenerator генератор случайных чисел.
+     */
+    public void shuffle(RandomGenerator randomGenerator) {
+        for(int i = 1; i < size; ++i) {
+            int randomIndex = randomGenerator.nextInt(size - i) + i;
+            swapAtUncheckedIndexes(i, randomIndex);
+        }
     }
 
     /**
@@ -604,6 +616,12 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         }
         values[size] = null;
         return removableItem;
+    }
+
+    private void swapAtUncheckedIndexes(int firstIndex, int secondIndex) {
+        T first = values[firstIndex];
+        values[firstIndex] = values[secondIndex];
+        values[secondIndex] = first;
     }
 
 
