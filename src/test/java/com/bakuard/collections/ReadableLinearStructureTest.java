@@ -212,7 +212,7 @@ class ReadableLinearStructureTest {
 
     private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
         return Stream.of(
-                Array.of(data),
+                DynamicArray.of(data),
                 Stack.of(data),
                 Queue.of(data),
                 RingBuffer.of(data)
@@ -223,7 +223,7 @@ class ReadableLinearStructureTest {
             T[] data, int removedItemsNumber, T[] addedData) {
         return Stream.of(
                 new StructAndMutator<>(
-                        Array.of(data),
+                        DynamicArray.of(data),
                         array -> {
                             for(int i = 0; i < removedItemsNumber; i++) array.orderedRemove(0);
                             for(T item : addedData) array.append(item);

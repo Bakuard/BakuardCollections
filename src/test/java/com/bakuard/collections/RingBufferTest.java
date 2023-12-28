@@ -153,10 +153,10 @@ public class RingBufferTest {
             """)
     @MethodSource("provideForPutAllOnLastOrReplace_iterable")
     void putAllOnLastOrReplace_iterable(RingBuffer<Integer> origin,
-                                        Array<Integer> addedValues,
+                                        DynamicArray<Integer> addedValues,
                                         RingBuffer<Integer> expected,
-                                        Array<Integer> expectedReturnedValues) {
-        Array<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
+                                        DynamicArray<Integer> expectedReturnedValues) {
+        DynamicArray<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
@@ -175,8 +175,8 @@ public class RingBufferTest {
     void putAllOnLastOrReplace_array(RingBuffer<Integer> origin,
                                      Integer[] addedValues,
                                      RingBuffer<Integer> expected,
-                                     Array<Integer> expectedReturnedValues) {
-        Array<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
+                                     DynamicArray<Integer> expectedReturnedValues) {
+        DynamicArray<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
@@ -213,7 +213,7 @@ public class RingBufferTest {
             """)
     @MethodSource("provideForPutAllOnLastOrSkip_iterable")
     void putAllOnLastOrSkip_iterable(RingBuffer<Integer> origin,
-                                     Array<Integer> addedValues,
+                                     DynamicArray<Integer> addedValues,
                                      RingBuffer<Integer> expected,
                                      int expectedReturnedValues) {
         int actualReturnedValues = origin.putAllOnLastOrSkip(addedValues);
@@ -349,19 +349,19 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForIterableConstructor2() {
         return Stream.of(
                 Arguments.of(
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        Array.of(null, null, null, null, null, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        DynamicArray.of(null, null, null, null, null, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        (Consumer<Array<Integer>>) iterable -> {
+                        (Consumer<DynamicArray<Integer>>) iterable -> {
                             for(int i = 0; i < 5; i++) iterable.replace(i, null);
                         },
                         (Consumer<RingBuffer<Integer>>) buffer -> {}
                 ),
                 Arguments.of(
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        (Consumer<Array<Integer>>) iterable -> {},
+                        (Consumer<DynamicArray<Integer>>) iterable -> {},
                         (Consumer<RingBuffer<Integer>>) buffer -> {
                             for(int i = 0; i < 5; i++) buffer.removeFirst();
                         }
@@ -460,57 +460,57 @@ public class RingBufferTest {
         return Stream.of(
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(),
+                        DynamicArray.of(),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of()
+                        DynamicArray.of()
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(11),
+                        DynamicArray.of(11),
                         RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
-                        Array.of(1)
+                        DynamicArray.of(1)
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(11, 12, 13, 14, 15),
+                        DynamicArray.of(11, 12, 13, 14, 15),
                         RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        Array.of(1, 2, 3, 4, 5)
+                        DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        DynamicArray.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
                         RingBuffer.of(16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
-                        Array.of(1, 2, 3, 4, 5, 6),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6),
                         RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
-                        Array.of()
+                        DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of()
+                        DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        Array.of(1, 2, 3, 4, 5)
+                        DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
                         RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
-                        Array.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+                        DynamicArray.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
                         RingBuffer.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 ),
                 Arguments.of(
                         RingBuffer.of(),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         RingBuffer.of(),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
     }
@@ -521,55 +521,55 @@ public class RingBufferTest {
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[0],
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of()
+                        DynamicArray.of()
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11},
                         RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
-                        Array.of(1)
+                        DynamicArray.of(1)
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15},
                         RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        Array.of(1, 2, 3, 4, 5)
+                        DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25},
                         RingBuffer.of(16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6},
                         RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
-                        Array.of()
+                        DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of()
+                        DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
                         RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        Array.of(1, 2, 3, 4, 5)
+                        DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
                         RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
                         new Integer[]{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
                         RingBuffer.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 ),
                 Arguments.of(
                         RingBuffer.of(),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         RingBuffer.of(),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
     }
@@ -619,55 +619,55 @@ public class RingBufferTest {
         return Stream.of(
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(),
+                        DynamicArray.of(),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(11),
+                        DynamicArray.of(11),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(11, 12, 13, 14, 15),
+                        DynamicArray.of(11, 12, 13, 14, 15),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        Array.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        DynamicArray.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
-                        Array.of(1, 2, 3, 4, 5, 6),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6),
                         RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
                         6
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
                         RingBuffer.withExtraSize(6, 1, 2, 3, 4, 5),
-                        Array.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        DynamicArray.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
                         6
                 ),
                 Arguments.of(
                         RingBuffer.of(),
-                        Array.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         RingBuffer.of(),
                         0
                 )

@@ -83,7 +83,7 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param iterable структура данных, элементы которой копируются в новый буфер.
      */
     public RingBuffer(Iterable<T> iterable) {
-        Array<T> tempBuffer = new Array<>();
+        DynamicArray<T> tempBuffer = new DynamicArray<>();
         tempBuffer.appendAll(iterable);
 
         values = tempBuffer.toArray();
@@ -146,10 +146,10 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param iterable структура данных, все элементы которой добавляются в текущий циклический буфер.
      * @return все перезаписанные элементы.
      */
-    public Array<T> putAllOnLastOrReplace(Iterable<T> iterable) {
+    public DynamicArray<T> putAllOnLastOrReplace(Iterable<T> iterable) {
         ++actualModCount;
 
-        Array<T> rewritingValues = new Array<>();
+        DynamicArray<T> rewritingValues = new DynamicArray<>();
         for(T value : iterable) {
             boolean valueWasRewriting = !hasAvailableSpace();
             T rewritingValue = putLastOrReplace(value);
@@ -172,10 +172,10 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param data массив, все элементы которого добавляются в текущий циклический буфер.
      * @return все перезаписанные элементы.
      */
-    public Array<T> putAllOnLastOrReplace(T... data) {
+    public DynamicArray<T> putAllOnLastOrReplace(T... data) {
         ++actualModCount;
 
-        Array<T> rewritingValues = new Array<>();
+        DynamicArray<T> rewritingValues = new DynamicArray<>();
         for(T value : data) {
             boolean valueWasRewriting = !hasAvailableSpace();
             T rewritingValue = putLastOrReplace(value);

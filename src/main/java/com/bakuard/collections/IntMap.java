@@ -179,12 +179,12 @@ public final class IntMap<T> implements Iterable<IntMap.Node<T>> {
     }
 
     /**
-     * Создает и возвращает объект {@link Array} содержащий все значения находящиеся в данном объекте
+     * Создает и возвращает объект {@link DynamicArray} содержащий все значения находящиеся в данном объекте
      * IntMap.
-     * @return объект {@link Array} содержащий все значения находящиеся в данном объекте IntMap.
+     * @return объект {@link DynamicArray} содержащий все значения находящиеся в данном объекте IntMap.
      */
-    public Array<T> getValues() {
-        Array<T> array = new Array<>(size);
+    public DynamicArray<T> getValues() {
+        DynamicArray<T> array = new DynamicArray<>(size);
 
         for(int i = 0, arrayIndex = 0; i < table.length; i++) {
             Node<T> currentNode = table[i];

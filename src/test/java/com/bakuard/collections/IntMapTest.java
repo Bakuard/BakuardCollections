@@ -1,7 +1,5 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.Array;
-import com.bakuard.collections.IntMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -318,20 +316,20 @@ class IntMapTest {
     @Test
     public void getValues() {
         IntMap<Integer> emptyMap = new IntMap<>();
-        Array<Integer> values = emptyMap.getValues();
+        DynamicArray<Integer> values = emptyMap.getValues();
         Assertions.assertEquals(0, values.size(),
                 "Метод getValues() для пустого объекта IntMap должен возвращать " +
-                        "пустой объект Array.");
+                        "пустой объект DynamicArray.");
 
         IntMap<Integer> map = new IntMap<>();
         map.put(1, 10);
-        Array<Integer> values1 = map.getValues();
+        DynamicArray<Integer> values1 = map.getValues();
         Assertions.assertEquals(map.getSize(), values1.size(),
-                "Объект Array возвращаемый методом getValues() должен содержать кол-во элементов " +
+                "Объект DynamicArray возвращаемый методом getValues() должен содержать кол-во элементов " +
                         "равное кол-ву элементов объекта IntMap, у которого вызывался метод. Данное правило " +
                         "должно соблюдаться и для случая с одним элементом.");
         Assertions.assertEquals(map.get(1), values1.at(0),
-                "Возвращаемый объект Array должен содержать все значения содержащиеся " +
+                "Возвращаемый объект DynamicArray должен содержать все значения содержащиеся " +
                         "в объектк IntMap у кторого вызывался метод getValues(). Данное правило " +
                         "должно соблюдаться и для случая с одним элементом.");
 
@@ -340,13 +338,13 @@ class IntMapTest {
         map2.put(2, 20);
         map2.put(3, 30);
         map2.put(4, 40);
-        Array<Integer> values2 = map2.getValues();
+        DynamicArray<Integer> values2 = map2.getValues();
         Assertions.assertEquals(map2.getSize(), values2.size(),
-                "Объект Array возвращаемый методом getValues() должен содержать кол-во элементов " +
+                "Объект DynamicArray возвращаемый методом getValues() должен содержать кол-во элементов " +
                         "равное кол-ву элементов объекта IntMap, у которого вызывался метод.");
         map2.forEach((IntMap.Node<Integer> node) -> {
             Assertions.assertTrue(values2.linearSearch(node.getValue()) != -1,
-                    "Возвращаемый объект Array должен содержать все значения содержащиеся " +
+                    "Возвращаемый объект DynamicArray должен содержать все значения содержащиеся " +
                             "в объектк IntMap у которого вызывался метод getValues().");
         });
     }

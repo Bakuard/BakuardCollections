@@ -8,20 +8,20 @@ import java.util.function.ToIntFunction;
 /**
  * Реализация динамического массива с объектами произвольного типа.
  */
-public final class Array<T> implements ReadableLinearStructure<T> {
+public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
     /**
-     * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект Array
+     * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект DynamicArray
      * будет содержать копию передаваемого массива, а не сам массив. Длина создаваемого объекта
      * ({@link #size()}) будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит
-     * ни одного элемента - создает пустой объект Array.
+     * ни одного элемента - создает пустой объект DynamicArray.
      * @param data элементы включаемые в создаваемый объект.
      * @throws NullPointerException если передаваемый массив элементов равен null.
      */
-    public static <T> Array<T> of(T... data) {
+    public static <T> DynamicArray<T> of(T... data) {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
-        Array<T> result = new Array<>();
+        DynamicArray<T> result = new DynamicArray<>();
         result.appendAll(data);
         return result;
     }
@@ -36,7 +36,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Создает пустой массив нулевой длины.
      */
     @SuppressWarnings("unchecked")
-    public Array() {
+    public DynamicArray() {
         values = (T[]) new Object[MIN_CAPACITY];
     }
 
@@ -46,7 +46,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * @throws IllegalArgumentException если указанная длина меньше нуля.
      */
     @SuppressWarnings("unchecked")
-    public Array(int size){
+    public DynamicArray(int size){
         if(size < 0)
             throw new IllegalArgumentException("Длина массива не может быть отрицательной.");
 
@@ -58,7 +58,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Создает копию указанного массива. Выполняет поверхностное копирование.
      * @param other массив, для которого создается копия.
      */
-    public Array(Array<T> other) {
+    public DynamicArray(DynamicArray<T> other) {
         values = other.values.clone();
         size = other.size;
     }
@@ -240,7 +240,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     /**
      * Удаляет элемент под указанным индексом и возвращает его. На место удаленного элемента будет записан
      * последний элемент массива и длина массива будет уменьшена на единицу. Данный метод не уменьшает емкость
-     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link Array},
+     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link DynamicArray},
      * используйте метод {@link #trimToSize()}. <br/>
      * Данный метод работает быстрее {@link #orderedRemove(int)}. Если порядок элементов в массиве для вас не
      * важен - для удаления рекомендуется использовать этот метод.
@@ -263,7 +263,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Удаляет элемент под указанным индексом и возвращает его. Все элементы, индекс которых больше указанного,
      * сдвигаются вниз на одну позицию. Иначе говоря, данный метод выполняет удаление элемента с сохранением
      * порядка для оставшихся элементов. Длина массива будет уменьшена на единицу. Данный метод не уменьшает емкость
-     * внутреннего хранилища. Если вам необходимо уменьшить объект памяти занимаемый данным объектом {@link Array},
+     * внутреннего хранилища. Если вам необходимо уменьшить объект памяти занимаемый данным объектом {@link DynamicArray},
      * используйте метод {@link #trimToSize()}.
      * @param index индекс удаляемого элемента.
      * @return удаляемый элемент под указанным индексом.
@@ -284,7 +284,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
 
     /**
      * Удаляет все элементы массива и уменьшает его длину до нуля. Данный метод не уменьшает емкость
-     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link Array},
+     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link DynamicArray},
      * используйте метод {@link #trimToSize()}.
      */
     public void clear() {
@@ -399,7 +399,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
      * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
-     * памяти занимаемый объектом Array.
+     * памяти занимаемый объектом DynamicArray.
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
     public boolean trimToSize() {
@@ -451,7 +451,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Array<?> array = (Array<?>) o;
+        DynamicArray<?> array = (DynamicArray<?>) o;
 
         boolean result = array.size == size;
         for(int i = 0; i < size && result; i++) {
@@ -476,7 +476,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         }
         valuesToString.append(']');
 
-        return "Array{size=" + size + ", " + valuesToString + '}';
+        return "DynamicArray{size=" + size + ", " + valuesToString + '}';
     }
 
 
@@ -562,7 +562,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
             assertLinearStructureWasNotBeenChanged();
             assertHasNext();
             recentIndex = ++cursor;
-            return (E) Array.this.get(recentIndex);
+            return (E) DynamicArray.this.get(recentIndex);
         }
 
         @Override
@@ -575,7 +575,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
             assertLinearStructureWasNotBeenChanged();
             assertHasPrevious();
             recentIndex = cursor--;
-            return (E) Array.this.get(recentIndex);
+            return (E) DynamicArray.this.get(recentIndex);
         }
 
         @Override
@@ -588,7 +588,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
             assertLinearStructureWasNotBeenChanged();
             assertCanJump(itemsNumber);
             recentIndex = cursor += itemsNumber;
-            return (E) Array.this.get(recentIndex);
+            return (E) DynamicArray.this.get(recentIndex);
         }
 
         @Override
@@ -610,7 +610,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
 
 
         private void assertLinearStructureWasNotBeenChanged() {
-            if(Array.this.actualModCount != expectedModCount) {
+            if(DynamicArray.this.actualModCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
         }

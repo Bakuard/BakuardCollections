@@ -162,7 +162,7 @@ class IndexedIteratorTest {
 
     private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
         return Stream.of(
-                Array.of(data),
+                DynamicArray.of(data),
                 Stack.of(data),
                 Queue.of(data),
                 RingBuffer.of(data)

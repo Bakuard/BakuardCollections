@@ -217,26 +217,26 @@ class StackTest {
 
     private static Stream<Arguments> provideForPutAllOnLast_iterable() {
         return Stream.of(
-                Arguments.of(new Stack<>(), new Array<>(), new Stack<>()),
-                Arguments.of(new Stack<>(), Array.of(100), Stack.of(100)),
+                Arguments.of(new Stack<>(), new DynamicArray<>(), new Stack<>()),
+                Arguments.of(new Stack<>(), DynamicArray.of(100), Stack.of(100)),
                 Arguments.of(
                         new Stack<>(),
-                        Array.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
                 ),
                 Arguments.of(
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
-                        new Array<>(),
+                        new DynamicArray<>(),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
                 ),
                 Arguments.of(
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
-                        Array.of(100),
+                        DynamicArray.of(100),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100)
                 ),
                 Arguments.of(
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
-                        Array.of(100,101,102,110,120,147,177,250),
+                        DynamicArray.of(100,101,102,110,120,147,177,250),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,110,120,147,177,250)
                 )
         );
