@@ -1,5 +1,6 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.exceptions.NegativeSizeException;
 import com.bakuard.collections.testUtil.ClosedRange;
 import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
@@ -367,6 +368,18 @@ class DynamicArrayTest {
         Assertions.assertThat(actualIndex).isBetween(acceptableIndexes.from(), acceptableIndexes.to());
     }
 
+    @DisplayName("""
+            growToSize(newSize):
+                newSize < 0
+                => exception
+            """)
+    @Test
+    public void growToSize_exception() {
+        DynamicArray<Integer> origin = DynamicArray.of(0,1,2,3,4,5,6,7,8,9);
+
+        Assertions.assertThatThrownBy(() -> origin.growToSize(-1)).isInstanceOf(NegativeSizeException.class);
+    }
+
     @DisplayName("growToSize(newSize):")
     @ParameterizedTest(name = """
              origin is {0},
@@ -377,14 +390,10 @@ class DynamicArrayTest {
     @MethodSource("provideForGrowToSize")
     public void growToSize(DynamicArray<Integer> origin,
                            int newSize,
-                           DynamicArray<Integer> expected,
-                           boolean expectedReturnedResult) {
-        boolean actualReturnedResult = origin.growToSize(newSize);
+                           DynamicArray<Integer> expected) {
+        origin.growToSize(newSize);
 
-        SoftAssertions assertions = new SoftAssertions();
-        assertions.assertThat(origin).isEqualTo(expected);
-        assertions.assertThat(actualReturnedResult).isEqualTo(expectedReturnedResult);
-        assertions.assertAll();
+        Assertions.assertThat(origin).isEqualTo(expected);
     }
 
     @DisplayName("equals(Object o):")
@@ -1137,38 +1146,32 @@ class DynamicArrayTest {
 
     private static Stream<Arguments> provideForGrowToSize() {
         return Stream.of(
-                Arguments.of(new DynamicArray<>(), -1, new DynamicArray<>(), false),
-                Arguments.of(new DynamicArray<>(), 0, new DynamicArray<>(), false),
-                Arguments.of(new DynamicArray<>(), 1, new DynamicArray<>(1), true),
+                Arguments.of(new DynamicArray<>(), 0, new DynamicArray<>()),
+                Arguments.of(new DynamicArray<>(), 1, new DynamicArray<>(1)),
                 Arguments.of(
                         DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
-                        -1,
-                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
-                        false
+                        0,
+                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100)
                 ),
                 Arguments.of(
                         DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
                         9,
-                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
-                        false
+                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100)
                 ),
                 Arguments.of(
                         DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
                         10,
-                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
-                        false
+                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100)
                 ),
                 Arguments.of(
                         DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
                         11,
-                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100,null),
-                        true
+                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100,null)
                 ),
                 Arguments.of(
                         DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
                         15,
-                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100,null,null,null,null,null),
-                        true
+                        DynamicArray.of(10,20,30,40,50,60,70,80,90,100,null,null,null,null,null)
                 )
         );
     }

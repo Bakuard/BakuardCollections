@@ -1,5 +1,7 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.exceptions.NegativeSizeException;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -121,7 +123,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
         ++actualModCount;
 
-        growToSize(index + 1);
+        growToSizeOrDoNothing(index + 1);
         T oldValue = values[index];
         values[index] = value;
         return oldValue;
@@ -135,7 +137,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int lastIndex = size;
-        growToSize(size + 1);
+        growToSizeOrDoNothing(size + 1);
         values[lastIndex] = value;
     }
 
@@ -149,7 +151,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
             ++actualModCount;
 
             int lastIndex = size;
-            growToSize(size + data.length);
+            growToSizeOrDoNothing(size + data.length);
             System.arraycopy(data, 0, this.values, lastIndex, data.length);
         }
     }
@@ -176,7 +178,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int oldSize = size;
-        growToSize(size + 1);
+        growToSizeOrDoNothing(size + 1);
         if(index < oldSize) {
             System.arraycopy(values, index, values, index + 1, oldSize - index);
         }
@@ -375,24 +377,15 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     /**
      * Если newSize больше длины массива ({@link #size()}), то увеличивает внутреннюю емкость массива
      * таким образом, чтобы вмещать кол-во элементов как минимум равное newSize, а длинна массива станет
-     * равна newSize. Если значение newSize меньше или равно длине массива - метод не вносит никаких
+     * равна newSize. Если значение newSize >= 0 и newSize < ({@link #size()}) - метод не вносит никаких
      * изменений.
      * @param newSize новая длина массива.
-     * @return true - передаваемый аргумент больше длины массива {@link #size()}, иначе - false.
+     * @return ссылку на этот же объект.
      */
-    public boolean growToSize(int newSize) {
-        boolean isExpand = newSize > size;
-
-        if(isExpand) {
-            ++actualModCount;
-
-            size = newSize;
-            if(newSize > values.length) {
-                values = Arrays.copyOf(values, calculateCapacity(newSize));
-            }
-        }
-
-        return isExpand;
+    public DynamicArray<T> growToSize(int newSize) {
+        assertNotNegativeSize(newSize);
+        growToSizeOrDoNothing(newSize);
+        return this;
     }
 
     /**
@@ -505,6 +498,12 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         }
     }
 
+    private void assertNotNegativeSize(int size) {
+        if(size < 0) {
+            throw new NegativeSizeException("Expected: size >= 0; Actual: size=" + size);
+        }
+    }
+
     private int linearSearchInRange(T value, int fromIndex, int toIndex) {
         Object[] vs = values;
         if(value == null) {
@@ -535,6 +534,17 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
             else toIndex = middle;
         }
         return -1;
+    }
+
+    private void growToSizeOrDoNothing(int newSize) {
+        if(newSize > size) {
+            ++actualModCount;
+
+            size = newSize;
+            if(newSize > values.length) {
+                values = Arrays.copyOf(values, calculateCapacity(newSize));
+            }
+        }
     }
 
 

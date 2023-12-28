@@ -262,29 +262,29 @@ public class RingBufferTest {
         assertions.assertAll();
     }
 
-    @DisplayName("grow(extraSize):")
+    @DisplayName("growToSize(newSize):")
     @ParameterizedTest(name = """
              origin buffer is {0}
-             extraSize is {1}
+             newSize is {1}
              => expected buffer is {2}
             """)
-    @MethodSource("provideForGrow")
-    void grow(RingBuffer<Integer> origin, int extraSize, RingBuffer<Integer> expected) {
-        origin.grow(extraSize);
+    @MethodSource("provideForGrowToSize")
+    void growToSize(RingBuffer<Integer> origin, int newSize, RingBuffer<Integer> expected) {
+        origin.growToSize(newSize);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
 
     @DisplayName("""
-            grow(extraSize):
-                extraSize < 0
+            growToSize(newSize):
+                newSize < 0
                 => exception
             """)
     @Test
-    void grow_exception() {
+    void growToSize_exception() {
         RingBuffer<Integer> origin = RingBuffer.of(1, 2, 3, 4, 5);
 
-        Assertions.assertThatThrownBy(() -> origin.grow(-1))
+        Assertions.assertThatThrownBy(() -> origin.growToSize(-1))
                 .isInstanceOf(NegativeSizeException.class);
     }
 
@@ -769,28 +769,10 @@ public class RingBufferTest {
         );
     }
 
-    private static Stream<Arguments> provideForGrow() {
+    private static Stream<Arguments> provideForGrowToSize() {
         return Stream.of(
-                Arguments.of(
-                        RingBuffer.of(),
-                        0,
-                        RingBuffer.of()
-                ),
-                Arguments.of(
-                        RingBuffer.of(),
-                        10,
-                        new RingBuffer<>(10)
-                ),
-                Arguments.of(
-                        new RingBuffer<>(10),
-                        0,
-                        new RingBuffer<>(10)
-                ),
-                Arguments.of(
-                        new RingBuffer<>(10),
-                        10,
-                        new RingBuffer<>(20)
-                ),
+                Arguments.of(RingBuffer.of(), 0, RingBuffer.of()),
+                Arguments.of(RingBuffer.of(), 10, new RingBuffer<>(10)),
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0,
@@ -799,7 +781,12 @@ public class RingBufferTest {
                 Arguments.of(
                         RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10,
-                        RingBuffer.withExtraSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                ),
+                Arguments.of(
+                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        50,
+                        RingBuffer.withExtraSize(40, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
     }

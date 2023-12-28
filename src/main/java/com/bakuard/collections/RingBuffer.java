@@ -306,27 +306,28 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Увеличивает максимальный размер ({@link #maxSize()}) циклического буфера на указанную величину.
-     * @throws NegativeSizeException если extraSize < 0
+     * Если newSize > {@link #size()}, то увеличивает максимальный размер ({@link #maxSize()}) циклического буфера
+     * до указанной величины (включительно).
+     * @throws NegativeSizeException если newSize < 0
      */
     @SuppressWarnings("unchecked")
-    public void grow(int extraSize) {
+    public RingBuffer<T> growToSize(int newSize) {
         ++actualModCount;
 
-        if(extraSize > 0) {
-            T[] newValues = (T[]) new Object[values.length + extraSize];
+        assertNotNegativeSize(newSize);
 
-            if(currentSize > 0) {
+        if(newSize > values.length) {
+            T[] newValues = (T[]) new Object[newSize];
+            if (currentSize > 0) {
                 int lengthBeforeWrap = values.length - firstItemIndex;
                 System.arraycopy(values, firstItemIndex, newValues, 0, lengthBeforeWrap);
                 System.arraycopy(values, 0, newValues, lengthBeforeWrap, values.length - lengthBeforeWrap);
             }
-
             values = newValues;
             firstItemIndex = 0;
-        } else if(extraSize < 0) {
-            throw new NegativeSizeException("Expected: extraSize can't be negative. Actual: extraSize = " + extraSize);
         }
+
+        return this;
     }
 
     /**
@@ -521,6 +522,12 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
             throw new IndexOutOfBoundsException(
                     "Expected: index >= -currentSize && index < currentSize. Actual: currentSize=" + currentSize + ", index=" + index
             );
+        }
+    }
+
+    private void assertNotNegativeSize(int size) {
+        if(size < 0) {
+            throw new NegativeSizeException("Expected: size >= 0; Actual: size=" + size);
         }
     }
 
