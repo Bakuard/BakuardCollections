@@ -1,6 +1,8 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.function.ConsumerAtIndex;
+import com.bakuard.collections.function.PredicateAtIndex;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -100,9 +102,9 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T replace(int index, T value) {
-        assertInBound(index);
-
         ++actualModCount;
+
+        assertInBound(index);
 
         T oldValue = values[index];
         values[index] = value;
@@ -120,8 +122,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
      */
     public T setWithoutBound(int index, T value) {
-        if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
         ++actualModCount;
+        if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
 
         growToSizeOrDoNothing(index + 1);
         T oldValue = values[index];
@@ -147,8 +149,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param data добавляемые элементы.
      */
     public void appendAll(T... data) {
+        ++actualModCount;
         if(data.length > 0) {
-            ++actualModCount;
 
             int lastIndex = size;
             growToSizeOrDoNothing(size + data.length);
@@ -173,9 +175,9 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index <= size
      */
     public void insert(int index, T value) {
-        assertInClosedBound(index);
-
         ++actualModCount;
+
+        assertInClosedBound(index);
 
         int oldSize = size;
         growToSizeOrDoNothing(size + 1);
@@ -229,10 +231,10 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      *                                   условие index >= 0 && index <= size
      */
     public void swap(int firstIndex, int secondIndex) {
+        ++actualModCount;
+
         assertInBound(firstIndex);
         assertInBound(secondIndex);
-
-        ++actualModCount;
 
         T first = values[firstIndex];
         values[firstIndex] = values[secondIndex];
@@ -251,9 +253,9 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T quickRemove(int index) {
-        assertInBound(index);
-
         ++actualModCount;
+
+        assertInBound(index);
 
         T removableItem = values[index];
         values[index] = values[--size];
@@ -272,16 +274,49 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если не соблюдается условие index >= 0 && index < size
      */
     public T orderedRemove(int index) {
-        assertInBound(index);
-
         ++actualModCount;
 
-        T removableItem = values[index];
-        if(--size > index) {
-            System.arraycopy(values, index + 1, values, index, size - index);
+        assertInBound(index);
+        return orderedRemoveAtUncheckedIndex(index);
+    }
+
+    /**
+     * Удаляет последний элемент и возвращает его. Если массив пуст - возвращает null.
+     * <b>ВАЖНО!</b> Т.к. массив допускает хранение null элементов, то возвращение данным методом
+     * null в качестве результата не гарантирует, что массив пуст. Для проверки наличия элементов
+     * в массиве используйте методы {@link #size()} или {@link #isEmpty()}.
+     * @return удаленный элемент или null.
+     */
+    public T removeLast() {
+        ++actualModCount;
+
+        if(size > 0) {
+            T removableItem = values[--size];
+            values[size] = null;
+            return removableItem;
         }
-        values[size] = null;
-        return removableItem;
+        return null;
+    }
+
+    /**
+     * Удаляет все элементы массива удовлетворяющие заданному предикату.
+     * @param predicate проверяет, нужно ли удалять элемент. Вызывается для
+     *                  каждого элемента массива.
+     * @return кол-во удаленных элементов.
+     * @throws ConcurrentModificationException при попытке изменить массив из predicate.
+     */
+    public int removeIf(PredicateAtIndex<T> predicate) {
+        final int EXPECTED_COUNT_MOD = ++actualModCount;
+
+        int result = 0;
+        for(int i = size - 1; i >= 0; --i) {
+            if(predicate.test(values[i], i)) {
+                orderedRemoveAtUncheckedIndex(i);
+                ++result;
+            }
+            if(EXPECTED_COUNT_MOD != actualModCount) throw new ConcurrentModificationException();
+        }
+        return result;
     }
 
     /**
@@ -383,6 +418,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @return ссылку на этот же объект.
      */
     public DynamicArray<T> growToSize(int newSize) {
+        ++actualModCount;
+
         assertNotNegativeSize(newSize);
         growToSizeOrDoNothing(newSize);
         return this;
@@ -434,6 +471,21 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
         for(int i = 0; i < size; i++) {
             action.accept(values[i]);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    /**
+     * Поведение этого метода расширяет контракт {@link #forEach(Consumer)}. Функция обратного вызова, помимо самих
+     * элементов также принимает их индексы.
+     */
+    public void forEach(ConsumerAtIndex<? super T> action) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        for(int i = 0; i < size; i++) {
+            action.accept(values[i], i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }
@@ -538,13 +590,20 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
     private void growToSizeOrDoNothing(int newSize) {
         if(newSize > size) {
-            ++actualModCount;
-
             size = newSize;
             if(newSize > values.length) {
                 values = Arrays.copyOf(values, calculateCapacity(newSize));
             }
         }
+    }
+
+    private T orderedRemoveAtUncheckedIndex(int index) {
+        T removableItem = values[index];
+        if(--size > index) {
+            System.arraycopy(values, index + 1, values, index, size - index);
+        }
+        values[size] = null;
+        return removableItem;
     }
 
 

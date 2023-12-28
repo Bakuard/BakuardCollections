@@ -323,6 +323,24 @@ class DynamicArrayTest {
         assertions.assertAll();
     }
 
+    @DisplayName("removeLast():")
+    @ParameterizedTest(name = """
+             origin is {0}
+             => expectedValue is {1},
+                expected is {2}
+            """)
+    @MethodSource("provideForRemoveLast")
+    public void removeLast(DynamicArray<Integer> origin, Integer expectedValue, DynamicArray<Integer> expected) {
+        Integer actual = origin.removeLast();
+
+        SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(origin).isEqualTo(expected);
+        assertions.assertThat(actual).isEqualTo(expectedValue);
+        origin.growToSize(origin.size() + 1);
+        assertions.assertThat(origin.getLast()).isNull();
+        assertions.assertAll();
+    }
+
     @DisplayName("clear():")
     @ParameterizedTest(name = """
              origin is {0}
@@ -1206,6 +1224,24 @@ class DynamicArrayTest {
                         DynamicArray.of(10,20,30,40,50,60,70,80,90,100),
                         arrayWithBigEntrySize,
                         true
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForRemoveLast() {
+        return Stream.of(
+                Arguments.of(new DynamicArray<>(), null, new DynamicArray<>()),
+                Arguments.of(DynamicArray.of(new Integer[]{null}), null, new DynamicArray<>()),
+                Arguments.of(DynamicArray.of(100), 100, new DynamicArray<>()),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,null),
+                        null,
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
+                ),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        15,
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14)
                 )
         );
     }
