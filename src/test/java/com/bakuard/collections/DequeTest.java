@@ -224,7 +224,7 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, Deque<Integer>> fabric = data -> {
+        Fabric<Integer, Deque<Integer>> fabric = (size, data) -> {
             Deque<Integer> deque = new Deque<>();
             for(Integer value : data) deque.putLast(value);
             return deque;
@@ -247,7 +247,7 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, Deque<Integer>> fabric = data -> {
+        Fabric<Integer, Deque<Integer>> fabric = (size, data) -> {
             Deque<Integer> deque = new Deque<>();
             for(Integer value : data) deque.putLast(value);
             return deque;

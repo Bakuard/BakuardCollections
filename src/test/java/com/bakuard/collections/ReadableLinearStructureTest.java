@@ -215,7 +215,7 @@ class ReadableLinearStructureTest {
                 DynamicArray.of(data),
                 Stack.of(data),
                 Queue.of(data),
-                RingBuffer.of(data)
+                RingBuffer.of(data.length, data)
         );
     }
 
@@ -244,7 +244,7 @@ class ReadableLinearStructureTest {
                         }
                 ),
                 new StructAndMutator<>(
-                        RingBuffer.of(data),
+                        RingBuffer.of(data.length, data),
                         buffer -> {
                             for(int i = 0; i < removedItemsNumber; i++) buffer.removeFirst();
                             for(T item : addedData) buffer.putLastOrReplace(item);

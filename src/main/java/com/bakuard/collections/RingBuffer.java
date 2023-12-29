@@ -16,34 +16,28 @@ import java.util.function.Predicate;
 public class RingBuffer<T> implements ReadableLinearStructure<T> {
 
     /**
-     * Создает и возвращает циклический буфер, максимальный размер которого равен кол-ву
-     * элементов массива data. Созданный буфер будет содержать все указанные элементы, при этом
-     * сохраняется порядок их следования заданный в data. Если массив пуст, то будет создан пустой
-     * циклический буфер максимальный размер которого равен 0.
+     * Создает и возвращает циклический буфер, максимальный размер которого равен maxSize.
+     * Созданный буфер будет содержать все элементы из data в том же порядке.
+     * @param maxSize максимальный размер создаваемого буфера.
      * @param data элементы включаемые в создаваемый циклический буфер.
      * @throws NullPointerException если передаваемый массив элементов равен null.
+     * @throws NegativeSizeException если maxSize < 0
+     * @throws MaxSizeExceededException если data.length > maxSize.
      */
-    public static <T> RingBuffer<T> of(T... data) {
-        return withExtraSize(0, data);
-    }
-
-    /**
-     * Создает и возвращает циклический буфер, максимальный размер которого равен кол-ву data.length + extraSize.
-     * Созданный буфер будет содержать все указанные элементы, при этом сохраняется порядок их следования заданный
-     * в data.
-     * @param extraSize дополнительный размер циклического буфера.
-     * @param data элементы включаемые в создаваемый циклический буфер.
-     * @throws NullPointerException если передаваемый массив элементов равен null.
-     */
-    public static <T> RingBuffer<T> withExtraSize(int extraSize, T... data) {
+    public static <T> RingBuffer<T> of(int maxSize, T... data) {
         if(data == null) {
             throw new NullPointerException("data[] can not be null.");
         }
-        if(extraSize < 0) {
-            throw new NegativeSizeException("Expected: extraSize >= 0. Actual: extraSize=" + extraSize);
+        if(maxSize < 0) {
+            throw new NegativeSizeException("Expected: maxSize >= 0. Actual: maxSize=" + maxSize);
+        }
+        if(maxSize < data.length) {
+            throw new MaxSizeExceededException(
+                    "Expected: maxSize < data.length. Actual: maxSize=%d, data.length=%d".formatted(maxSize, data.length)
+            );
         }
 
-        RingBuffer<T> result = new RingBuffer<>(data.length + extraSize);
+        RingBuffer<T> result = new RingBuffer<>(maxSize);
         result.putAllOnLastOrSkip(data);
         return result;
     }

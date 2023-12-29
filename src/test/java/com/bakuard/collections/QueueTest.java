@@ -274,7 +274,7 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, Queue<Integer>> fabric = data -> {
+        Fabric<Integer, Queue<Integer>> fabric = (size, data) -> {
             Queue<Integer> queue = new Queue<>();
             for(Integer value : data) queue.putLast(value);
             return queue;
@@ -297,7 +297,7 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, Queue<Integer>> fabric = data -> {
+        Fabric<Integer, Queue<Integer>> fabric = (size, data) -> {
             Queue<Integer> queue = new Queue<>();
             for(Integer value : data) queue.putLast(value);
             return queue;
@@ -394,7 +394,7 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForPutAllOnLastData() {
-        Fabric<Integer, Queue<Integer>> fabric = data -> {
+        Fabric<Integer, Queue<Integer>> fabric = (size, data) -> {
             Queue<Integer> queue = new Queue<>();
             for(Integer value : data) queue.putLast(value);
             return queue;

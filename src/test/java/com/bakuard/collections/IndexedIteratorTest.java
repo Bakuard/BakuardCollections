@@ -165,7 +165,7 @@ class IndexedIteratorTest {
                 DynamicArray.of(data),
                 Stack.of(data),
                 Queue.of(data),
-                RingBuffer.of(data)
+                RingBuffer.of(data.length, data)
         );
     }
 

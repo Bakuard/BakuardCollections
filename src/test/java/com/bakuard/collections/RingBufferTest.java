@@ -88,32 +88,35 @@ public class RingBufferTest {
         assertions.assertAll();
     }
 
-    @DisplayName("of(...data):")
+    @DisplayName("of(maxSize, ...data):")
     @ParameterizedTest(name = """
-             data is {0}
-             => expected {1}
+             maxSize is {0},
+             data is {1}
+             => expected is {2}
             """)
     @MethodSource("provideForOf1")
-    void of(Integer[] data, RingBuffer<Integer> expected) {
-        RingBuffer<Integer> actual = RingBuffer.of(data);
+    void of(int maxSize, Integer[] data, RingBuffer<Integer> expected) {
+        RingBuffer<Integer> actual = RingBuffer.of(maxSize, data);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @DisplayName("of(...data): data and ring buffer must be independent of each other")
+    @DisplayName("of(maxSize, ...data): data and ring buffer must be independent of each other")
     @ParameterizedTest(name = """
-             data is {0},
+             maxSize is {0},
+             data is {1},
              change data and ring buffer after creation
-             => expected data {1},
-                expected ring buffer {2}
+             => expected data {2},
+                expected ring buffer {3}
             """)
     @MethodSource("provideForOf2")
-    void of_doNotChangeOrigin(Integer[] data,
+    void of_doNotChangeOrigin(int maxSize,
+                              Integer[] data,
                               Integer[] expectedData,
                               RingBuffer<Integer> expectedBuffer,
                               Consumer<Integer[]> dataMutator,
                               Consumer<RingBuffer<Integer>> bufferMutator) {
-        RingBuffer<Integer> actual = RingBuffer.of(data);
+        RingBuffer<Integer> actual = RingBuffer.of(maxSize, data);
 
         dataMutator.accept(data);
         bufferMutator.accept(actual);
@@ -282,7 +285,7 @@ public class RingBufferTest {
             """)
     @Test
     void growToSize_exception() {
-        RingBuffer<Integer> origin = RingBuffer.of(1, 2, 3, 4, 5);
+        RingBuffer<Integer> origin = RingBuffer.of(10, 1, 2, 3, 4, 5);
 
         Assertions.assertThatThrownBy(() -> origin.growToSize(-1))
                 .isInstanceOf(NegativeSizeException.class);
@@ -292,12 +295,12 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForCopyConstructor1() {
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        RingBuffer.of(15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
-                        RingBuffer.of(1),
-                        RingBuffer.of(1)
+                        RingBuffer.of(1, 1),
+                        RingBuffer.of(1, 1)
                 ),
                 Arguments.of(
                         new RingBuffer<>(100),
@@ -309,18 +312,18 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForCopyConstructor2() {
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.of(6, 7, 8, 9, 10),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         (Consumer<RingBuffer<Integer>>) origin -> {
                             for(int i = 0; i < 5; i++) origin.removeFirst();
                         },
                         (Consumer<RingBuffer<Integer>>) copy -> {}
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.of(6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 6, 7, 8, 9, 10),
                         (Consumer<RingBuffer<Integer>>) origin -> {},
                         (Consumer<RingBuffer<Integer>>) copy -> {
                             for(int i = 0; i < 5; i++) copy.removeFirst();
@@ -333,11 +336,11 @@ public class RingBufferTest {
         return Stream.of(
                 Arguments.of(
                         List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        RingBuffer.of(15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         List.of(1),
-                        RingBuffer.of(1)
+                        RingBuffer.of(1, 1)
                 ),
                 Arguments.of(
                         List.of(),
@@ -351,7 +354,7 @@ public class RingBufferTest {
                 Arguments.of(
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         DynamicArray.of(null, null, null, null, null, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         (Consumer<DynamicArray<Integer>>) iterable -> {
                             for(int i = 0; i < 5; i++) iterable.replace(i, null);
                         },
@@ -360,7 +363,7 @@ public class RingBufferTest {
                 Arguments.of(
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(15, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         (Consumer<DynamicArray<Integer>>) iterable -> {},
                         (Consumer<RingBuffer<Integer>>) buffer -> {
                             for(int i = 0; i < 5; i++) buffer.removeFirst();
@@ -370,22 +373,30 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(size);
             for(Integer value : data) buffer.putLastOrSkip(value);
             return buffer;
         };
 
         return Stream.of(
                 Arguments.of(
+                        15,
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                        fabric.createWithSize(15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
+                        15,
+                        new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+                        fabric.createWithSize(15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                ),
+                Arguments.of(
+                        1,
                         new Integer[]{1},
                         fabric.create(1)
                 ),
                 Arguments.of(
+                        0,
                         new Integer[0],
                         new RingBuffer<>(0)
                 )
@@ -393,26 +404,28 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(size);
             for(Integer value : data) buffer.putLastOrSkip(value);
             return buffer;
         };
 
         return Stream.of(
                 Arguments.of(
+                        10,
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{null, null, null, null, null, 6, 7, 8, 9, 10},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {
                             for(int i = 0; i < 5; i++) data[i] = null;
                         },
                         (Consumer<RingBuffer<Integer>>) buffer -> {}
                 ),
                 Arguments.of(
+                        10,
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        fabric.create(6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 6, 7, 8, 9, 10),
                         (Consumer<Integer[]>) data -> {},
                         (Consumer<RingBuffer<Integer>>) buffer -> {
                             for(int i = 0; i < 5; i++) buffer.removeFirst();
@@ -424,33 +437,33 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForPutLastOrReplace() {
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(),
+                        RingBuffer.of(0),
                         1,
-                        RingBuffer.of(),
+                        RingBuffer.of(0),
                         1
                 ),
                 Arguments.of(
-                        RingBuffer.of(1),
+                        RingBuffer.of(1, 1),
                         2,
-                        RingBuffer.of(2),
+                        RingBuffer.of(1, 2),
                         1
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         11,
-                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        RingBuffer.of(10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
                         1
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         1,
-                        RingBuffer.of(1),
+                        RingBuffer.of(10, 1),
                         null
                 ),
                 Arguments.of(
-                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5),
                         6,
-                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6),
                         null
                 )
         );
@@ -459,57 +472,57 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForPutAllOnLastOrReplace_iterable() {
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of()
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(11),
-                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        RingBuffer.of(10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
                         DynamicArray.of(1)
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(11, 12, 13, 14, 15),
-                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(10, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
-                        RingBuffer.of(16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        RingBuffer.of(10, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         DynamicArray.of(1, 2, 3, 4, 5, 6),
-                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6),
                         DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(10, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
-                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5),
                         DynamicArray.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
-                        RingBuffer.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+                        RingBuffer.of(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 ),
                 Arguments.of(
-                        RingBuffer.of(),
+                        RingBuffer.of(0),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.of(),
+                        RingBuffer.of(0),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
@@ -518,98 +531,98 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForPutAllOnLastOrReplace_array() {
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[0],
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of()
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11},
-                        RingBuffer.of(2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        RingBuffer.of(10, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
                         DynamicArray.of(1)
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15},
-                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(10, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25},
-                        RingBuffer.of(16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
+                        RingBuffer.of(10, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6},
-                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6),
                         DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of()
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        RingBuffer.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                        RingBuffer.of(10, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         DynamicArray.of(1, 2, 3, 4, 5)
                 ),
                 Arguments.of(
-                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5),
                         new Integer[]{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-                        RingBuffer.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+                        RingBuffer.of(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 ),
                 Arguments.of(
-                        RingBuffer.of(),
+                        RingBuffer.of(0),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        RingBuffer.of(),
+                        RingBuffer.of(0),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
     }
 
     private static Stream<Arguments> provideForPutLastOrSkip() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(size);
             for(Integer value : data) buffer.putLastOrReplace(value);
             return buffer;
         };
 
         return Stream.of(
                 Arguments.of(
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         11,
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         false
                 ),
                 Arguments.of(
-                        fabric.create(1),
+                        fabric.createWithSize(1, 1),
                         2,
-                        fabric.create(1),
+                        fabric.createWithSize(1, 1),
                         false
                 ),
                 Arguments.of(
-                        fabric.create(),
+                        fabric.createWithSize(0),
                         1,
-                        fabric.create(),
+                        fabric.createWithSize(0),
                         false
                 ),
                 Arguments.of(
-                        RingBuffer.withExtraSize(5, 1, 2, 3, 4, 5),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5),
                         6,
-                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6),
                         true
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         1,
-                        fabric.create(1),
+                        fabric.createWithSize(1, 1),
                         true
                 )
         );
@@ -618,122 +631,122 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForPutAllOnLastOrSkip_iterable() {
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(11),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(11, 12, 13, 14, 15),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         DynamicArray.of(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         DynamicArray.of(1, 2, 3, 4, 5, 6),
-                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6),
                         6
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
-                        RingBuffer.withExtraSize(6, 1, 2, 3, 4, 5),
+                        RingBuffer.of(11, 1, 2, 3, 4, 5),
                         DynamicArray.of(6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        RingBuffer.of(11, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
                         6
                 ),
                 Arguments.of(
-                        RingBuffer.of(),
+                        new RingBuffer<>(0),
                         DynamicArray.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.of(),
+                        new RingBuffer<>(0),
                         0
                 )
         );
     }
 
     private static Stream<Arguments> provideForPutAllOnLastOrSkip_array() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = data -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(data.length);
+        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
+            RingBuffer<Integer> buffer = new RingBuffer<>(size);
             for(Integer value : data) buffer.putLastOrSkip(value);
             return buffer;
         };
 
         return Stream.of(
                 Arguments.of(
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[0],
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         new Integer[]{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6},
-                        RingBuffer.withExtraSize(4, 1, 2, 3, 4, 5, 6),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6),
                         6
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
                         new RingBuffer<>(10),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        fabric.createWithSize(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10
                 ),
                 Arguments.of(
-                        RingBuffer.withExtraSize(6, 1, 2, 3, 4, 5),
+                        fabric.createWithSize(11, 1, 2, 3, 4, 5),
                         new Integer[]{6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
-                        fabric.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                        fabric.createWithSize(11, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
                         6
                 ),
                 Arguments.of(
-                        fabric.create(),
+                        new RingBuffer<>(0),
                         new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                        fabric.create(),
+                        new RingBuffer<>(0),
                         0
                 )
         );
@@ -742,28 +755,28 @@ public class RingBufferTest {
     private static Stream<Arguments> provideForRemoveFirst() {
         return Stream.of(
                 Arguments.of(
-                        RingBuffer.of(),
-                        RingBuffer.of(),
+                        new RingBuffer<>(0),
+                        new RingBuffer<>(0),
                         null
                 ),
                 Arguments.of(
-                        RingBuffer.of(1),
+                        RingBuffer.of(1, 1),
                         new RingBuffer<>(1),
                         1
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.withExtraSize(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         1
                 ),
                 Arguments.of(
-                        RingBuffer.of(new Integer[]{null}),
+                        RingBuffer.of(1, new Integer[]{null}),
                         new RingBuffer<>(1),
                         null
                 ),
                 Arguments.of(
-                        RingBuffer.of(null, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                        RingBuffer.withExtraSize(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, null, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         null
                 )
         );
@@ -771,22 +784,22 @@ public class RingBufferTest {
 
     private static Stream<Arguments> provideForGrowToSize() {
         return Stream.of(
-                Arguments.of(RingBuffer.of(), 0, RingBuffer.of()),
-                Arguments.of(RingBuffer.of(), 10, new RingBuffer<>(10)),
+                Arguments.of(new RingBuffer<>(0), 0, new RingBuffer<>(0)),
+                Arguments.of(new RingBuffer<>(0), 10, new RingBuffer<>(10)),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         0,
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         10,
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 ),
                 Arguments.of(
-                        RingBuffer.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                         50,
-                        RingBuffer.withExtraSize(40, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        RingBuffer.of(50, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 )
         );
     }

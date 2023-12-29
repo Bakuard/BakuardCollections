@@ -255,7 +255,7 @@ class StackTest {
     }
 
     private static Stream<Arguments> provideForPutAllOnLast() {
-        Fabric<Integer, Stack<Integer>> fabric = data -> {
+        Fabric<Integer, Stack<Integer>> fabric = (size, data) -> {
             Stack<Integer> stack = new Stack<>();
             for(Integer value : data) stack.putLast(value);
             return stack;

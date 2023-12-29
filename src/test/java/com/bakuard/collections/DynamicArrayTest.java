@@ -635,7 +635,7 @@ class DynamicArrayTest {
     }
 
     private static Stream<Arguments> provideForAppendAll() {
-        Fabric<Integer, DynamicArray<Integer>> fabric = data -> {
+        Fabric<Integer, DynamicArray<Integer>> fabric = (size, data) -> {
             DynamicArray<Integer> result = new DynamicArray<>();
             for(Integer value : data) result.append(value);
             return result;
@@ -675,7 +675,7 @@ class DynamicArrayTest {
     }
 
     private static Stream<Arguments> provideForAppendAll_iterable() {
-        Fabric<Integer, List<Integer>> fabric = data -> new ArrayList<>(Arrays.asList(data));
+        Fabric<Integer, List<Integer>> fabric = (size, data) -> new ArrayList<>(Arrays.asList(data));
 
         return Stream.of(
                 Arguments.of(new DynamicArray<>(), fabric.create(), new DynamicArray<>()),
