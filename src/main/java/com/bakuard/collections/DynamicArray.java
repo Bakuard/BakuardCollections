@@ -336,7 +336,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param randomGenerator генератор случайных чисел.
      */
     public void shuffle(RandomGenerator randomGenerator) {
-        for(int i = 1; i < size; ++i) {
+        for(int i = 0; i < size; ++i) {
             int randomIndex = randomGenerator.nextInt(size - i) + i;
             swapAtUncheckedIndexes(i, randomIndex);
         }
