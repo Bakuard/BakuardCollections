@@ -52,6 +52,18 @@ public class QueueTest {
         assertions.assertAll();
     }
 
+    @DisplayName("Queue(iterable):")
+    @ParameterizedTest(name = """
+             iterable is {0}
+             => expected {1}
+            """)
+    @MethodSource("provideForConstructorWithIterable")
+    public void Queue_iterable(Iterable<Integer> iterable, Queue<Integer> expected) {
+        Queue<Integer> actual = new Queue<>(iterable);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
     @DisplayName("of(...data):")
     @ParameterizedTest(name = """
              data is {0}
@@ -518,6 +530,18 @@ public class QueueTest {
                         queue,
                         Queue.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
                         true
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForConstructorWithIterable() {
+        return Stream.of(
+                Arguments.of(new DynamicArray<>(), new Queue<>()),
+                Arguments.of(DynamicArray.of(new Integer[]{null}), Queue.of(new Integer[]{null})),
+                Arguments.of(DynamicArray.of(100), Queue.of(100)),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        Queue.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
                 )
         );
     }

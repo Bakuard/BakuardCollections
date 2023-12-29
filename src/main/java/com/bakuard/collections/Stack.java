@@ -50,6 +50,15 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     }
 
     /**
+     * Создает новый стек копируя в него все элементы iterable в порядке их возвращения итератором.
+     * @param iterable структура данных, элементы которой копируются в новый стек.
+     */
+    public Stack(Iterable<T> iterable) {
+        this();
+        putAllOnLast(iterable);
+    }
+
+    /**
      * Добавляет элемент на вершину стека увеличивая его длину ({@link #size()}) на единицу.
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
@@ -58,7 +67,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int lastIndex = size;
-        grow(size + 1);
+        growToSizeOrDoNothing(size + 1);
         values[lastIndex] = value;
     }
 
@@ -81,7 +90,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
             ++actualModCount;
 
             int lastIndex = size;
-            grow(size + data.length);
+            growToSizeOrDoNothing(size + data.length);
             System.arraycopy(data, 0, this.values, lastIndex, data.length);
         }
     }
@@ -95,9 +104,9 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     public T removeLast() {
         ++actualModCount;
         if(size > 0) {
-            T value = values[--size];
+            T removableItem = values[--size];
             values[size] = null;
-            return value;
+            return removableItem;
         }
         return null;
     }
@@ -274,7 +283,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         return size + (size >>> 1);
     }
 
-    private void grow(int newSize) {
+    private void growToSizeOrDoNothing(int newSize) {
         if(newSize > size) {
             size = newSize;
             if(newSize > values.length) {

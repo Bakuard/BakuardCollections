@@ -83,6 +83,18 @@ class DynamicArrayTest {
         assertions.assertAll();
     }
 
+    @DisplayName("DynamicArray(iterable):")
+    @ParameterizedTest(name = """
+             iterable is {0}
+             => expected {1}
+            """)
+    @MethodSource("provideForConstructorWithIterable")
+    public void DynamicArray_iterable(Iterable<Integer> iterable, DynamicArray<Integer> expected) {
+        DynamicArray<Integer> actual = new DynamicArray<>(iterable);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
     @DisplayName("replace(index, value):")
     @ParameterizedTest(name = """
              origin is {0},
@@ -1242,6 +1254,18 @@ class DynamicArrayTest {
                         DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
                         15,
                         DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForConstructorWithIterable() {
+        return Stream.of(
+                Arguments.of(List.of(), new DynamicArray<>()),
+                Arguments.of(Stream.of(new Integer[]{null}).toList(), DynamicArray.of(new Integer[]{null})),
+                Arguments.of(List.of(100), DynamicArray.of(100)),
+                Arguments.of(
+                        List.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
                 )
         );
     }

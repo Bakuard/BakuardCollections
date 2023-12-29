@@ -54,6 +54,15 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     }
 
     /**
+     * Создает новую очередь копируя в неё все элементы iterable в порядке их возвращения итератором.
+     * @param iterable структура данных, элементы которой копируются в новую очередь.
+     */
+    public Queue(Iterable<T> iterable) {
+        this();
+        putAllOnLast(iterable);
+    }
+
+    /**
      * Добавляет элемент в конец очереди увеличивая его длину ({@link #size()}) на единицу.
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.

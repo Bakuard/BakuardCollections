@@ -51,6 +51,18 @@ class StackTest {
         assertions.assertAll();
     }
 
+    @DisplayName("Stack(iterable):")
+    @ParameterizedTest(name = """
+             iterable is {0}
+             => expected {1}
+            """)
+    @MethodSource("provideForConstructorWithIterable")
+    public void Stack_iterable(Iterable<Integer> iterable, Stack<Integer> expected) {
+        Stack<Integer> actual = new Stack<>(iterable);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
     @DisplayName("putLast(value):")
     @ParameterizedTest(name = """
              origin is {0},
@@ -332,6 +344,18 @@ class StackTest {
                         stackWithBigEntrySize,
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
                         true
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForConstructorWithIterable() {
+        return Stream.of(
+                Arguments.of(new DynamicArray<>(), new Stack<>()),
+                Arguments.of(DynamicArray.of(new Integer[]{null}), Stack.of(new Integer[]{null})),
+                Arguments.of(DynamicArray.of(100), Stack.of(100)),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
                 )
         );
     }

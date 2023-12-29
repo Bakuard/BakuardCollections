@@ -68,6 +68,15 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     }
 
     /**
+     * Создает новый массив копируя в него все элементы iterable в порядке их возвращения итератором.
+     * @param iterable структура данных, элементы которой копируются в новый массив.
+     */
+    public DynamicArray(Iterable<T> iterable) {
+        this();
+        appendAll(iterable);
+    }
+
+    /**
      * Возвращает элемент по его индексу.
      * @param index индекс искомого элемента.
      * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
