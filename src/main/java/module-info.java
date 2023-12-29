@@ -1,7 +1,7 @@
 module com.bakuard.collections {
 
-    exports com.bakuard.collections.immutable;
-    exports com.bakuard.collections.mutable;
-
+    exports com.bakuard.collections;
+    exports com.bakuard.collections.exceptions;
+    exports com.bakuard.collections.function;
 
 }
