@@ -78,7 +78,7 @@ public final class Bits implements Comparable<Bits> {
      */
     public boolean get(int index) throws IndexOutOfBoundsException {
         assertInHalfOpenInterval(index);
-        return (words[index >>> 6] & (1L << index)) != 0L;
+        return unsafeGet(index);
     }
 
     /**
@@ -205,6 +205,19 @@ public final class Bits implements Comparable<Bits> {
     public Bits clearAll() {
         Arrays.fill(words, 0L);
         return this;
+    }
+
+    /**
+     * Инвертирует бит под указанным индексом.
+     * @param index индекс инвертируемого бита.
+     * @return предыдущее значение указанного бита.
+     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}.
+     */
+    public boolean flip(int index) throws IndexOutOfBoundsException {
+        assertInHalfOpenInterval(index);
+        boolean returnedValue = unsafeGet(index);
+        words[index >>> 6] ^= (1L << index);
+        return returnedValue;
     }
 
     /**
@@ -712,7 +725,11 @@ public final class Bits implements Comparable<Bits> {
             }
         }
     }
-    
+
+    private boolean unsafeGet(int index) {
+        return (words[index >>> 6] & (1L << index)) != 0L;
+    }
+
     private static String toBinaryString(long value, final int bitsNumber) {
         char[] chars = new char[bitsNumber];
         for(int i = 0; i < bitsNumber; i++) {
