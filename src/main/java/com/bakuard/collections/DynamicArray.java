@@ -1,8 +1,9 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.exceptions.NegativeSizeException;
-import com.bakuard.collections.function.ConsumerAtIndex;
-import com.bakuard.collections.function.PredicateAtIndex;
+import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -50,7 +51,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param size длина массива.
      * @throws NegativeSizeException если указанная длина меньше нуля.
      */
-    @SuppressWarnings("unchecked")
+     @SuppressWarnings("unchecked")
     public DynamicArray(int size){
         assertNotNegativeSize(size);
 
@@ -313,7 +314,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @return кол-во удаленных элементов.
      * @throws ConcurrentModificationException при попытке изменить массив из predicate.
      */
-    public int removeIf(PredicateAtIndex<T> predicate) {
+    public int removeIf(IndexBiPredicate<T> predicate) {
         final int EXPECTED_COUNT_MOD = ++actualModCount;
 
         int result = 0;
@@ -344,7 +345,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     public void sort(Comparator<T> comparator) {
         ++actualModCount;
 
-        Arrays.sort(values, 0, size, comparator);
+        Arrays.sort((T[]) values, 0, size, comparator);
     }
 
     /**
@@ -487,24 +488,17 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public void forEach(Consumer<? super T> action) {
-        final int EXPECTED_COUNT_MOD = actualModCount;
-
-        for(int i = 0; i < size; i++) {
-            action.accept(values[i]);
-            if(EXPECTED_COUNT_MOD != actualModCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
+        forEach((item, index) -> action.accept(item));
     }
 
     /**
-     * Поведение этого метода расширяет контракт {@link #forEach(Consumer)}. Функция обратного вызова, помимо самих
-     * элементов также принимает их индексы.
+     * {@inheritDoc}
      */
-    public void forEach(ConsumerAtIndex<? super T> action) {
+    @Override
+    public void forEach(IndexBiConsumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
-        for(int i = 0; i < size; i++) {
+        for(int i = 0; i < size; ++i) {
             action.accept(values[i], i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
@@ -519,7 +513,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         DynamicArray<?> array = (DynamicArray<?>) o;
 
         boolean result = array.size == size;
-        for(int i = 0; i < size && result; i++) {
+        for(int i = 0; i < size && result; ++i) {
             result = Objects.equals(array.values[i], values[i]);
         }
         return result;
@@ -528,7 +522,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     @Override
     public int hashCode() {
         int result = size;
-        for(int i = 0; i < size; i++) result = result * 31 + Objects.hashCode(values[i]);
+        for(int i = 0; i < size; ++i) result = result * 31 + Objects.hashCode(values[i]);
         return result;
     }
 
@@ -738,6 +732,4 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         }
 
     }
-
 }
-

@@ -3,7 +3,8 @@ package com.bakuard.collections.function;
 /**
  * Используется при переборе линейных структур данных для проверки элементов на соответствие некоторому условию.
  */
-public interface PredicateAtIndex<T> {
+@FunctionalInterface
+public interface IndexBiPredicate<T> {
 
     /**
      * Проверяет, соответствует ли указанный элемент под указанным индексом некоторому условию.

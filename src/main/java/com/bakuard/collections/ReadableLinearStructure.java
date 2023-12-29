@@ -1,6 +1,10 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiConsumer;
+
+import java.util.ConcurrentModificationException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -152,4 +156,9 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
     @Override
     public IndexedIterator<T> iterator();
 
+    /**
+     * Поведение этого метода расширяет контракт {@link #forEach(Consumer)}. Функция обратного вызова, помимо самих
+     * элементов также принимает их индексы.
+     */
+    public void forEach(IndexBiConsumer<? super T> action);
 }

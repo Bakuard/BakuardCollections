@@ -1,5 +1,7 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiConsumer;
+
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -270,10 +272,18 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      */
     @Override
     public void forEach(Consumer<? super T> action) {
+        forEach((item, index) -> action.accept(item));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void forEach(IndexBiConsumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
         for(int i = 0, size = size(); i < size; ++i) {
-            action.accept(unsafeGet(i));
+            action.accept(unsafeGet(i), i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

@@ -3,7 +3,8 @@ package com.bakuard.collections.function;
 /**
  * Используется при переборе линейных структур данных для обработки отдельных элементов.
  */
-public interface ConsumerAtIndex<T> {
+@FunctionalInterface
+public interface IndexBiConsumer<T> {
 
     /**
      * Обрабатывает указанный элемент под указанным индексом.

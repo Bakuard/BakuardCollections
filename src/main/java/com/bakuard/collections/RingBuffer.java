@@ -2,6 +2,7 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.exceptions.MaxSizeExceededException;
 import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.function.IndexBiConsumer;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
@@ -13,7 +14,7 @@ import java.util.function.Predicate;
 /**
  * Реализация циклического буфера с объектами произвольного типа.
  */
-public class RingBuffer<T> implements ReadableLinearStructure<T> {
+public final class RingBuffer<T> implements ReadableLinearStructure<T> {
 
     /**
      * Создает и возвращает циклический буфер, максимальный размер которого равен maxSize.
@@ -454,10 +455,18 @@ public class RingBuffer<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public void forEach(Consumer<? super T> action) {
+        forEach((item, index) -> action.accept(item));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void forEach(IndexBiConsumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
         for(int i = 0; i < currentSize; ++i) {
-            action.accept(unsafeGet(i));
+            action.accept(unsafeGet(i), i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

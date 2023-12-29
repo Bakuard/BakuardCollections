@@ -1,5 +1,7 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiConsumer;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -240,6 +242,22 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
 
         for(int i = 0; i < size; ++i) {
             action.accept(values[i]);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    /**
+     * Поведение этого метода расширяет контракт {@link #forEach(Consumer)}. Функция обратного вызова, помимо самих
+     * элементов также принимает их индексы.
+     */
+    @Override
+    public void forEach(IndexBiConsumer<? super T> action) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        for(int i = 0; i < size; ++i) {
+            action.accept(values[i], i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

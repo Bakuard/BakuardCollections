@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.testUtil.Mutator;
+import com.bakuard.collections.testUtil.Pair;
 import com.bakuard.collections.testUtil.StructAndMutator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +9,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -203,6 +206,20 @@ class ReadableLinearStructureTest {
         int actual = linearStructure.frequency(v -> Objects.equals(v, value));
 
         Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @DisplayName("forEach(action):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             => expected sequence {1}
+            """)
+    @MethodSource("provideForEachWithIndex")
+    void forEachWithIndex(ReadableLinearStructure<Integer> linearStructure, List<Pair<Integer, Integer>> expectedSequence) {
+        List<Pair<Integer, Integer>> actualSequence = new ArrayList<>();
+
+        linearStructure.forEach((item, index) -> actualSequence.add(new Pair<>(item, index)));
+
+        Assertions.assertThat(actualSequence).isEqualTo(expectedSequence);
     }
 
 
@@ -491,6 +508,20 @@ class ReadableLinearStructureTest {
                         map(struct -> Arguments.of(struct, 40, 2)),
                 structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
                         map(struct -> Arguments.of(struct, null, 2))
+        ).flatMap(stream -> stream);
+    }
+
+    private static Stream<Arguments> provideForEachWithIndex() {
+        return Stream.of(
+                structures().map(struct -> Arguments.of(struct, List.of())),
+                structures(10).map(struct -> Arguments.of(struct, List.of(Pair.of(10, 0)))),
+                structures(new Integer[]{null}).map(struct -> Arguments.of(struct, List.of(Pair.of(null, 0)))),
+                structures(null, 10, 20, 30, 40, null, 60 ,70 , null, null, 100, 110, 120, 130, 140)
+                        .map(struct -> Arguments.of(struct, List.of(
+                                Pair.of(null, 0), Pair.of(10, 1), Pair.of(20, 2), Pair.of(30, 3), Pair.of(40, 4),
+                                Pair.of(null, 5), Pair.of(60, 6), Pair.of(70, 7), Pair.of(null, 8), Pair.of(null, 9),
+                                Pair.of(100, 10), Pair.of(110, 11), Pair.of(120, 12), Pair.of(130, 13), Pair.of(140, 14)
+                        )))
         ).flatMap(stream -> stream);
     }
 }
