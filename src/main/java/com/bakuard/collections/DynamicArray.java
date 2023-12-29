@@ -35,6 +35,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
     private static final int MIN_CAPACITY = 10;
 
+
     private T[] values;
     private int size;
     private int actualModCount;
@@ -48,7 +49,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     }
 
      /**
-     * Создает пустой массив указанной длины.
+     * Создает пустой массив указанной длины. Все значения в пределах заданного диапазона будут равны null.
      * @param size длина массива.
      * @throws NegativeSizeException если указанная длина меньше нуля.
      */
@@ -462,6 +463,23 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         if(isTrim) values = Arrays.copyOf(values, size);
 
         return isTrim;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <R> DynamicArray<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        DynamicArray<R> result = new DynamicArray<>(size);
+        for(int i = 0; i < size; ++i) {
+            result.values[i] = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
     }
 
     /**

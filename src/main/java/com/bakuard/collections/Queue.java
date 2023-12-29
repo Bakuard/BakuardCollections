@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
@@ -41,9 +42,8 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     /**
      * Создает новую пустую очередь.
      */
-    @SuppressWarnings("unchecked")
     public Queue() {
-        values = (T[]) new Object[MIN_CAPACITY];
+        this(MIN_CAPACITY, 0);
     }
 
     /**
@@ -63,6 +63,12 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     public Queue(Iterable<T> iterable) {
         this();
         putAllOnLast(iterable);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Queue(int capacity, int size) {
+        this.values = (T[]) new Object[capacity];
+        this.lastItemIndex = size;
     }
 
     /**
@@ -260,6 +266,24 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
             if(predicate.test(unsafeGet(i))) ++result;
         }
 
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <R> Queue<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        Queue<R> result = new Queue<>(size, size);
+        for(int i = 0; i < size; ++i) {
+            result.values[i] = mapper.apply(unsafeGet(i), i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
         return result;
     }
 

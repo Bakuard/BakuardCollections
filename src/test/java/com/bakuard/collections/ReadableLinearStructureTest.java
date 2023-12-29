@@ -1,5 +1,7 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
 import com.bakuard.collections.testUtil.Pair;
 import com.bakuard.collections.testUtil.StructAndMutator;
@@ -234,18 +236,36 @@ class ReadableLinearStructureTest {
         Assertions.assertThat(actualArray).isEqualTo(expectedArray);
     }
 
+    @DisplayName("cloneAndMap(mapper):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             => expected is {1}
+            """)
+    @MethodSource("provideForCloneAndMap")
+    void cloneAndMap(ReadableLinearStructure<Integer> origin,
+                     ReadableLinearStructure<Integer> expected,
+                     IndexBiFunction<Integer, Integer> mapper) {
+        ReadableLinearStructure<Integer> actual = origin.cloneAndMap(mapper);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
 
     private static boolean isExceptionType(Object obj) {
         return obj instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>)obj);
     }
 
-    private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
+    private static <T> Stream<Fabric<T, ReadableLinearStructure<T>>> structureFabrics() {
         return Stream.of(
-                DynamicArray.of(data),
-                Stack.of(data),
-                Queue.of(data),
-                RingBuffer.of(data.length, data)
+                (size, data) -> DynamicArray.of(data),
+                (size, data) -> Stack.of(data),
+                (size, data) -> Queue.of(data),
+                (size, data) -> RingBuffer.of(data.length, data)
         );
+    }
+
+    private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
+        return structureFabrics().map(fabric -> (ReadableLinearStructure<T>) fabric.create(data));
     }
 
     private static <T> Stream<StructAndMutator<T, ? extends ReadableLinearStructure<T>>> structuresWithMutators(
@@ -545,6 +565,31 @@ class ReadableLinearStructureTest {
                 structures(0,10).map(struct -> Arguments.of(struct,new Integer[]{0,10})),
                 structures(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150)
                         .map(struct -> Arguments.of(struct,new Integer[]{0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150}))
+        ).flatMap(stream -> stream);
+    }
+
+    private static Stream<Arguments> provideForCloneAndMap() {
+        return Stream.of(
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(),
+                        fabric.create(),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(new Integer[]{null}),
+                        fabric.create(new Integer[]{null}),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(1),
+                        fabric.create(10),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item * 10
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        fabric.create(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item * 10
+                ))
         ).flatMap(stream -> stream);
     }
 }

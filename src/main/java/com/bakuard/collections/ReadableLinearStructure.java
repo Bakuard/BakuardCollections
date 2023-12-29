@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
@@ -152,6 +153,14 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
     }
 
     /**
+     * Создает и возвращает копию этой структуры данных, где каждый элемент исходной структуры данных заменен
+     * результатом функции mapper.
+     * @param mapper функция обратного вызова заменяющая каждый элемент скопированный из исходной структуры данных.
+     * @throws ConcurrentModificationException при попытке изменить структуру данных из mapper.
+     */
+    public <R> ReadableLinearStructure<R> cloneAndMap(IndexBiFunction<T, R> mapper);
+
+    /**
      * Создает и возвращает новый статический массив содержащий все элементы этой структуры данных
      * в том же порядке.
      */
@@ -172,6 +181,7 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
     /**
      * Поведение этого метода расширяет контракт {@link #forEach(Consumer)}. Функция обратного вызова, помимо самих
      * элементов также принимает их индексы.
+     * @throws ConcurrentModificationException при попытке изменить структуру данных из action.
      */
     public void forEach(IndexBiConsumer<? super T> action);
 }

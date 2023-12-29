@@ -3,6 +3,7 @@ package com.bakuard.collections;
 import com.bakuard.collections.exceptions.MaxSizeExceededException;
 import com.bakuard.collections.exceptions.NegativeSizeException;
 import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
@@ -440,6 +441,24 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public <R> RingBuffer<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        RingBuffer<R> result = new RingBuffer<>(maxSize());
+        result.currentSize = currentSize;
+        for(int i = 0; i < currentSize; ++i) {
+            result.values[i] = mapper.apply(unsafeGet(i), i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public T[] toArray(Class<T> itemType) {
@@ -517,7 +536,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
 
-    protected T unsafeGet(int index) {
+    T unsafeGet(int index) {
         return values[(firstItemIndex + index) % values.length];
     }
 

@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -38,9 +39,8 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     /**
      * Создает пустой стек.
      */
-    @SuppressWarnings("unchecked")
     public Stack() {
-        values = (T[]) new Object[MIN_CAPACITY];
+        this(MIN_CAPACITY, 0);
     }
 
     /**
@@ -59,6 +59,12 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     public Stack(Iterable<T> iterable) {
         this();
         putAllOnLast(iterable);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Stack(int capacity, int size) {
+        this.values = (T[]) new Object[capacity];
+        this.size = size;
     }
 
     /**
@@ -222,6 +228,22 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <R> Stack<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        Stack<R> result = new Stack<>(size, size);
+        for(int i = 0; i < size; ++i) {
+            result.values[i] = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
 
     /**
      * {@inheritDoc}
