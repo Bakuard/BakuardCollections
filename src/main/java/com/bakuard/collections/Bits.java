@@ -545,6 +545,15 @@ public final class Bits implements Comparable<Bits> {
     }
 
     /**
+     * Проверяет - выполняется ли для индекса условие: <br/>
+     * index >= 0 && index < {@link #size()}
+     * @param index проверяемый индекс.
+     */
+    public boolean inBound(int index) {
+        return index >= 0 && index < size;
+    }
+
+    /**
      * Два объекта Bits считаются одинаковыми если их размеры (значения возвращаемые методом {@link #size()})
      * равны и значения всех бит попарно равны.
      * @param o объект типа Bits с которым производится сравнение.
