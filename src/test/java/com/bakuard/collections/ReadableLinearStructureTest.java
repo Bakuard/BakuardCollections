@@ -222,6 +222,18 @@ class ReadableLinearStructureTest {
         Assertions.assertThat(actualSequence).isEqualTo(expectedSequence);
     }
 
+    @DisplayName("toArray():")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             => expectedArray is {1}
+            """)
+    @MethodSource("provideForToArray")
+    void toArray(ReadableLinearStructure<Integer> linearStructure, Integer[] expectedArray) {
+        Integer[] actualArray = linearStructure.toArray(Integer.class);
+
+        Assertions.assertThat(actualArray).isEqualTo(expectedArray);
+    }
+
 
     private static boolean isExceptionType(Object obj) {
         return obj instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>)obj);
@@ -522,6 +534,17 @@ class ReadableLinearStructureTest {
                                 Pair.of(null, 5), Pair.of(60, 6), Pair.of(70, 7), Pair.of(null, 8), Pair.of(null, 9),
                                 Pair.of(100, 10), Pair.of(110, 11), Pair.of(120, 12), Pair.of(130, 13), Pair.of(140, 14)
                         )))
+        ).flatMap(stream -> stream);
+    }
+
+    private static Stream<Arguments> provideForToArray() {
+        return Stream.of(
+                structures().map(struct -> Arguments.of(struct, new Integer[0])),
+                structures(new Integer[]{null}).map(struct -> Arguments.of(struct,new Integer[]{null})),
+                structures(100).map(struct -> Arguments.of(struct,new Integer[]{100})),
+                structures(0,10).map(struct -> Arguments.of(struct,new Integer[]{0,10})),
+                structures(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150)
+                        .map(struct -> Arguments.of(struct,new Integer[]{0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150}))
         ).flatMap(stream -> stream);
     }
 }

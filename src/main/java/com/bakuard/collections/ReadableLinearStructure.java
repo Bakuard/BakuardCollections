@@ -2,9 +2,11 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
 
+import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 /**
@@ -147,6 +149,17 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
             if(predicate.test(get(i))) ++result;
         }
         return result;
+    }
+
+    /**
+     * Создает и возвращает новый статический массив содержащий все элементы этой структуры данных
+     * в том же порядке.
+     */
+    @SuppressWarnings("unchecked")
+    public default T[] toArray(Class<T> itemType) {
+        T[] array = (T[]) Array.newInstance(itemType, size());
+        forEach((item, index) -> array[index] = item);
+        return array;
     }
 
     /**

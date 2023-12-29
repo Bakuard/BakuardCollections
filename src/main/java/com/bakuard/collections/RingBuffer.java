@@ -4,6 +4,7 @@ import com.bakuard.collections.exceptions.MaxSizeExceededException;
 import com.bakuard.collections.exceptions.NegativeSizeException;
 import com.bakuard.collections.function.IndexBiConsumer;
 
+import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -75,11 +76,13 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
      * Максимальный размер буфера будет равен кол-ву элементов возвращенных итератором.
      * @param iterable структура данных, элементы которой копируются в новый буфер.
      */
+    @SuppressWarnings("unchecked")
     public RingBuffer(Iterable<T> iterable) {
         DynamicArray<T> tempBuffer = new DynamicArray<>();
         tempBuffer.appendAll(iterable);
 
-        values = tempBuffer.toArray();
+        values = (T[]) new Object[tempBuffer.size()];
+        tempBuffer.forEach((item, index) -> values[index] = item);
         currentSize = tempBuffer.size();
     }
 
@@ -311,11 +314,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
 
         if(newSize > values.length) {
             T[] newValues = (T[]) new Object[newSize];
-            if (currentSize > 0) {
-                int lengthBeforeWrap = values.length - firstItemIndex;
-                System.arraycopy(values, firstItemIndex, newValues, 0, lengthBeforeWrap);
-                System.arraycopy(values, 0, newValues, lengthBeforeWrap, values.length - lengthBeforeWrap);
-            }
+            fillArray(newValues);
             values = newValues;
             firstItemIndex = 0;
         }
@@ -439,6 +438,18 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public T[] toArray(Class<T> itemType) {
+        int size = size();
+        T[] result = (T[]) Array.newInstance(itemType, size);
+        fillArray(result);
+        return result;
+    }
+
+    /**
      * Создает и возвращает итератор, позволяющий последовательно перебрать циклический буфер в обоих направлениях.
      * Сразу после создания, курсор итератора установлен перед первым элементом.
      */
@@ -529,6 +540,14 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     private void assertNotNegativeSize(int size) {
         if(size < 0) {
             throw new NegativeSizeException("Expected: size >= 0; Actual: size=" + size);
+        }
+    }
+
+    private void fillArray(T[] array) {
+        if(currentSize > 0) {
+            int lengthBeforeWrap = values.length - firstItemIndex;
+            System.arraycopy(values, firstItemIndex, array, 0, lengthBeforeWrap);
+            System.arraycopy(values, 0, array, lengthBeforeWrap, values.length - lengthBeforeWrap);
         }
     }
 

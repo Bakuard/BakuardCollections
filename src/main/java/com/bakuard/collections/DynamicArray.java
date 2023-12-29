@@ -5,6 +5,7 @@ import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
 import com.bakuard.collections.function.IndexBiPredicate;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -464,11 +465,14 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Создает и возвращает новый статический массив содержащий все элементы данного динамического массива
-     * в том же порядке.
+     * {@inheritDoc}
      */
-    public T[] toArray() {
-        return Arrays.copyOf(values, size);
+    @SuppressWarnings("unchecked")
+    @Override
+    public T[] toArray(Class<T> itemType) {
+        T[] result = (T[]) Array.newInstance(itemType, size);
+        System.arraycopy(values, 0, result, 0, size);
+        return result;
     }
 
     /**

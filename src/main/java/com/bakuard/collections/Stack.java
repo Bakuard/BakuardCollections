@@ -2,6 +2,7 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -218,6 +219,18 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         for(int i = 0; i < size; ++i) {
             if(predicate.test(values[i])) ++result;
         }
+        return result;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public T[] toArray(Class<T> itemType) {
+        T[] result = (T[]) Array.newInstance(itemType, size);
+        System.arraycopy(values, 0, result, 0, size);
         return result;
     }
 
