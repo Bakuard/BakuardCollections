@@ -52,6 +52,18 @@ public class DequeTest {
         assertions.assertAll();
     }
 
+    @DisplayName("Deque(iterable):")
+    @ParameterizedTest(name = """
+             iterable is {0}
+             => expected {1}
+            """)
+    @MethodSource("provideForConstructorWithIterable")
+    public void Deque_iterable(Iterable<Integer> iterable, Deque<Integer> expected) {
+        Deque<Integer> actual = new Deque<>(iterable);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
     @DisplayName("of(...data):")
     @ParameterizedTest(name = """
              data is {0}
@@ -212,7 +224,7 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, Deque<Integer>> fabric = data -> {
+        Fabric<Integer, Deque<Integer>> fabric = (size, data) -> {
             Deque<Integer> deque = new Deque<>();
             for(Integer value : data) deque.putLast(value);
             return deque;
@@ -235,7 +247,7 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, Deque<Integer>> fabric = data -> {
+        Fabric<Integer, Deque<Integer>> fabric = (size, data) -> {
             Deque<Integer> deque = new Deque<>();
             for(Integer value : data) deque.putLast(value);
             return deque;
@@ -420,6 +432,18 @@ public class DequeTest {
                         Deque.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 100),
                         Deque.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         100
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForConstructorWithIterable() {
+        return Stream.of(
+                Arguments.of(new DynamicArray<>(), new Deque<>()),
+                Arguments.of(DynamicArray.of(new Integer[]{null}), Deque.of(new Integer[]{null})),
+                Arguments.of(DynamicArray.of(100), Deque.of(100)),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        Deque.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
                 )
         );
     }

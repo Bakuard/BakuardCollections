@@ -1,5 +1,9 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
+
+import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -38,9 +42,8 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     /**
      * Создает новую пустую очередь.
      */
-    @SuppressWarnings("unchecked")
     public Queue() {
-        values = (T[]) new Object[MIN_CAPACITY];
+        this(MIN_CAPACITY, 0);
     }
 
     /**
@@ -51,6 +54,21 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         this.values = other.values.clone();
         this.firstItemIndex = other.firstItemIndex;
         this.lastItemIndex = other.lastItemIndex;
+    }
+
+    /**
+     * Создает новую очередь копируя в неё все элементы iterable в порядке их возвращения итератором.
+     * @param iterable структура данных, элементы которой копируются в новую очередь.
+     */
+    public Queue(Iterable<T> iterable) {
+        this();
+        putAllOnLast(iterable);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Queue(int capacity, int size) {
+        this.values = (T[]) new Object[capacity];
+        this.lastItemIndex = size;
     }
 
     /**
@@ -143,13 +161,20 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * памяти занимаемый объектом Queue.
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
+    @SuppressWarnings("unchecked")
     public boolean trimToSize() {
         ++actualModCount;
 
         int size = Math.max(MIN_CAPACITY - 1, size());
         boolean isTrim = size < values.length;
 
-        if(isTrim) repackInnerArray(size, size + 1);
+        if(isTrim) {
+            T[] newValues = (T[]) new Object[size + 1];
+            fillArray(newValues, size);
+            values = newValues;
+            firstItemIndex = 0;
+            lastItemIndex = size;
+        }
 
         return isTrim;
     }
@@ -245,6 +270,36 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <R> Queue<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        Queue<R> result = new Queue<>(size, size);
+        for(int i = 0; i < size; ++i) {
+            result.values[i] = mapper.apply(unsafeGet(i), i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public T[] toArray(Class<T> itemType) {
+        int size = size();
+        T[] result = (T[]) Array.newInstance(itemType, size);
+        fillArray(result, size);
+        return result;
+    }
+
+    /**
      * Создает и возвращает итератор, позволяющий последовательно перебрать очередь в обоих направлениях.
      * Сразу после создания, курсор итератора установлен перед первым элементом.
      */
@@ -261,10 +316,18 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      */
     @Override
     public void forEach(Consumer<? super T> action) {
+        forEach((item, index) -> action.accept(item));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void forEach(IndexBiConsumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
         for(int i = 0, size = size(); i < size; ++i) {
-            action.accept(unsafeGet(i));
+            action.accept(unsafeGet(i), i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }
@@ -311,27 +374,15 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         return values[(firstItemIndex + index) % values.length];
     }
 
+    @SuppressWarnings("unchecked")
     protected void grow(int currentSize, int newSize) {
         if(newSize >= values.length) {
-            repackInnerArray(currentSize, calculateCapacity(newSize));
+            T[] newValues = (T[]) new Object[calculateCapacity(newSize)];
+            fillArray(newValues, currentSize);
+            values = newValues;
+            firstItemIndex = 0;
+            lastItemIndex = currentSize;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void repackInnerArray(int currentSize, int newSize) {
-        T[] newValues = (T[]) new Object[newSize];
-
-        if(firstItemIndex < lastItemIndex) {
-            System.arraycopy(values, firstItemIndex, newValues, 0, currentSize);
-        } else if(firstItemIndex > lastItemIndex) {
-            int lengthBeforeWrap = values.length - firstItemIndex;
-            System.arraycopy(values, firstItemIndex, newValues, 0, lengthBeforeWrap);
-            System.arraycopy(values, 0, newValues, lengthBeforeWrap, lastItemIndex);
-        }
-
-        values = newValues;
-        firstItemIndex = 0;
-        lastItemIndex = currentSize;
     }
 
     private int calculateCapacity(int size) {
@@ -353,6 +404,16 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
             throw new IndexOutOfBoundsException(
                     "Expected: index >= -size && index < size. Actual: size=" + size + ", index=" + index
             );
+        }
+    }
+
+    private void fillArray(T[] array, int currentSize) {
+        if(firstItemIndex < lastItemIndex) {
+            System.arraycopy(values, firstItemIndex, array, 0, currentSize);
+        } else if(firstItemIndex > lastItemIndex) {
+            int lengthBeforeWrap = values.length - firstItemIndex;
+            System.arraycopy(values, firstItemIndex, array, 0, lengthBeforeWrap);
+            System.arraycopy(values, 0, array, lengthBeforeWrap, lastItemIndex);
         }
     }
 

@@ -1,32 +1,40 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
+
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
+import java.util.random.RandomGenerator;
 
 /**
  * Реализация динамического массива с объектами произвольного типа.
  */
-public final class Array<T> implements ReadableLinearStructure<T> {
+public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
     /**
-     * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект Array
+     * Создает и возвращает массив содержащий указанные элементы в указанном порядке. Итоговый объект DynamicArray
      * будет содержать копию передаваемого массива, а не сам массив. Длина создаваемого объекта
      * ({@link #size()}) будет равна кол-ву передаваемых элементов. Если передаваемый массив не содержит
-     * ни одного элемента - создает пустой объект Array.
+     * ни одного элемента - создает пустой объект DynamicArray.
      * @param data элементы включаемые в создаваемый объект.
      * @throws NullPointerException если передаваемый массив элементов равен null.
      */
-    public static <T> Array<T> of(T... data) {
+    public static <T> DynamicArray<T> of(T... data) {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
-        Array<T> result = new Array<>();
+        DynamicArray<T> result = new DynamicArray<>();
         result.appendAll(data);
         return result;
     }
 
     private static final int MIN_CAPACITY = 10;
+
 
     private T[] values;
     private int size;
@@ -36,19 +44,18 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Создает пустой массив нулевой длины.
      */
     @SuppressWarnings("unchecked")
-    public Array() {
+    public DynamicArray() {
         values = (T[]) new Object[MIN_CAPACITY];
     }
 
-    /**
-     * Создает пустой массив указанной длины.
+     /**
+     * Создает пустой массив указанной длины. Все значения в пределах заданного диапазона будут равны null.
      * @param size длина массива.
-     * @throws IllegalArgumentException если указанная длина меньше нуля.
+     * @throws NegativeSizeException если указанная длина меньше нуля.
      */
-    @SuppressWarnings("unchecked")
-    public Array(int size){
-        if(size < 0)
-            throw new IllegalArgumentException("Длина массива не может быть отрицательной.");
+     @SuppressWarnings("unchecked")
+    public DynamicArray(int size){
+        assertNotNegativeSize(size);
 
         this.size = size;
         values = (T[]) new Object[Math.max(calculateCapacity(size), MIN_CAPACITY)];
@@ -58,9 +65,18 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Создает копию указанного массива. Выполняет поверхностное копирование.
      * @param other массив, для которого создается копия.
      */
-    public Array(Array<T> other) {
+    public DynamicArray(DynamicArray<T> other) {
         values = other.values.clone();
         size = other.size;
+    }
+
+    /**
+     * Создает новый массив копируя в него все элементы iterable в порядке их возвращения итератором.
+     * @param iterable структура данных, элементы которой копируются в новый массив.
+     */
+    public DynamicArray(Iterable<T> iterable) {
+        this();
+        appendAll(iterable);
     }
 
     /**
@@ -108,26 +124,6 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Записывает элемент в ячейку с указанным индексом и возвращает элемент, который находился в этой
-     * ячейке до вызова этого метода. Если указанный индекс меньше длины массива - то вызов метода не
-     * изменяет размер массива. Если указанный индекс больше или равен длине массива - то длина массива
-     * станет равна index + 1.
-     * @param index индекс ячейки массива куда будет записан элемент.
-     * @param value добавляемое значение.
-     * @throws IndexOutOfBoundsException если значение индекса меньше нуля.
-     * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
-     */
-    public T setWithoutBound(int index, T value) {
-        if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
-        ++actualModCount;
-
-        growToSize(index + 1);
-        T oldValue = values[index];
-        values[index] = value;
-        return oldValue;
-    }
-
-    /**
      * Увеличивает длину массива на единицу и затем записывает элемент в конец массива.
      * @param value добавляемое значение.
      */
@@ -135,7 +131,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int lastIndex = size;
-        growToSize(size + 1);
+        growToSizeOrDoNothing(size + 1);
         values[lastIndex] = value;
     }
 
@@ -145,11 +141,11 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * @param data добавляемые элементы.
      */
     public void appendAll(T... data) {
+        ++actualModCount;
         if(data.length > 0) {
-            ++actualModCount;
 
             int lastIndex = size;
-            growToSize(size + data.length);
+            growToSizeOrDoNothing(size + data.length);
             System.arraycopy(data, 0, this.values, lastIndex, data.length);
         }
     }
@@ -176,7 +172,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int oldSize = size;
-        growToSize(size + 1);
+        growToSizeOrDoNothing(size + 1);
         if(index < oldSize) {
             System.arraycopy(values, index, values, index + 1, oldSize - index);
         }
@@ -232,15 +228,13 @@ public final class Array<T> implements ReadableLinearStructure<T> {
 
         ++actualModCount;
 
-        T first = values[firstIndex];
-        values[firstIndex] = values[secondIndex];
-        values[secondIndex] = first;
+        swapAtUncheckedIndexes(firstIndex, secondIndex);
     }
 
     /**
      * Удаляет элемент под указанным индексом и возвращает его. На место удаленного элемента будет записан
      * последний элемент массива и длина массива будет уменьшена на единицу. Данный метод не уменьшает емкость
-     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link Array},
+     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link DynamicArray},
      * используйте метод {@link #trimToSize()}. <br/>
      * Данный метод работает быстрее {@link #orderedRemove(int)}. Если порядок элементов в массиве для вас не
      * важен - для удаления рекомендуется использовать этот метод.
@@ -263,7 +257,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      * Удаляет элемент под указанным индексом и возвращает его. Все элементы, индекс которых больше указанного,
      * сдвигаются вниз на одну позицию. Иначе говоря, данный метод выполняет удаление элемента с сохранением
      * порядка для оставшихся элементов. Длина массива будет уменьшена на единицу. Данный метод не уменьшает емкость
-     * внутреннего хранилища. Если вам необходимо уменьшить объект памяти занимаемый данным объектом {@link Array},
+     * внутреннего хранилища. Если вам необходимо уменьшить объект памяти занимаемый данным объектом {@link DynamicArray},
      * используйте метод {@link #trimToSize()}.
      * @param index индекс удаляемого элемента.
      * @return удаляемый элемент под указанным индексом.
@@ -274,17 +268,51 @@ public final class Array<T> implements ReadableLinearStructure<T> {
 
         ++actualModCount;
 
-        T removableItem = values[index];
-        if(--size > index) {
-            System.arraycopy(values, index + 1, values, index, size - index);
+        return orderedRemoveAtUncheckedIndex(index);
+    }
+
+    /**
+     * Удаляет последний элемент и возвращает его. Если массив пуст - возвращает null.
+     * <b>ВАЖНО!</b> Т.к. массив допускает хранение null элементов, то возвращение данным методом
+     * null в качестве результата не гарантирует, что массив пуст. Для проверки наличия элементов
+     * в массиве используйте методы {@link #size()} или {@link #isEmpty()}.
+     * @return удаленный элемент или null.
+     */
+    public T removeLast() {
+        ++actualModCount;
+
+        if(size > 0) {
+            T removableItem = values[--size];
+            values[size] = null;
+            return removableItem;
         }
-        values[size] = null;
-        return removableItem;
+        return null;
+    }
+
+    /**
+     * Удаляет все элементы массива удовлетворяющие заданному предикату.
+     * @param predicate проверяет, нужно ли удалять элемент. Вызывается для
+     *                  каждого элемента массива.
+     * @return кол-во удаленных элементов.
+     * @throws ConcurrentModificationException при попытке изменить массив из predicate.
+     */
+    public int removeIf(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = ++actualModCount;
+
+        int result = 0;
+        for(int i = size - 1; i >= 0; --i) {
+            if(predicate.test(values[i], i)) {
+                orderedRemoveAtUncheckedIndex(i);
+                ++result;
+            }
+            if(EXPECTED_COUNT_MOD != actualModCount) throw new ConcurrentModificationException();
+        }
+        return result;
     }
 
     /**
      * Удаляет все элементы массива и уменьшает его длину до нуля. Данный метод не уменьшает емкость
-     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link Array},
+     * внутреннего хранилища. Если вам необходимо уменьшить объем памяти занимаемый данным объектом {@link DynamicArray},
      * используйте метод {@link #trimToSize()}.
      */
     public void clear() {
@@ -299,7 +327,19 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     public void sort(Comparator<T> comparator) {
         ++actualModCount;
 
-        Arrays.sort(values, 0, size, comparator);
+        Arrays.sort((T[]) values, 0, size, comparator);
+    }
+
+    /**
+     * Случайным образом меняет элементы местами друг с другом. Использует для выбора новых позиций элементов
+     * переданный генератор случайных или псевдослучайных чисел.
+     * @param randomGenerator генератор случайных чисел.
+     */
+    public void shuffle(RandomGenerator randomGenerator) {
+        for(int i = 1; i < size; ++i) {
+            int randomIndex = randomGenerator.nextInt(size - i) + i;
+            swapAtUncheckedIndexes(i, randomIndex);
+        }
     }
 
     /**
@@ -375,31 +415,39 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     /**
      * Если newSize больше длины массива ({@link #size()}), то увеличивает внутреннюю емкость массива
      * таким образом, чтобы вмещать кол-во элементов как минимум равное newSize, а длинна массива станет
-     * равна newSize. Если значение newSize меньше или равно длине массива - метод не вносит никаких
+     * равна newSize. Если значение newSize >= 0 и newSize <= ({@link #size()}) - метод не вносит никаких
      * изменений.
      * @param newSize новая длина массива.
-     * @return true - передаваемый аргумент больше длины массива {@link #size()}, иначе - false.
+     * @return ссылку на этот же объект.
      */
-    public boolean growToSize(int newSize) {
-        boolean isExpand = newSize > size;
+    public DynamicArray<T> growToSize(int newSize) {
+        ++actualModCount;
 
-        if(isExpand) {
-            ++actualModCount;
+        assertNotNegativeSize(newSize);
+        growToSizeOrDoNothing(newSize);
+        return this;
+    }
 
-            size = newSize;
-            if(newSize > values.length) {
-                values = Arrays.copyOf(values, calculateCapacity(newSize));
-            }
-        }
+    /**
+     * Если index больше или равен длине массива ({@link #size()}), то увеличивает внутреннюю емкость массива
+     * таким образом, чтобы вместить элемент с указанным индексом. Если значение index >= 0 и index < ({@link #size()}) -
+     * метод не вносит никаких изменений.
+     * @param index индекс, до которого увеличивается размер массива.
+     * @return ссылку на этот же объект.
+     */
+    public DynamicArray<T> growToIndex(int index) {
+        ++actualModCount;
 
-        return isExpand;
+        assertNotNegativeIndex(index);
+        growToSizeOrDoNothing(index + 1);
+        return this;
     }
 
     /**
      * Если размер внутреннего массива больше его минимально необходимого значения в соответствии с текущей
      * длинной объекта ({@link #size()}), то уменьшает емкость внутреннего массива, иначе - не вносит
      * никаких изменений. Данный метод следует использовать в тех случаях, когда необходимо минимизировать объем
-     * памяти занимаемый объектом Array.
+     * памяти занимаемый объектом DynamicArray.
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
     public boolean trimToSize() {
@@ -413,11 +461,31 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Создает и возвращает новый статический массив содержащий все элементы данного динамического массива
-     * в том же порядке.
+     * {@inheritDoc}
      */
-    public T[] toArray() {
-        return Arrays.copyOf(values, size);
+    @Override
+    public <R> DynamicArray<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        DynamicArray<R> result = new DynamicArray<>(size);
+        for(int i = 0; i < size; ++i) {
+            result.values[i] = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public T[] toArray(Class<T> itemType) {
+        T[] result = (T[]) Array.newInstance(itemType, size);
+        System.arraycopy(values, 0, result, 0, size);
+        return result;
     }
 
     /**
@@ -437,10 +505,18 @@ public final class Array<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public void forEach(Consumer<? super T> action) {
+        forEach((item, index) -> action.accept(item));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void forEach(IndexBiConsumer<? super T> action) {
         final int EXPECTED_COUNT_MOD = actualModCount;
 
-        for(int i = 0; i < size; i++) {
-            action.accept(values[i]);
+        for(int i = 0; i < size; ++i) {
+            action.accept(values[i], i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }
@@ -451,10 +527,10 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Array<?> array = (Array<?>) o;
+        DynamicArray<?> array = (DynamicArray<?>) o;
 
         boolean result = array.size == size;
-        for(int i = 0; i < size && result; i++) {
+        for(int i = 0; i < size && result; ++i) {
             result = Objects.equals(array.values[i], values[i]);
         }
         return result;
@@ -463,7 +539,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
     @Override
     public int hashCode() {
         int result = size;
-        for(int i = 0; i < size; i++) result = result * 31 + Objects.hashCode(values[i]);
+        for(int i = 0; i < size; ++i) result = result * 31 + Objects.hashCode(values[i]);
         return result;
     }
 
@@ -476,7 +552,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         }
         valuesToString.append(']');
 
-        return "Array{size=" + size + ", " + valuesToString + '}';
+        return "DynamicArray{size=" + size + ", " + valuesToString + '}';
     }
 
 
@@ -502,6 +578,18 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         if(!inBoundByModulo(index)) {
             throw new IndexOutOfBoundsException(
                     "Expected: index >= -size() && index < size. Actual: size=" + size + ", index=" + index);
+        }
+    }
+
+    private void assertNotNegativeSize(int size) {
+        if(size < 0) {
+            throw new NegativeSizeException("Expected: size >= 0; Actual: size=" + size);
+        }
+    }
+
+    private void assertNotNegativeIndex(int index) {
+        if(index < 0) {
+            throw new IndexOutOfBoundsException("Expected: index >= 0. Actual: index=" + index);
         }
     }
 
@@ -537,6 +625,30 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         return -1;
     }
 
+    private void growToSizeOrDoNothing(int newSize) {
+        if(newSize > size) {
+            size = newSize;
+            if(newSize > values.length) {
+                values = Arrays.copyOf(values, calculateCapacity(newSize));
+            }
+        }
+    }
+
+    private T orderedRemoveAtUncheckedIndex(int index) {
+        T removableItem = values[index];
+        if(--size > index) {
+            System.arraycopy(values, index + 1, values, index, size - index);
+        }
+        values[size] = null;
+        return removableItem;
+    }
+
+    private void swapAtUncheckedIndexes(int firstIndex, int secondIndex) {
+        T first = values[firstIndex];
+        values[firstIndex] = values[secondIndex];
+        values[secondIndex] = first;
+    }
+
 
     private final class IndexedIteratorImpl<E> implements IndexedIterator<E> {
 
@@ -562,7 +674,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
             assertLinearStructureWasNotBeenChanged();
             assertHasNext();
             recentIndex = ++cursor;
-            return (E) Array.this.get(recentIndex);
+            return (E) DynamicArray.this.get(recentIndex);
         }
 
         @Override
@@ -575,7 +687,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
             assertLinearStructureWasNotBeenChanged();
             assertHasPrevious();
             recentIndex = cursor--;
-            return (E) Array.this.get(recentIndex);
+            return (E) DynamicArray.this.get(recentIndex);
         }
 
         @Override
@@ -588,7 +700,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
             assertLinearStructureWasNotBeenChanged();
             assertCanJump(itemsNumber);
             recentIndex = cursor += itemsNumber;
-            return (E) Array.this.get(recentIndex);
+            return (E) DynamicArray.this.get(recentIndex);
         }
 
         @Override
@@ -610,7 +722,7 @@ public final class Array<T> implements ReadableLinearStructure<T> {
 
 
         private void assertLinearStructureWasNotBeenChanged() {
-            if(Array.this.actualModCount != expectedModCount) {
+            if(DynamicArray.this.actualModCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
         }
@@ -643,6 +755,4 @@ public final class Array<T> implements ReadableLinearStructure<T> {
         }
 
     }
-
 }
-

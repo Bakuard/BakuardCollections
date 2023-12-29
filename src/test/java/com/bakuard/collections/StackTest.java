@@ -51,6 +51,18 @@ class StackTest {
         assertions.assertAll();
     }
 
+    @DisplayName("Stack(iterable):")
+    @ParameterizedTest(name = """
+             iterable is {0}
+             => expected {1}
+            """)
+    @MethodSource("provideForConstructorWithIterable")
+    public void Stack_iterable(Iterable<Integer> iterable, Stack<Integer> expected) {
+        Stack<Integer> actual = new Stack<>(iterable);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
     @DisplayName("putLast(value):")
     @ParameterizedTest(name = """
              origin is {0},
@@ -217,33 +229,33 @@ class StackTest {
 
     private static Stream<Arguments> provideForPutAllOnLast_iterable() {
         return Stream.of(
-                Arguments.of(new Stack<>(), new Array<>(), new Stack<>()),
-                Arguments.of(new Stack<>(), Array.of(100), Stack.of(100)),
+                Arguments.of(new Stack<>(), new DynamicArray<>(), new Stack<>()),
+                Arguments.of(new Stack<>(), DynamicArray.of(100), Stack.of(100)),
                 Arguments.of(
                         new Stack<>(),
-                        Array.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
                 ),
                 Arguments.of(
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
-                        new Array<>(),
+                        new DynamicArray<>(),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
                 ),
                 Arguments.of(
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
-                        Array.of(100),
+                        DynamicArray.of(100),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100)
                 ),
                 Arguments.of(
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
-                        Array.of(100,101,102,110,120,147,177,250),
+                        DynamicArray.of(100,101,102,110,120,147,177,250),
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,110,120,147,177,250)
                 )
         );
     }
 
     private static Stream<Arguments> provideForPutAllOnLast() {
-        Fabric<Integer, Stack<Integer>> fabric = data -> {
+        Fabric<Integer, Stack<Integer>> fabric = (size, data) -> {
             Stack<Integer> stack = new Stack<>();
             for(Integer value : data) stack.putLast(value);
             return stack;
@@ -332,6 +344,18 @@ class StackTest {
                         stackWithBigEntrySize,
                         Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20),
                         true
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForConstructorWithIterable() {
+        return Stream.of(
+                Arguments.of(new DynamicArray<>(), new Stack<>()),
+                Arguments.of(DynamicArray.of(new Integer[]{null}), Stack.of(new Integer[]{null})),
+                Arguments.of(DynamicArray.of(100), Stack.of(100)),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        Stack.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
                 )
         );
     }

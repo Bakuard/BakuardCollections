@@ -1,6 +1,9 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
+import com.bakuard.collections.testUtil.Pair;
 import com.bakuard.collections.testUtil.StructAndMutator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +11,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -205,25 +210,69 @@ class ReadableLinearStructureTest {
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
+    @DisplayName("forEach(action):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             => expected sequence {1}
+            """)
+    @MethodSource("provideForEachWithIndex")
+    void forEachWithIndex(ReadableLinearStructure<Integer> linearStructure, List<Pair<Integer, Integer>> expectedSequence) {
+        List<Pair<Integer, Integer>> actualSequence = new ArrayList<>();
+
+        linearStructure.forEach((item, index) -> actualSequence.add(new Pair<>(item, index)));
+
+        Assertions.assertThat(actualSequence).isEqualTo(expectedSequence);
+    }
+
+    @DisplayName("toArray():")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             => expectedArray is {1}
+            """)
+    @MethodSource("provideForToArray")
+    void toArray(ReadableLinearStructure<Integer> linearStructure, Integer[] expectedArray) {
+        Integer[] actualArray = linearStructure.toArray(Integer.class);
+
+        Assertions.assertThat(actualArray).isEqualTo(expectedArray);
+    }
+
+    @DisplayName("cloneAndMap(mapper):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             => expected is {1}
+            """)
+    @MethodSource("provideForCloneAndMap")
+    void cloneAndMap(ReadableLinearStructure<Integer> origin,
+                     ReadableLinearStructure<Integer> expected,
+                     IndexBiFunction<Integer, Integer> mapper) {
+        ReadableLinearStructure<Integer> actual = origin.cloneAndMap(mapper);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
 
     private static boolean isExceptionType(Object obj) {
         return obj instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>)obj);
     }
 
-    private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
+    private static <T> Stream<Fabric<T, ReadableLinearStructure<T>>> structureFabrics() {
         return Stream.of(
-                Array.of(data),
-                Stack.of(data),
-                Queue.of(data),
-                RingBuffer.of(data)
+                (size, data) -> DynamicArray.of(data),
+                (size, data) -> Stack.of(data),
+                (size, data) -> Queue.of(data),
+                (size, data) -> RingBuffer.of(data.length, data)
         );
+    }
+
+    private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
+        return structureFabrics().map(fabric -> (ReadableLinearStructure<T>) fabric.create(data));
     }
 
     private static <T> Stream<StructAndMutator<T, ? extends ReadableLinearStructure<T>>> structuresWithMutators(
             T[] data, int removedItemsNumber, T[] addedData) {
         return Stream.of(
                 new StructAndMutator<>(
-                        Array.of(data),
+                        DynamicArray.of(data),
                         array -> {
                             for(int i = 0; i < removedItemsNumber; i++) array.orderedRemove(0);
                             for(T item : addedData) array.append(item);
@@ -244,7 +293,7 @@ class ReadableLinearStructureTest {
                         }
                 ),
                 new StructAndMutator<>(
-                        RingBuffer.of(data),
+                        RingBuffer.of(data.length, data),
                         buffer -> {
                             for(int i = 0; i < removedItemsNumber; i++) buffer.removeFirst();
                             for(T item : addedData) buffer.putLastOrReplace(item);
@@ -491,6 +540,56 @@ class ReadableLinearStructureTest {
                         map(struct -> Arguments.of(struct, 40, 2)),
                 structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
                         map(struct -> Arguments.of(struct, null, 2))
+        ).flatMap(stream -> stream);
+    }
+
+    private static Stream<Arguments> provideForEachWithIndex() {
+        return Stream.of(
+                structures().map(struct -> Arguments.of(struct, List.of())),
+                structures(10).map(struct -> Arguments.of(struct, List.of(Pair.of(10, 0)))),
+                structures(new Integer[]{null}).map(struct -> Arguments.of(struct, List.of(Pair.of(null, 0)))),
+                structures(null, 10, 20, 30, 40, null, 60 ,70 , null, null, 100, 110, 120, 130, 140)
+                        .map(struct -> Arguments.of(struct, List.of(
+                                Pair.of(null, 0), Pair.of(10, 1), Pair.of(20, 2), Pair.of(30, 3), Pair.of(40, 4),
+                                Pair.of(null, 5), Pair.of(60, 6), Pair.of(70, 7), Pair.of(null, 8), Pair.of(null, 9),
+                                Pair.of(100, 10), Pair.of(110, 11), Pair.of(120, 12), Pair.of(130, 13), Pair.of(140, 14)
+                        )))
+        ).flatMap(stream -> stream);
+    }
+
+    private static Stream<Arguments> provideForToArray() {
+        return Stream.of(
+                structures().map(struct -> Arguments.of(struct, new Integer[0])),
+                structures(new Integer[]{null}).map(struct -> Arguments.of(struct,new Integer[]{null})),
+                structures(100).map(struct -> Arguments.of(struct,new Integer[]{100})),
+                structures(0,10).map(struct -> Arguments.of(struct,new Integer[]{0,10})),
+                structures(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150)
+                        .map(struct -> Arguments.of(struct,new Integer[]{0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150}))
+        ).flatMap(stream -> stream);
+    }
+
+    private static Stream<Arguments> provideForCloneAndMap() {
+        return Stream.of(
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(),
+                        fabric.create(),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(new Integer[]{null}),
+                        fabric.create(new Integer[]{null}),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(1),
+                        fabric.create(10),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item * 10
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+                        fabric.create(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150),
+                        (IndexBiFunction<Integer, Integer>) (item, index) -> item * 10
+                ))
         ).flatMap(stream -> stream);
     }
 }

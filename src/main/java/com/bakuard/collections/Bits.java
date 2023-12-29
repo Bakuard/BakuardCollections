@@ -53,11 +53,10 @@ public final class Bits implements Comparable<Bits> {
      * Создает объект Bits зарезервированный для хранения указанного кол-ва бит. Значение любого бита в заданном
      * диапазоне, после вызова этого конструктора, будет равняться 0.
      * @param numberBits емкость создаваемого объекта Bits.
-     * @throws IndexOutOfBoundsException если numberBits меньше нуля.
+     * @throws NegativeSizeException если numberBits меньше нуля.
      */
     public Bits(int numberBits) {
-        if(numberBits < 0)
-            throw new IndexOutOfBoundsException("numberBits must be greater or equal 0. numberBits = " + numberBits);
+        assertNotNegativeSize(numberBits);
         growToIndexOrDoNothing(numberBits - 1);
     }
 
@@ -79,7 +78,7 @@ public final class Bits implements Comparable<Bits> {
      */
     public boolean get(int index) throws IndexOutOfBoundsException {
         assertInHalfOpenInterval(index);
-        return (words[index >>> 6] & (1L << index)) != 0L;
+        return unsafeGet(index);
     }
 
     /**
@@ -206,6 +205,19 @@ public final class Bits implements Comparable<Bits> {
     public Bits clearAll() {
         Arrays.fill(words, 0L);
         return this;
+    }
+
+    /**
+     * Инвертирует бит под указанным индексом.
+     * @param index индекс инвертируемого бита.
+     * @return предыдущее значение указанного бита.
+     * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}.
+     */
+    public boolean flip(int index) throws IndexOutOfBoundsException {
+        assertInHalfOpenInterval(index);
+        boolean returnedValue = unsafeGet(index);
+        words[index >>> 6] ^= (1L << index);
+        return returnedValue;
     }
 
     /**
@@ -546,6 +558,15 @@ public final class Bits implements Comparable<Bits> {
     }
 
     /**
+     * Проверяет - выполняется ли для индекса условие: <br/>
+     * index >= 0 && index < {@link #size()}
+     * @param index проверяемый индекс.
+     */
+    public boolean inBound(int index) {
+        return index >= 0 && index < size;
+    }
+
+    /**
      * Два объекта Bits считаются одинаковыми если их размеры (значения возвращаемые методом {@link #size()})
      * равны и значения всех бит попарно равны.
      * @param o объект типа Bits с которым производится сравнение.
@@ -640,6 +661,12 @@ public final class Bits implements Comparable<Bits> {
         return result;
     }
 
+    public int hasCodeIgnoreSize() {
+        int result = 17;
+        result = result * 31 + Arrays.hashCode(words);
+        return result;
+    }
+
     @Override
     public String toString() {
         StringBuilder array = new StringBuilder();
@@ -698,7 +725,11 @@ public final class Bits implements Comparable<Bits> {
             }
         }
     }
-    
+
+    private boolean unsafeGet(int index) {
+        return (words[index >>> 6] & (1L << index)) != 0L;
+    }
+
     private static String toBinaryString(long value, final int bitsNumber) {
         char[] chars = new char[bitsNumber];
         for(int i = 0; i < bitsNumber; i++) {

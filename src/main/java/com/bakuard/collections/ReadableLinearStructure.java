@@ -1,6 +1,13 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
+
+import java.lang.reflect.Array;
+import java.util.ConcurrentModificationException;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 /**
@@ -146,10 +153,35 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
     }
 
     /**
+     * Создает и возвращает копию этой структуры данных, где каждый элемент исходной структуры данных заменен
+     * результатом функции mapper.
+     * @param mapper функция обратного вызова заменяющая каждый элемент скопированный из исходной структуры данных.
+     * @throws ConcurrentModificationException при попытке изменить структуру данных из mapper.
+     */
+    public <R> ReadableLinearStructure<R> cloneAndMap(IndexBiFunction<T, R> mapper);
+
+    /**
+     * Создает и возвращает новый статический массив содержащий все элементы этой структуры данных
+     * в том же порядке.
+     */
+    @SuppressWarnings("unchecked")
+    public default T[] toArray(Class<T> itemType) {
+        T[] array = (T[]) Array.newInstance(itemType, size());
+        forEach((item, index) -> array[index] = item);
+        return array;
+    }
+
+    /**
      * Создает и возвращает итератор, позволяющий последовательно перебирать линейные структуру данных в
      * обоих направлениях. Сразу после создания, курсор итератора установлен перед элементом {@link #getFirst()}.
      */
     @Override
     public IndexedIterator<T> iterator();
 
+    /**
+     * Поведение этого метода расширяет контракт {@link #forEach(Consumer)}. Функция обратного вызова, помимо самих
+     * элементов также принимает их индексы.
+     * @throws ConcurrentModificationException при попытке изменить структуру данных из action.
+     */
+    public void forEach(IndexBiConsumer<? super T> action);
 }

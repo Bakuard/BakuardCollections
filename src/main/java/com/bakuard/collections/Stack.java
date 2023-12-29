@@ -1,5 +1,9 @@
 package com.bakuard.collections;
 
+import com.bakuard.collections.function.IndexBiConsumer;
+import com.bakuard.collections.function.IndexBiFunction;
+
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -35,9 +39,8 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     /**
      * Создает пустой стек.
      */
-    @SuppressWarnings("unchecked")
     public Stack() {
-        values = (T[]) new Object[MIN_CAPACITY];
+        this(MIN_CAPACITY, 0);
     }
 
     /**
@@ -50,6 +53,21 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     }
 
     /**
+     * Создает новый стек копируя в него все элементы iterable в порядке их возвращения итератором.
+     * @param iterable структура данных, элементы которой копируются в новый стек.
+     */
+    public Stack(Iterable<T> iterable) {
+        this();
+        putAllOnLast(iterable);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Stack(int capacity, int size) {
+        this.values = (T[]) new Object[capacity];
+        this.size = size;
+    }
+
+    /**
      * Добавляет элемент на вершину стека увеличивая его длину ({@link #size()}) на единицу.
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
@@ -58,7 +76,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         ++actualModCount;
 
         int lastIndex = size;
-        grow(size + 1);
+        growToSizeOrDoNothing(size + 1);
         values[lastIndex] = value;
     }
 
@@ -81,7 +99,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
             ++actualModCount;
 
             int lastIndex = size;
-            grow(size + data.length);
+            growToSizeOrDoNothing(size + data.length);
             System.arraycopy(data, 0, this.values, lastIndex, data.length);
         }
     }
@@ -95,9 +113,9 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     public T removeLast() {
         ++actualModCount;
         if(size > 0) {
-            T value = values[--size];
+            T removableItem = values[--size];
             values[size] = null;
-            return value;
+            return removableItem;
         }
         return null;
     }
@@ -211,6 +229,34 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <R> Stack<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        Stack<R> result = new Stack<>(size, size);
+        for(int i = 0; i < size; ++i) {
+            result.values[i] = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public T[] toArray(Class<T> itemType) {
+        T[] result = (T[]) Array.newInstance(itemType, size);
+        System.arraycopy(values, 0, result, 0, size);
+        return result;
+    }
+
+    /**
      * Создает и возвращает итератор, позволяющий последовательно перебрать стек в обоих направлениях.
      * Сразу после создания, курсор итератора установлен перед элементом {@link #getFirst()}.
      */
@@ -231,6 +277,22 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
 
         for(int i = 0; i < size; ++i) {
             action.accept(values[i]);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    /**
+     * Поведение этого метода расширяет контракт {@link #forEach(Consumer)}. Функция обратного вызова, помимо самих
+     * элементов также принимает их индексы.
+     */
+    @Override
+    public void forEach(IndexBiConsumer<? super T> action) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        for(int i = 0; i < size; ++i) {
+            action.accept(values[i], i);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }
@@ -274,7 +336,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         return size + (size >>> 1);
     }
 
-    private void grow(int newSize) {
+    private void growToSizeOrDoNothing(int newSize) {
         if(newSize > size) {
             size = newSize;
             if(newSize > values.length) {
