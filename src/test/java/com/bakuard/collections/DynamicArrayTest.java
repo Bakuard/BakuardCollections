@@ -129,40 +129,6 @@ class DynamicArrayTest {
         assertions.assertAll();
     }
 
-    @DisplayName("setWithoutBound(index, value):")
-    @ParameterizedTest(name = """
-             origin is {0},
-             index is {1},
-             value is {2}
-             => exception
-            """)
-    @MethodSource("provideForMethodWithIndexParam_twoParams_notNegative_exceptionCase")
-    public void setWithoutBound_exception(DynamicArray<Integer> origin, int index, Integer value) {
-        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> origin.setWithoutBound(index, value));
-    }
-
-    @DisplayName("setWithoutBound(index, value):")
-    @ParameterizedTest(name = """
-             origin is {0},
-             index is {1},
-             value is {2},
-             expectedReturnedValue is {3}
-             => expected is {4}
-            """)
-    @MethodSource("provideForSetWithoutBound")
-    public void setWithoutBound(DynamicArray<Integer> origin,
-                                int index,
-                                Integer value,
-                                Integer expectedReturnedValue,
-                                DynamicArray<Integer> expected) {
-        Integer actualReturnedValue = origin.setWithoutBound(index, value);
-
-        SoftAssertions assertions = new SoftAssertions();
-        assertions.assertThat(origin).isEqualTo(expected);
-        assertions.assertThat(actualReturnedValue).isEqualTo(expectedReturnedValue);
-        assertions.assertAll();
-    }
-
     @DisplayName("append(value):")
     @ParameterizedTest(name = """
              origin is {0},
@@ -535,14 +501,6 @@ class DynamicArrayTest {
         );
     }
 
-    private static Stream<Arguments> provideForMethodWithIndexParam_twoParams_notNegative_exceptionCase() {
-        return Stream.of(
-                Arguments.of(new DynamicArray<>(), -1, 100),
-                Arguments.of(new DynamicArray<>(1), -1, 100),
-                Arguments.of(new DynamicArray<>(1000), -1, 100)
-        );
-    }
-
     private static Stream<Arguments> provideForMethodWithIndexParam_twoParams_closedInterval_exceptionCase() {
         return Stream.of(
                 Arguments.of(new DynamicArray<>(), -1, 100),
@@ -573,44 +531,6 @@ class DynamicArrayTest {
                         DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917),
                         5, null, 55,
                         DynamicArray.of(0,1,2,7,12,null,60,101,121,317,560,666,917)
-                )
-        );
-    }
-
-    private static Stream<Arguments> provideForSetWithoutBound() {
-        return Stream.of(
-                Arguments.of(DynamicArray.of(new Integer[]{null}), 0, 100, null, DynamicArray.of(100)),
-                Arguments.of(DynamicArray.of(77), 0, 100, 77, DynamicArray.of(100)),
-                Arguments.of(DynamicArray.of(77), 0, null, 77, DynamicArray.of(new Integer[]{null})),
-                Arguments.of(
-                        DynamicArray.of(0,1,2,7,12,null,60,101,121,317,560,666,917),
-                        5, 55, null,
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917)
-                ),
-                Arguments.of(
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917),
-                        5, 77, 55,
-                        DynamicArray.of(0,1,2,7,12,77,60,101,121,317,560,666,917)
-                ),
-                Arguments.of(
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917),
-                        5, null, 55,
-                        DynamicArray.of(0,1,2,7,12,null,60,101,121,317,560,666,917)
-                ),
-                Arguments.of(
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917),
-                        13, 1000, null,
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917,1000)
-                ),
-                Arguments.of(
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917),
-                        14, 1000, null,
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917,null,1000)
-                ),
-                Arguments.of(
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917),
-                        16, 1000, null,
-                        DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917,null,null,null,1000)
                 )
         );
     }

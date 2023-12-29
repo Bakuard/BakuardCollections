@@ -124,26 +124,6 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     }
 
     /**
-     * Записывает элемент в ячейку с указанным индексом и возвращает элемент, который находился в этой
-     * ячейке до вызова этого метода. Если указанный индекс меньше длины массива - то вызов метода не
-     * изменяет размер массива. Если указанный индекс больше или равен длине массива - то длина массива
-     * станет равна index + 1.
-     * @param index индекс ячейки массива куда будет записан элемент.
-     * @param value добавляемое значение.
-     * @throws IndexOutOfBoundsException если значение индекса меньше нуля.
-     * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
-     */
-    public T setWithoutBound(int index, T value) {
-        if(index < 0) throw new IndexOutOfBoundsException("index=" + index);
-        ++actualModCount;
-
-        growToSizeOrDoNothing(index + 1);
-        T oldValue = values[index];
-        values[index] = value;
-        return oldValue;
-    }
-
-    /**
      * Увеличивает длину массива на единицу и затем записывает элемент в конец массива.
      * @param value добавляемое значение.
      */
@@ -435,7 +415,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     /**
      * Если newSize больше длины массива ({@link #size()}), то увеличивает внутреннюю емкость массива
      * таким образом, чтобы вмещать кол-во элементов как минимум равное newSize, а длинна массива станет
-     * равна newSize. Если значение newSize >= 0 и newSize < ({@link #size()}) - метод не вносит никаких
+     * равна newSize. Если значение newSize >= 0 и newSize <= ({@link #size()}) - метод не вносит никаких
      * изменений.
      * @param newSize новая длина массива.
      * @return ссылку на этот же объект.
@@ -445,6 +425,21 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
         assertNotNegativeSize(newSize);
         growToSizeOrDoNothing(newSize);
+        return this;
+    }
+
+    /**
+     * Если index больше или равен длине массива ({@link #size()}), то увеличивает внутреннюю емкость массива
+     * таким образом, чтобы вместить элемент с указанным индексом. Если значение index >= 0 и index < ({@link #size()}) -
+     * метод не вносит никаких изменений.
+     * @param index индекс, до которого увеличивается размер массива.
+     * @return ссылку на этот же объект.
+     */
+    public DynamicArray<T> growToIndex(int index) {
+        ++actualModCount;
+
+        assertNotNegativeIndex(index);
+        growToSizeOrDoNothing(index + 1);
         return this;
     }
 
@@ -589,6 +584,12 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     private void assertNotNegativeSize(int size) {
         if(size < 0) {
             throw new NegativeSizeException("Expected: size >= 0; Actual: size=" + size);
+        }
+    }
+
+    private void assertNotNegativeIndex(int index) {
+        if(index < 0) {
+            throw new IndexOutOfBoundsException("Expected: index >= 0. Actual: index=" + index);
         }
     }
 
