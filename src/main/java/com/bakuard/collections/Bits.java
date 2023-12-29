@@ -639,6 +639,12 @@ public final class Bits implements Comparable<Bits> {
         return result;
     }
 
+    public int hasCodeIgnoreSize() {
+        int result = 17;
+        result = result * 31 + Arrays.hashCode(words);
+        return result;
+    }
+
     @Override
     public String toString() {
         StringBuilder array = new StringBuilder();
