@@ -1,6 +1,6 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
 import com.bakuard.collections.function.IndexBiPredicate;
@@ -117,6 +117,26 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         assertInBound(index);
 
         ++actualModCount;
+
+        T oldValue = values[index];
+        values[index] = value;
+        return oldValue;
+    }
+
+    /**
+     * Записывает элемент в ячейку с указанным индексом и возвращает элемент, который находился в этой
+     * ячейке до вызова этого метода. Если index >= {@link #size()}, то увеличивает размер массива до index + 1,
+     * затем записывает указанное значение по заданному индексу, а затем возвращает null.
+     * @param index индекс ячейки массива куда будет записан элемент.
+     * @param value добавляемое значение.
+     * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
+     * @throws IndexOutOfBoundsException если index < 0.
+     */
+    public T replaceWithGrow(int index, T value) {
+        ++actualModCount;
+
+        assertNotNegativeIndex(index);
+        growToSizeOrDoNothing(index + 1);
 
         T oldValue = values[index];
         values[index] = value;
@@ -348,6 +368,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * в них значений из старых.
      * @return длина массива.
      */
+    @Override
     public int size() {
         return size;
     }
@@ -355,6 +376,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     /**
      * Возвращает true если данный массив пуст, иначе - false.
      */
+    @Override
     public boolean isEmpty() {
         return size == 0;
     }
@@ -366,6 +388,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param value значение искомого элемента.
      * @return индекс первого встретившегося элемента с указанным значением.
      */
+    @Override
     public int linearSearch(T value) {
         return linearSearchInRange(value, 0, size);
     }
@@ -377,6 +400,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param predicate условие, которому должен соответствовать искомый элемент.
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
+    @Override
     public int linearSearch(Predicate<T> predicate) {
         return linearSearchInRange(predicate, 0, size);
     }
@@ -404,6 +428,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     /**
      * Возвращает кол-во элементов соответствующих заданному предикату.
      */
+    @Override
     public int frequency(Predicate<T> predicate) {
         int result = 0;
         for(int i = 0; i < size; ++i) {

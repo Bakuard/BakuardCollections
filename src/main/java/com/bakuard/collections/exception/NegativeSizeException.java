@@ -1,4 +1,4 @@
-package com.bakuard.collections.exceptions;
+package com.bakuard.collections.exception;
 
 /**
  * Указывает на попытку задать отрицательный размер при создании структуры данных и увеличении её размера

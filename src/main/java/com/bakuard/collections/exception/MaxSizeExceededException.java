@@ -1,4 +1,4 @@
-package com.bakuard.collections.exceptions;
+package com.bakuard.collections.exception;
 
 /**
  * Указывает, что произошла попытка добавить элемент в структуру данных, для которой установлен максимально возможный

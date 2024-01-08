@@ -1,7 +1,7 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.MaxSizeExceededException;
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.MaxSizeExceededException;
+import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
 
@@ -243,7 +243,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
      * Добавляет элемент в конец циклического буфера. Если в циклическом буфере нет свободного места для добавления
      * этого элемента ({@link #hasAvailableSpace()} равен false), то выбрасывает исключение.
      * @param value добавляемый элемент.
-     * @throws com.bakuard.collections.exceptions.MaxSizeExceededException если в циклическом буфере нет свободного
+     * @throws com.bakuard.collections.exception.MaxSizeExceededException если в циклическом буфере нет свободного
      *                                                                     места для добавления этого элемента.
      */
     public void tryPutLast(T value) {

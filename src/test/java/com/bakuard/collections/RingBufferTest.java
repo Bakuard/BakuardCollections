@@ -1,6 +1,6 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.testUtil.Fabric;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;

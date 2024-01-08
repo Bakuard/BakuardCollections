@@ -1,6 +1,6 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.testUtil.ClosedRange;
 import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
