@@ -4,6 +4,7 @@ import com.bakuard.collections.exception.MaxSizeExceededException;
 import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
@@ -459,6 +460,27 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public RingBuffer<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        RingBuffer<T> result = new RingBuffer<>(maxSize());
+        for(int i = 0, j = 0; i < currentSize; ++i) {
+            T item = unsafeGet(i);
+            if(predicate.test(item, i)) {
+                result.values[j++] = item;
+                ++result.currentSize;
+            }
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public T[] toArray(Class<T> itemType) {
@@ -536,7 +558,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
 
-    T unsafeGet(int index) {
+    private T unsafeGet(int index) {
         return values[(firstItemIndex + index) % values.length];
     }
 

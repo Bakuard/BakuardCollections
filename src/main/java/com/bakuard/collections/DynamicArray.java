@@ -505,6 +505,23 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public DynamicArray<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        DynamicArray<T> result = new DynamicArray<>();
+        for(int i = 0; i < size; ++i) {
+            if(predicate.test(values[i], i)) result.append(values[i]);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public T[] toArray(Class<T> itemType) {

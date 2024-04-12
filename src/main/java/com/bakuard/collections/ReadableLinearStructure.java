@@ -2,12 +2,12 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 /**
@@ -159,6 +159,14 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
      * @throws ConcurrentModificationException при попытке изменить структуру данных из mapper.
      */
     public <R> ReadableLinearStructure<R> cloneAndMap(IndexBiFunction<T, R> mapper);
+
+    /**
+     * Создает и возвращает новую структуру данных того же самого типа. Возвращаемая структура
+     * будет содержать все элементы искомой структуры, которые удовлетворяют заданному предикату.
+     * @param predicate условие, по которому отбираются элементы в возвращаемую структуру данных.
+     * @throws ConcurrentModificationException при попытке изменить структуру данных из predicate.
+     */
+    public ReadableLinearStructure<T> cloneAndFilter(IndexBiPredicate<T> predicate);
 
     /**
      * Создает и возвращает новый статический массив содержащий все элементы этой структуры данных

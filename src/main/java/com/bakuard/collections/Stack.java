@@ -2,6 +2,7 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -238,6 +239,23 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         Stack<R> result = new Stack<>(size, size);
         for(int i = 0; i < size; ++i) {
             result.values[i] = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Stack cloneAndFilter(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        Stack<T> result = new Stack<>();
+        for(int i = 0; i < size; ++i) {
+            if(predicate.test(values[i], i)) result.putLast(values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

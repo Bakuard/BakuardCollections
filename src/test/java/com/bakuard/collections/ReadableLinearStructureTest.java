@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
 import com.bakuard.collections.testUtil.Pair;
@@ -250,6 +251,20 @@ class ReadableLinearStructureTest {
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
+    @DisplayName("cloneAndFilter(predicate):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             => expected is {1}
+            """)
+    @MethodSource("provideForCloneAndFilter")
+    void cloneAndFilter(ReadableLinearStructure<Integer> origin,
+                        ReadableLinearStructure<Integer> expected,
+                        IndexBiPredicate<Integer> predicate) {
+        ReadableLinearStructure<Integer> actual = origin.cloneAndFilter(predicate);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
 
     private static boolean isExceptionType(Object obj) {
         return obj instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>)obj);
@@ -260,6 +275,7 @@ class ReadableLinearStructureTest {
                 (size, data) -> DynamicArray.of(data),
                 (size, data) -> Stack.of(data),
                 (size, data) -> Queue.of(data),
+                (size, data) -> Deque.of(data),
                 (size, data) -> RingBuffer.of(data.length, data)
         );
     }
@@ -290,6 +306,13 @@ class ReadableLinearStructureTest {
                         queue -> {
                             for(int i = 0; i < removedItemsNumber; i++) queue.removeFirst();
                             for(T item : addedData) queue.putLast(item);
+                        }
+                ),
+                new StructAndMutator<>(
+                        Deque.of(data),
+                        deque -> {
+                            for(int i = 0; i < removedItemsNumber; i++) deque.removeFirst();
+                            for(T item : addedData) deque.putLast(item);
                         }
                 ),
                 new StructAndMutator<>(
@@ -589,6 +612,41 @@ class ReadableLinearStructureTest {
                         fabric.create(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
                         fabric.create(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150),
                         (IndexBiFunction<Integer, Integer>) (item, index) -> item * 10
+                ))
+        ).flatMap(stream -> stream);
+    }
+
+    private static Stream<Arguments> provideForCloneAndFilter() {
+        return Stream.of(
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(),
+                        fabric.create(),
+                        (IndexBiPredicate<Integer>) (item, index) -> item != null
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(new Integer[]{null}),
+                        fabric.create(new Integer[]{null}),
+                        (IndexBiPredicate<Integer>) (item, index) -> item == null
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(new Integer[]{null}),
+                        fabric.create(),
+                        (IndexBiPredicate<Integer>) (item, index) -> item != null
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(1),
+                        fabric.create(1),
+                        (IndexBiPredicate<Integer>) (item, index) -> item == 1
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(1),
+                        fabric.create(),
+                        (IndexBiPredicate<Integer>) (item, index) -> item != 1
+                )),
+                structureFabrics().map(fabric -> Arguments.of(
+                        fabric.create(1,2,3,null,5,6,7,8,9,10,11,12,13,14,null,16,17,18,19,null),
+                        fabric.create(11,12,13,14,16,17,18,19),
+                        (IndexBiPredicate<Integer>) (item, index) -> item != null && item > 10
                 ))
         ).flatMap(stream -> stream);
     }

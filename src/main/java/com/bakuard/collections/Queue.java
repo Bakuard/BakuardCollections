@@ -2,6 +2,7 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
@@ -43,7 +44,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * Создает новую пустую очередь.
      */
     public Queue() {
-        this(MIN_CAPACITY, 0);
+        this(0);
     }
 
     /**
@@ -66,8 +67,9 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
     }
 
     @SuppressWarnings("unchecked")
-    private Queue(int capacity, int size) {
-        this.values = (T[]) new Object[capacity];
+    private Queue(int size) {
+        int capacity = Math.max(calculateCapacity(size), MIN_CAPACITY);
+        this.values = (T[]) new Object[calculateCapacity(capacity)];
         this.lastItemIndex = size;
     }
 
@@ -277,9 +279,28 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         final int EXPECTED_COUNT_MOD = actualModCount;
 
         int size = size();
-        Queue<R> result = new Queue<>(size, size);
+        Queue<R> result = new Queue<>(size);
         for(int i = 0; i < size; ++i) {
             result.values[i] = mapper.apply(unsafeGet(i), i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Queue<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        Queue<T> result = new Queue<>();
+        for(int i = 0; i < size; ++i) {
+            T item = unsafeGet(i);
+            if(predicate.test(item, i)) result.putLast(item);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }
@@ -385,7 +406,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         }
     }
 
-    private int calculateCapacity(int size) {
+    protected int calculateCapacity(int size) {
         return size + (size >>> 1);
     }
 
