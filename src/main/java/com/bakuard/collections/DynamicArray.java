@@ -479,7 +479,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     public boolean trimToSize() {
         ++actualModCount;
 
-        boolean isTrim = size < values.length && values.length >= MIN_CAPACITY;
+        boolean isTrim = size < values.length && size >= MIN_CAPACITY;
 
         if(isTrim) values = Arrays.copyOf(values, size);
 
