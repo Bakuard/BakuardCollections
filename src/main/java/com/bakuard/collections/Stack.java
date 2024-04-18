@@ -2,6 +2,7 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -25,22 +26,18 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Stack<T> result = new Stack<>();
-        result.putAllOnLast(data);
+        result.addAllOnLast(data);
         return result;
     }
 
-    private static final int MIN_CAPACITY = 10;
 
-
-    private T[] values;
-    private int size;
-    private int actualModCount;
+    private DynamicArray<T> array;
 
     /**
      * Создает пустой стек.
      */
     public Stack() {
-        this(MIN_CAPACITY, 0);
+        array = new DynamicArray<>();
     }
 
     /**
@@ -48,8 +45,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * @param other копируемый стек.
      */
     public Stack(Stack<T> other) {
-        this.size = other.size;
-        this.values = other.values.clone();
+        this.array = new DynamicArray<>(other.array);
     }
 
     /**
@@ -58,13 +54,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      */
     public Stack(Iterable<T> iterable) {
         this();
-        putAllOnLast(iterable);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Stack(int capacity, int size) {
-        this.values = (T[]) new Object[capacity];
-        this.size = size;
+        addAllOnLast(iterable);
     }
 
     /**
@@ -72,12 +62,8 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
      */
-    public void putLast(T value) {
-        ++actualModCount;
-
-        int lastIndex = size;
-        growToSizeOrDoNothing(size + 1);
-        values[lastIndex] = value;
+    public void addLast(T value) {
+        array.addLast(value);
     }
 
     /**
@@ -85,8 +71,8 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которой добавляются на вершину текущего стека.
      */
-    public void putAllOnLast(Iterable<T> iterable) {
-        for(T value : iterable) putLast(value);
+    public void addAllOnLast(Iterable<T> iterable) {
+        array.addAllOnLast(iterable);
     }
 
     /**
@@ -94,14 +80,8 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * в порядке их следования в указанном массиве.
      * @param data массив, все элементы которого добавляются в текущий стек.
      */
-    public void putAllOnLast(T... data) {
-        if(data.length > 0) {
-            ++actualModCount;
-
-            int lastIndex = size;
-            growToSizeOrDoNothing(size + data.length);
-            System.arraycopy(data, 0, this.values, lastIndex, data.length);
-        }
+    public void addAllOnLast(T... data) {
+        array.addAllOnLast(data);
     }
 
     /**
@@ -111,13 +91,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * в стеке используйте методы {@link #size()} или {@link #isEmpty()}.
      */
     public T removeLast() {
-        ++actualModCount;
-        if(size > 0) {
-            T removableItem = values[--size];
-            values[size] = null;
-            return removableItem;
-        }
-        return null;
+        return array.removeLast();
     }
 
     /**
@@ -125,7 +99,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * @throws NoSuchElementException если стек пуст.
      */
     public T tryRemoveLast() {
-        if(size == 0) {
+        if(array.isEmpty()) {
             throw new NoSuchElementException("Fail to remove top: stack is empty.");
         }
 
@@ -138,8 +112,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * используйте метод {@link #trimToSize()}.
      */
     public void clear() {
-        ++actualModCount;
-        for(int to = size, i = size = 0; i < to; ++i) values[i] = null;
+        array.clear();
     }
 
     /**
@@ -150,13 +123,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * @return true - если объем внутреннего массива был уменьшен, иначе - false.
      */
     public boolean trimToSize() {
-        ++actualModCount;
-
-        boolean isTrim = size < values.length;
-
-        if(isTrim) values = Arrays.copyOf(values, size);
-
-        return isTrim;
+        return array.trimToSize();
     }
 
     /**
@@ -166,9 +133,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если index < 0 или index >= {@link #size()}
      */
     public T get(int index) {
-        assertInBound(index);
-
-        return values[index];
+        return array.get(index);
     }
 
     /**
@@ -179,16 +144,14 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * @throws IndexOutOfBoundsException если index < -({@link #size()}) или index >= {@link #size()}
      */
     public T at(int index) {
-        assertInBoundByModulo(index);
-
-        return index < 0 ? values[size + index] : values[index];
+        return array.at(index);
     }
 
     /**
      * Возвращает кол-во элементов в стеке.
      */
     public int size() {
-        return size;
+        return array.size();
     }
 
     /**
@@ -199,9 +162,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * @return индекс первого встретившегося элемента с указанным значением.
      */
     public int linearSearch(T value) {
-        int index = 0;
-        while(index < size && !Objects.equals(values[index], value)) ++index;
-        return index >= size ? -1 : index;
+        return array.linearSearch(value);
     }
 
     /**
@@ -212,20 +173,14 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
     public int linearSearch(Predicate<T> predicate) {
-        int index = 0;
-        while(index < size && !predicate.test(values[index])) ++index;
-        return index >= size ? -1 : index;
+        return array.linearSearch(predicate);
     }
 
     /**
      * Возвращает кол-во элементов соответствующих заданному предикату.
      */
     public int frequency(Predicate<T> predicate) {
-        int result = 0;
-        for(int i = 0; i < size; ++i) {
-            if(predicate.test(values[i])) ++result;
-        }
-        return result;
+        return array.frequency(predicate);
     }
 
     /**
@@ -233,27 +188,27 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public <R> Stack<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
-        final int EXPECTED_COUNT_MOD = actualModCount;
-
-        Stack<R> result = new Stack<>(size, size);
-        for(int i = 0; i < size; ++i) {
-            result.values[i] = mapper.apply(values[i], i);
-            if(EXPECTED_COUNT_MOD != actualModCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
+        Stack<R> result = new Stack<>();
+        result.array = array.cloneAndMap(mapper);
         return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("unchecked")
+    @Override
+    public Stack<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+        Stack<T> result = new Stack<>();
+        result.array = array.cloneAndFilter(predicate);
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public T[] toArray(Class<T> itemType) {
-        T[] result = (T[]) Array.newInstance(itemType, size);
-        System.arraycopy(values, 0, result, 0, size);
-        return result;
+        return array.toArray(itemType);
     }
 
     /**
@@ -262,7 +217,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public IndexedIterator<T> iterator() {
-        return new IndexedIteratorImpl<>(actualModCount, size);
+        return array.iterator();
     }
 
     /**
@@ -273,14 +228,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public void forEach(Consumer<? super T> action) {
-        final int EXPECTED_COUNT_MOD = actualModCount;
-
-        for(int i = 0; i < size; ++i) {
-            action.accept(values[i]);
-            if(EXPECTED_COUNT_MOD != actualModCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
+        array.forEach(action);
     }
 
     /**
@@ -289,14 +237,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      */
     @Override
     public void forEach(IndexBiConsumer<? super T> action) {
-        final int EXPECTED_COUNT_MOD = actualModCount;
-
-        for(int i = 0; i < size; ++i) {
-            action.accept(values[i], i);
-            if(EXPECTED_COUNT_MOD != actualModCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
+        array.forEach(action);
     }
 
     @Override
@@ -304,168 +245,23 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Stack<?> stack = (Stack<?>) o;
-
-        boolean result = stack.size == size;
-        for(int i = 0; i < size && result; i++) {
-            result = Objects.equals(stack.values[i], values[i]);
-        }
-        return result;
+        return array.equals(stack.array);
     }
 
     @Override
     public int hashCode() {
-        int result = size;
-        for(int i = 0; i < size; i++) result = result * 31 + Objects.hashCode(values[i]);
-        return result;
+        return Objects.hashCode(array);
     }
 
     @Override
     public String toString() {
         StringBuilder valuesToString = new StringBuilder("[");
-        if(size > 0) {
-            valuesToString.append(values[size - 1]);
-            for(int i = size - 2; i >= 0; --i) valuesToString.append(',').append(values[i]);
+        if(!array.isEmpty()) {
+            valuesToString.append(array.getLast());
+            for(int i = array.size() - 2; i >= 0; --i) valuesToString.append(',').append(array.get(i));
         }
         valuesToString.append(']');
 
-        return "Stack{size=" + size + ", " + valuesToString + '}';
+        return "Stack{size=" + array.size() + ", " + valuesToString + '}';
     }
-
-
-    private int calculateCapacity(int size) {
-        return size + (size >>> 1);
-    }
-
-    private void growToSizeOrDoNothing(int newSize) {
-        if(newSize > size) {
-            size = newSize;
-            if(newSize > values.length) {
-                values = Arrays.copyOf(values, calculateCapacity(newSize));
-            }
-        }
-    }
-
-    private void assertInBound(int index) {
-        if(index < 0 || index >= size) {
-            throw new IndexOutOfBoundsException(
-                    "Expected: index >= 0 && index < size. Actual: size=" + size + ", index=" + index
-            );
-        }
-    }
-
-    private void assertInBoundByModulo(int index) {
-        if(index < -size || index >= size) {
-            throw new IndexOutOfBoundsException(
-                    "Expected: index >= -size && index < size. Actual: size=" + size + ", index=" + index
-            );
-        }
-    }
-
-
-    private final class IndexedIteratorImpl<E> implements IndexedIterator<E> {
-
-        private final int expectedModCount;
-        private final int totalItems;
-        private int cursor;
-        private int recentIndex;
-
-        public IndexedIteratorImpl(int actualModCount, int itemsNumber) {
-            this.expectedModCount = actualModCount;
-            this.totalItems = itemsNumber;
-            this.cursor = - 1;
-            this.recentIndex = -1;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return cursor + 1 < totalItems;
-        }
-
-        @Override
-        public E next() {
-            assertLinearStructureWasNotBeenChanged();
-            assertHasNext();
-            recentIndex = ++cursor;
-            return (E) Stack.this.get(recentIndex);
-        }
-
-        @Override
-        public boolean hasPrevious() {
-            return cursor >= 0;
-        }
-
-        @Override
-        public E previous() {
-            assertLinearStructureWasNotBeenChanged();
-            assertHasPrevious();
-            recentIndex = cursor--;
-            return (E) Stack.this.get(recentIndex);
-        }
-
-        @Override
-        public boolean canJump(int itemsNumber) {
-            return cursor + itemsNumber >= 0 && cursor + itemsNumber < totalItems;
-        }
-
-        @Override
-        public E jump(int itemsNumber) {
-            assertLinearStructureWasNotBeenChanged();
-            assertCanJump(itemsNumber);
-            recentIndex = cursor += itemsNumber;
-            return (E) Stack.this.get(recentIndex);
-        }
-
-        @Override
-        public void beforeFirst() {
-            cursor = -1;
-            recentIndex = -1;
-        }
-
-        @Override
-        public void afterLast() {
-            cursor = totalItems - 1;
-            recentIndex = -1;
-        }
-
-        @Override
-        public int recentIndex() {
-            return recentIndex;
-        }
-
-
-        private void assertLinearStructureWasNotBeenChanged() {
-            if(Stack.this.actualModCount != expectedModCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
-
-        private void assertCanJump(int itemsNumber) {
-            if(!canJump(itemsNumber)) {
-                throw new NoSuchElementException(
-                        "There is no item for jump. Detail: itemsNumber=%d, totalItems=%d, currentIndex=%d".
-                                formatted(itemsNumber, totalItems, cursor)
-                );
-            }
-        }
-
-        private void assertHasNext() {
-            if(!hasNext()) {
-                throw new NoSuchElementException(
-                        "There is no next item. Detail: totalItems=%d, currentIndex=%d".
-                                formatted(totalItems, cursor)
-                );
-            }
-        }
-
-        private void assertHasPrevious() {
-            if(!hasPrevious()) {
-                throw new NoSuchElementException(
-                        "There is no previous item. Detail: totalItems=%d, currentIndex=%d".
-                                formatted(totalItems, cursor)
-                );
-            }
-        }
-
-    }
-
 }

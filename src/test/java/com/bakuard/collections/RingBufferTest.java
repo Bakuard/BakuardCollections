@@ -134,12 +134,12 @@ public class RingBufferTest {
              => expected buffer is {2},
                 expected value is {3}
             """)
-    @MethodSource("provideForPutLastOrReplace")
-    void putLastOrReplace(RingBuffer<Integer> origin,
+    @MethodSource("provideForAddLastOrReplace")
+    void addLastOrReplace(RingBuffer<Integer> origin,
                           Integer addedValue,
                           RingBuffer<Integer> expected,
                           Integer expectedReturnedValue) {
-        Integer actualReturnedValue = origin.putLastOrReplace(addedValue);
+        Integer actualReturnedValue = origin.addLastOrReplace(addedValue);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValue).isEqualTo(expectedReturnedValue);
@@ -154,12 +154,12 @@ public class RingBufferTest {
              => expected buffer is {2},
                 expected values is {3}
             """)
-    @MethodSource("provideForPutAllOnLastOrReplace_iterable")
-    void putAllOnLastOrReplace_iterable(RingBuffer<Integer> origin,
+    @MethodSource("provideForAddAllOnLastOrReplace_iterable")
+    void addAllOnLastOrReplace_iterable(RingBuffer<Integer> origin,
                                         DynamicArray<Integer> addedValues,
                                         RingBuffer<Integer> expected,
                                         DynamicArray<Integer> expectedReturnedValues) {
-        DynamicArray<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
+        DynamicArray<Integer> actualReturnedValues = origin.addAllOnLastOrReplace(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
@@ -174,12 +174,12 @@ public class RingBufferTest {
              => expected buffer is {2},
                 expected values is {3}
             """)
-    @MethodSource("provideForPutAllOnLastOrReplace_array")
-    void putAllOnLastOrReplace_array(RingBuffer<Integer> origin,
+    @MethodSource("provideForAddAllOnLastOrReplace_array")
+    void addAllOnLastOrReplace_array(RingBuffer<Integer> origin,
                                      Integer[] addedValues,
                                      RingBuffer<Integer> expected,
                                      DynamicArray<Integer> expectedReturnedValues) {
-        DynamicArray<Integer> actualReturnedValues = origin.putAllOnLastOrReplace(addedValues);
+        DynamicArray<Integer> actualReturnedValues = origin.addAllOnLastOrReplace(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
@@ -194,12 +194,12 @@ public class RingBufferTest {
              => expected buffer is {2},
                 expected value is {3}
             """)
-    @MethodSource("provideForPutLastOrSkip")
-    void putLastOrSkip(RingBuffer<Integer> origin,
+    @MethodSource("provideForAddLastOrSkip")
+    void addLastOrSkip(RingBuffer<Integer> origin,
                        Integer addedValue,
                        RingBuffer<Integer> expected,
                        boolean expectedReturnedValue) {
-        boolean actualReturnedValue = origin.putLastOrSkip(addedValue);
+        boolean actualReturnedValue = origin.addLastOrSkip(addedValue);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValue).isEqualTo(expectedReturnedValue);
@@ -214,12 +214,12 @@ public class RingBufferTest {
              => expected buffer is {2},
                 expected values is {3}
             """)
-    @MethodSource("provideForPutAllOnLastOrSkip_iterable")
-    void putAllOnLastOrSkip_iterable(RingBuffer<Integer> origin,
+    @MethodSource("provideForAddAllOnLastOrSkip_iterable")
+    void addAllOnLastOrSkip_iterable(RingBuffer<Integer> origin,
                                      DynamicArray<Integer> addedValues,
                                      RingBuffer<Integer> expected,
                                      int expectedReturnedValues) {
-        int actualReturnedValues = origin.putAllOnLastOrSkip(addedValues);
+        int actualReturnedValues = origin.addAllOnLastOrSkip(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
@@ -234,12 +234,12 @@ public class RingBufferTest {
              => expected buffer is {2},
                 expected values is {3}
             """)
-    @MethodSource("provideForPutAllOnLastOrSkip_array")
-    void putAllOnLastOrSkip_array(RingBuffer<Integer> origin,
+    @MethodSource("provideForAddAllOnLastOrSkip_array")
+    void addAllOnLastOrSkip_array(RingBuffer<Integer> origin,
                                   Integer[] addedValues,
                                   RingBuffer<Integer> expected,
                                   int expectedReturnedValues) {
-        int actualReturnedValues = origin.putAllOnLastOrSkip(addedValues);
+        int actualReturnedValues = origin.addAllOnLastOrSkip(addedValues);
 
         SoftAssertions assertions = new SoftAssertions();
         assertions.assertThat(actualReturnedValues).isEqualTo(expectedReturnedValues);
@@ -373,10 +373,18 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrSkip(value);
-            return buffer;
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.addLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(
@@ -404,10 +412,18 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrSkip(value);
-            return buffer;
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.addLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(
@@ -434,7 +450,7 @@ public class RingBufferTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutLastOrReplace() {
+    private static Stream<Arguments> provideForAddLastOrReplace() {
         return Stream.of(
                 Arguments.of(
                         RingBuffer.of(0),
@@ -469,7 +485,7 @@ public class RingBufferTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastOrReplace_iterable() {
+    private static Stream<Arguments> provideForAddAllOnLastOrReplace_iterable() {
         return Stream.of(
                 Arguments.of(
                         RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
@@ -528,7 +544,7 @@ public class RingBufferTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastOrReplace_array() {
+    private static Stream<Arguments> provideForAddAllOnLastOrReplace_array() {
         return Stream.of(
                 Arguments.of(
                         RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
@@ -587,11 +603,19 @@ public class RingBufferTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutLastOrSkip() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrReplace(value);
-            return buffer;
+    private static Stream<Arguments> provideForAddLastOrSkip() {
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.addLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(
@@ -628,7 +652,7 @@ public class RingBufferTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastOrSkip_iterable() {
+    private static Stream<Arguments> provideForAddAllOnLastOrSkip_iterable() {
         return Stream.of(
                 Arguments.of(
                         RingBuffer.of(10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
@@ -687,11 +711,19 @@ public class RingBufferTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastOrSkip_array() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrSkip(value);
-            return buffer;
+    private static Stream<Arguments> provideForAddAllOnLastOrSkip_array() {
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.addLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(

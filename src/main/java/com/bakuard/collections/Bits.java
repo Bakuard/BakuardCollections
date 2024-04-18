@@ -210,14 +210,11 @@ public final class Bits implements Comparable<Bits> {
     /**
      * Инвертирует бит под указанным индексом.
      * @param index индекс инвертируемого бита.
-     * @return предыдущее значение указанного бита.
      * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}.
      */
-    public boolean flip(int index) throws IndexOutOfBoundsException {
+    public void flip(int index) throws IndexOutOfBoundsException {
         assertInHalfOpenInterval(index);
-        boolean returnedValue = unsafeGet(index);
         words[index >>> 6] ^= (1L << index);
-        return returnedValue;
     }
 
     /**
@@ -661,7 +658,7 @@ public final class Bits implements Comparable<Bits> {
         return result;
     }
 
-    public int hasCodeIgnoreSize() {
+    public int hashCodeIgnoreSize() {
         int result = 17;
         result = result * 31 + Arrays.hashCode(words);
         return result;

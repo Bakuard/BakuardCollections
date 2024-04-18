@@ -69,9 +69,9 @@ class StackTest {
              value is {1}
              => expected is {2}
             """)
-    @MethodSource("provideForPutLast")
-    public void putLast(Stack<Integer> origin, Integer value, Stack<Integer> expected) {
-        origin.putLast(value);
+    @MethodSource("provideForAddLast")
+    public void addLast(Stack<Integer> origin, Integer value, Stack<Integer> expected) {
+        origin.addLast(value);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
@@ -82,9 +82,9 @@ class StackTest {
              iterable is {1}
              => expected is {2}
             """)
-    @MethodSource("provideForPutAllOnLast_iterable")
-    public void putAllOnLast_iterable(Stack<Integer> origin, Iterable<Integer> iterable, Stack<Integer> expected) {
-        origin.putAllOnLast(iterable);
+    @MethodSource("provideForAddAllOnLast_iterable")
+    public void addAllOnLast_iterable(Stack<Integer> origin, Iterable<Integer> iterable, Stack<Integer> expected) {
+        origin.addAllOnLast(iterable);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
@@ -95,9 +95,9 @@ class StackTest {
              data is {1}
              => expected is {2}
             """)
-    @MethodSource("provideForPutAllOnLast")
-    public void putAllOnLast(Stack<Integer> origin, Integer[] data, Stack<Integer> expected) {
-        origin.putAllOnLast(data);
+    @MethodSource("provideForAddAllOnLast")
+    public void addAllOnLast(Stack<Integer> origin, Integer[] data, Stack<Integer> expected) {
+        origin.addAllOnLast(data);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
@@ -218,7 +218,7 @@ class StackTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutLast() {
+    private static Stream<Arguments> provideForAddLast() {
         return Stream.of(
                 Arguments.of(new Stack<>(), 100, Stack.of(100)),
                 Arguments.of(new Stack<>(), null, Stack.of(new Integer[]{null})),
@@ -227,7 +227,7 @@ class StackTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLast_iterable() {
+    private static Stream<Arguments> provideForAddAllOnLast_iterable() {
         return Stream.of(
                 Arguments.of(new Stack<>(), new DynamicArray<>(), new Stack<>()),
                 Arguments.of(new Stack<>(), DynamicArray.of(100), Stack.of(100)),
@@ -254,11 +254,19 @@ class StackTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLast() {
-        Fabric<Integer, Stack<Integer>> fabric = (size, data) -> {
-            Stack<Integer> stack = new Stack<>();
-            for(Integer value : data) stack.putLast(value);
-            return stack;
+    private static Stream<Arguments> provideForAddAllOnLast() {
+        Fabric<Integer, Stack<Integer>> fabric = new Fabric<>() {
+            @Override
+            public Stack<Integer> createWithSize(int size, Integer... data) {
+                Stack<Integer> stack = new Stack<>();
+                for (Integer value : data) stack.addLast(value);
+                return stack;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return Stack.class;
+            }
         };
 
         return Stream.of(
@@ -324,9 +332,9 @@ class StackTest {
 
     private static Stream<Arguments> provideForEquals() {
         Stack<Integer> stackWithBigEntrySize = new Stack<>();
-        for(int i = 0; i < 1000; i++) stackWithBigEntrySize.putLast(i);
+        for(int i = 0; i < 1000; i++) stackWithBigEntrySize.addLast(i);
         for(int i = 0; i < 1000; i++) stackWithBigEntrySize.removeLast();
-        stackWithBigEntrySize.putAllOnLast(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20);
+        stackWithBigEntrySize.addAllOnLast(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20);
 
         return Stream.of(
                 Arguments.of(new Stack<>(), new Stack<>(), true),
