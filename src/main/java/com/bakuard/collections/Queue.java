@@ -29,7 +29,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Queue<T> queue = new Queue<>();
-        queue.putAllOnLast(data);
+        queue.addAllOnLast(data);
         return queue;
     }
 
@@ -64,7 +64,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      */
     public Queue(Iterable<T> iterable) {
         this();
-        putAllOnLast(iterable);
+        addAllOnLast(iterable);
     }
 
     @SuppressWarnings("unchecked")
@@ -79,7 +79,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
      */
-    public void putLast(T value) {
+    public void addLast(T value) {
         ++actualModCount;
 
         int currentSize = size();
@@ -93,8 +93,8 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которой добавляются в текущую очередь.
      */
-    public void putAllOnLast(Iterable<T> iterable) {
-        for(T value: iterable) putLast(value);
+    public void addAllOnLast(Iterable<T> iterable) {
+        for(T value: iterable) addLast(value);
     }
 
     /**
@@ -102,7 +102,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * их следования в массиве.
      * @param data массив, все элементы которого добавляются в текущую очередь.
      */
-    public void putAllOnLast(T... data) {
+    public void addAllOnLast(T... data) {
         ++actualModCount;
 
         int currentSize = size();
@@ -301,7 +301,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         Queue<T> result = new Queue<>();
         for(int i = 0; i < size; ++i) {
             T item = unsafeGet(i);
-            if(predicate.test(item, i)) result.putLast(item);
+            if(predicate.test(item, i)) result.addLast(item);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

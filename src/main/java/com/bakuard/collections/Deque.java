@@ -23,7 +23,7 @@ public final class Deque<T> extends Queue<T> {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Deque<T> deque = new Deque<>();
-        deque.putAllOnLast(data);
+        deque.addAllOnLast(data);
         return deque;
     }
 
@@ -53,7 +53,7 @@ public final class Deque<T> extends Queue<T> {
      */
     public Deque(Iterable<T> iterable) {
         this();
-        putAllOnFirst(iterable);
+        addAllOnFirst(iterable);
     }
 
     @SuppressWarnings("unchecked")
@@ -68,7 +68,7 @@ public final class Deque<T> extends Queue<T> {
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
      */
-    public void putFirst(T value) {
+    public void addFirst(T value) {
         ++actualModCount;
 
         int currentSize = size();
@@ -82,11 +82,11 @@ public final class Deque<T> extends Queue<T> {
      * Элементы добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которого добавляются в текущую двустороннюю очередь.
      */
-    public void putAllOnFirst(Iterable<T> iterable) {
+    public void addAllOnFirst(Iterable<T> iterable) {
         ++actualModCount;
 
         Stack<T> stack = new Stack<>();
-        stack.putAllOnLast(iterable);
+        stack.addAllOnLast(iterable);
 
         int currentSize = size();
         grow(currentSize, currentSize + stack.size());
@@ -101,7 +101,7 @@ public final class Deque<T> extends Queue<T> {
      * их следования в массиве.
      * @param data массив, все элементы которого добавляются в текущую двустороннюю очередь.
      */
-    public void putAllOnFirst(T... data) {
+    public void addAllOnFirst(T... data) {
         ++actualModCount;
 
         int currentSize = size();
@@ -173,7 +173,7 @@ public final class Deque<T> extends Queue<T> {
         Deque<T> result = new Deque<>();
         for(int i = 0; i < size; ++i) {
             T item = unsafeGet(i);
-            if(predicate.test(item, i)) result.putLast(item);
+            if(predicate.test(item, i)) result.addLast(item);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

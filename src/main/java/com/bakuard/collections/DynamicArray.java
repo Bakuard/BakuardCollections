@@ -30,7 +30,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         DynamicArray<T> result = new DynamicArray<>();
-        result.appendAll(data);
+        result.addAllOnLast(data);
         return result;
     }
 
@@ -77,7 +77,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      */
     public DynamicArray(Iterable<T> iterable) {
         this();
-        appendAll(iterable);
+        addAllOnLast(iterable);
     }
 
     /**
@@ -148,7 +148,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * Увеличивает длину массива на единицу и затем записывает элемент в конец массива.
      * @param value добавляемое значение.
      */
-    public void append(T value) {
+    public void addLast(T value) {
         ++actualModCount;
 
         int lastIndex = size;
@@ -161,7 +161,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * Порядок, в котором элементы передаются методу, сохраняется.
      * @param data добавляемые элементы.
      */
-    public void appendAll(T... data) {
+    public void addAllOnLast(T... data) {
         ++actualModCount;
         if(data.length > 0) {
 
@@ -176,8 +176,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * Элементы добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которой добавляются в данный массив.
      */
-    public void appendAll(Iterable<T> iterable) {
-        for(T value : iterable) append(value);
+    public void addAllOnLast(Iterable<T> iterable) {
+        for(T value : iterable) addLast(value);
     }
 
     /**
@@ -512,7 +512,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
         DynamicArray<T> result = new DynamicArray<>();
         for(int i = 0; i < size; ++i) {
-            if(predicate.test(values[i], i)) result.append(values[i]);
+            if(predicate.test(values[i], i)) result.addLast(values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

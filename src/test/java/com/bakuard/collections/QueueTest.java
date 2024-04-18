@@ -106,9 +106,9 @@ public class QueueTest {
              value is {1}
              => expected queue is {2}
             """)
-    @MethodSource("provideForPutLast")
-    void putLast(Queue<Integer> originQueue, Integer addedValue, Queue<Integer> expectedQueue) {
-        originQueue.putLast(addedValue);
+    @MethodSource("provideForAddLast")
+    void addLast(Queue<Integer> originQueue, Integer addedValue, Queue<Integer> expectedQueue) {
+        originQueue.addLast(addedValue);
 
         Assertions.assertThat(originQueue).isEqualTo(expectedQueue);
     }
@@ -119,9 +119,9 @@ public class QueueTest {
              iterable is {1}
              => expected queue is {2}
             """)
-    @MethodSource("provideForPutAllOnLastIterable")
-    void putAllOnLast_Iterable(Queue<Integer> originQueue, Iterable<Integer> iterable, Queue<Integer> expectedQueue) {
-        originQueue.putAllOnLast(iterable);
+    @MethodSource("provideForAddAllOnLastIterable")
+    void addAllOnLast_Iterable(Queue<Integer> originQueue, Iterable<Integer> iterable, Queue<Integer> expectedQueue) {
+        originQueue.addAllOnLast(iterable);
 
         Assertions.assertThat(originQueue).isEqualTo(expectedQueue);
     }
@@ -132,9 +132,9 @@ public class QueueTest {
              data is {1}
              => expected queue is {2}
             """)
-    @MethodSource("provideForPutAllOnLastData")
-    void putAllOnLast_Data(Queue<Integer> originQueue, Integer[] data, Queue<Integer> expectedQueue) {
-        originQueue.putAllOnLast(data);
+    @MethodSource("provideForAddAllOnLastData")
+    void addAllOnLast_Data(Queue<Integer> originQueue, Integer[] data, Queue<Integer> expectedQueue) {
+        originQueue.addAllOnLast(data);
 
         Assertions.assertThat(originQueue).isEqualTo(expectedQueue);
     }
@@ -278,7 +278,7 @@ public class QueueTest {
             @Override
             public Queue<Integer> createWithSize(int size, Integer... data) {
                 Queue<Integer> queue = new Queue<>();
-                for (Integer value : data) queue.putLast(value);
+                for (Integer value : data) queue.addLast(value);
                 return queue;
             }
 
@@ -309,7 +309,7 @@ public class QueueTest {
             @Override
             public Queue<Integer> createWithSize(int size, Integer... data) {
                 Queue<Integer> queue = new Queue<>();
-                for (Integer value : data) queue.putLast(value);
+                for (Integer value : data) queue.addLast(value);
                 return queue;
             }
 
@@ -341,9 +341,9 @@ public class QueueTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutLast() {
+    private static Stream<Arguments> provideForAddLast() {
         Queue<Integer> modifiedQueue = Queue.of(0, 1, 2, 3, 4, 5, 6, 7);
-        for(int i = 0; i < 5; i++) modifiedQueue.putLast(modifiedQueue.removeFirst());
+        for(int i = 0; i < 5; i++) modifiedQueue.addLast(modifiedQueue.removeFirst());
 
         return Stream.of(
                 Arguments.of(
@@ -384,7 +384,7 @@ public class QueueTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastIterable() {
+    private static Stream<Arguments> provideForAddAllOnLastIterable() {
         return Stream.of(
                 Arguments.of(
                         new Queue<>(),
@@ -409,12 +409,12 @@ public class QueueTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnLastData() {
+    private static Stream<Arguments> provideForAddAllOnLastData() {
         Fabric<Integer, Queue<Integer>> fabric = new Fabric<>() {
             @Override
             public Queue<Integer> createWithSize(int size, Integer... data) {
                 Queue<Integer> queue = new Queue<>();
-                for (Integer value : data) queue.putLast(value);
+                for (Integer value : data) queue.addLast(value);
                 return queue;
             }
 
@@ -450,7 +450,7 @@ public class QueueTest {
 
     private static Stream<Arguments> provideForRemoveFirst() {
         Queue<Integer> modifiedQueue = Queue.of(0, 1, 2, 3, 4, 5, 6, 7);
-        for(int i = 0; i < 5; i++) modifiedQueue.putLast(modifiedQueue.removeFirst());
+        for(int i = 0; i < 5; i++) modifiedQueue.addLast(modifiedQueue.removeFirst());
 
         return Stream.of(
                 Arguments.of(
@@ -530,9 +530,9 @@ public class QueueTest {
 
     private static Stream<Arguments> provideForEqual() {
         Queue<Integer> queue = new Queue<>();
-        for(int i = 0; i < 1000; i++) queue.putLast(i);
+        for(int i = 0; i < 1000; i++) queue.addLast(i);
         for(int i = 0; i < 1000; i++) queue.removeFirst();
-        queue.putAllOnLast(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+        queue.addAllOnLast(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 
         return Stream.of(
                 Arguments.of(

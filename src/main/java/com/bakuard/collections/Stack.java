@@ -26,7 +26,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Stack<T> result = new Stack<>();
-        result.putAllOnLast(data);
+        result.addAllOnLast(data);
         return result;
     }
 
@@ -59,7 +59,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      */
     public Stack(Iterable<T> iterable) {
         this();
-        putAllOnLast(iterable);
+        addAllOnLast(iterable);
     }
 
     @SuppressWarnings("unchecked")
@@ -73,7 +73,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
      */
-    public void putLast(T value) {
+    public void addLast(T value) {
         ++actualModCount;
 
         int lastIndex = size;
@@ -86,8 +86,8 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которой добавляются на вершину текущего стека.
      */
-    public void putAllOnLast(Iterable<T> iterable) {
-        for(T value : iterable) putLast(value);
+    public void addAllOnLast(Iterable<T> iterable) {
+        for(T value : iterable) addLast(value);
     }
 
     /**
@@ -95,7 +95,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
      * в порядке их следования в указанном массиве.
      * @param data массив, все элементы которого добавляются в текущий стек.
      */
-    public void putAllOnLast(T... data) {
+    public void addAllOnLast(T... data) {
         if(data.length > 0) {
             ++actualModCount;
 
@@ -255,7 +255,7 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
 
         Stack<T> result = new Stack<>();
         for(int i = 0; i < size; ++i) {
-            if(predicate.test(values[i], i)) result.putLast(values[i]);
+            if(predicate.test(values[i], i)) result.addLast(values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

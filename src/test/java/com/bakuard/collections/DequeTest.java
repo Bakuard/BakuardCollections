@@ -106,9 +106,9 @@ public class DequeTest {
              value is {1}
              => expected deque {2}
             """)
-    @MethodSource("provideForPutFirst")
-    void putFirst(Deque<Integer> originDeque, Integer addedValue, Deque<Integer> expectedDeque) {
-        originDeque.putFirst(addedValue);
+    @MethodSource("provideForAddFirst")
+    void addFirst(Deque<Integer> originDeque, Integer addedValue, Deque<Integer> expectedDeque) {
+        originDeque.addFirst(addedValue);
 
         Assertions.assertThat(originDeque).isEqualTo(expectedDeque);
     }
@@ -119,11 +119,11 @@ public class DequeTest {
              iterable is {1}
              => expected deque {2}
             """)
-    @MethodSource("provideForPutAllOnFirstIterable")
-    void putAllOnFirst_Iterable(Deque<Integer> originDeque,
+    @MethodSource("provideForAddAllOnFirstIterable")
+    void addAllOnFirst_Iterable(Deque<Integer> originDeque,
                                 Iterable<Integer> iterable,
                                 Deque<Integer> expectedDeque) {
-        originDeque.putAllOnFirst(iterable);
+        originDeque.addAllOnFirst(iterable);
 
         Assertions.assertThat(originDeque).isEqualTo(expectedDeque);
     }
@@ -134,9 +134,9 @@ public class DequeTest {
              data is {1}
              => expected deque {2}
             """)
-    @MethodSource("provideForPutAllOnFirstData")
-    void putAllOnFirst_Data(Deque<Integer> originDeque, Integer[] data, Deque<Integer> expectedDeque) {
-        originDeque.putAllOnFirst(data);
+    @MethodSource("provideForAddAllOnFirstData")
+    void addAllOnFirst_Data(Deque<Integer> originDeque, Integer[] data, Deque<Integer> expectedDeque) {
+        originDeque.addAllOnFirst(data);
 
         Assertions.assertThat(originDeque).isEqualTo(expectedDeque);
     }
@@ -228,7 +228,7 @@ public class DequeTest {
             @Override
             public Deque<Integer> createWithSize(int size, Integer... data) {
                 Deque<Integer> deque = new Deque<>();
-                for (Integer value : data) deque.putLast(value);
+                for (Integer value : data) deque.addLast(value);
                 return deque;
             }
 
@@ -259,7 +259,7 @@ public class DequeTest {
             @Override
             public Deque<Integer> createWithSize(int size, Integer... data) {
                 Deque<Integer> deque = new Deque<>();
-                for (Integer value : data) deque.putLast(value);
+                for (Integer value : data) deque.addLast(value);
                 return deque;
             }
 
@@ -291,9 +291,9 @@ public class DequeTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutFirst() {
+    private static Stream<Arguments> provideForAddFirst() {
         Deque<Integer> modifiedDeque = Deque.of(0, 1, 2, 3, 4, 5, 6, 7);
-        for(int i = 0; i < 5; i++) modifiedDeque.putLast(modifiedDeque.removeFirst());
+        for(int i = 0; i < 5; i++) modifiedDeque.addLast(modifiedDeque.removeFirst());
 
         return Stream.of(
                 Arguments.of(
@@ -334,7 +334,7 @@ public class DequeTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnFirstIterable() {
+    private static Stream<Arguments> provideForAddAllOnFirstIterable() {
         return Stream.of(
                 Arguments.of(
                         new Deque<>(),
@@ -359,7 +359,7 @@ public class DequeTest {
         );
     }
 
-    private static Stream<Arguments> provideForPutAllOnFirstData() {
+    private static Stream<Arguments> provideForAddAllOnFirstData() {
         return Stream.of(
                 Arguments.of(
                         new Deque<>(),
@@ -386,7 +386,7 @@ public class DequeTest {
 
     private static Stream<Arguments> provideForRemoveLast() {
         Deque<Integer> modifiedDeque = Deque.of(0, 1, 2, 3, 4, 5, 6, 7);
-        for(int i = 0; i < 5; i++) modifiedDeque.putLast(modifiedDeque.removeFirst());
+        for(int i = 0; i < 5; i++) modifiedDeque.addLast(modifiedDeque.removeFirst());
 
         return Stream.of(
                 Arguments.of(

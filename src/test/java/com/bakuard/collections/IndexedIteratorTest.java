@@ -297,7 +297,7 @@ class IndexedIteratorTest {
                             (Mutator<Integer, Queue<Integer>>) queue -> {
                                 for(int i = 5; i < 10; i++) {
                                     queue.removeFirst();
-                                    queue.putLast(expected[i]);
+                                    queue.addLast(expected[i]);
                                 }
                             }
                     ),
@@ -305,7 +305,7 @@ class IndexedIteratorTest {
                             RingBuffer.of(10, 10, 10, 10, 10, null, 1, 2, 3, 4),
                             expected,
                             (Mutator<Integer, RingBuffer<Integer>>) buffer -> {
-                                for(int i = 5; i < 10; i++) buffer.putLastOrReplace(expected[i]);
+                                for(int i = 5; i < 10; i++) buffer.addLastOrReplace(expected[i]);
                             }
                     )
                 )
@@ -327,7 +327,7 @@ class IndexedIteratorTest {
                                 (Mutator<Integer, Queue<Integer>>) queue -> {
                                     for(int i = 4; i >= 0; i--) {
                                         queue.removeFirst();
-                                        queue.putLast(expected[i]);
+                                        queue.addLast(expected[i]);
                                     }
                                 }
                         ),
@@ -335,7 +335,7 @@ class IndexedIteratorTest {
                                 RingBuffer.of(10, 10, 10, 10, 10, null, 1, 2, 3, 4),
                                 expected,
                                 (Mutator<Integer, RingBuffer<Integer>>) buffer -> {
-                                   buffer.putAllOnLastOrReplace(null, 6, 7, null, null);
+                                   buffer.addAllOnLastOrReplace(null, 6, 7, null, null);
                                 }
                         )
                 )
