@@ -2,10 +2,10 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiFunction;
 import com.bakuard.collections.function.IndexBiPredicate;
+import com.bakuard.collections.testUtil.ArgumentsBuilder;
 import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
 import com.bakuard.collections.testUtil.Pair;
-import com.bakuard.collections.testUtil.StructAndMutator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,8 +13,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
 class ReadableLinearStructureTest {
@@ -27,13 +29,23 @@ class ReadableLinearStructureTest {
             """)
     @MethodSource("provideForGetMethod")
     void get(ReadableLinearStructure<Integer> linearStructure, int index, Object expected) {
-        if(isExceptionType(expected)) {
-            Assertions.assertThatThrownBy(() -> linearStructure.get(index)).isInstanceOf((Class<?>) expected);
-        } else {
-            Integer actual = linearStructure.get(index);
+        Integer actual = linearStructure.get(index);
 
-            Assertions.assertThat(actual).isEqualTo(expected);
-        }
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @DisplayName("get(index):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             index = {1}
+             => exception
+            """)
+    @MethodSource("provideForGetMethod_Exception")
+    void get_exception(ReadableLinearStructure<Integer> linearStructure,
+                       int index,
+                       Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> linearStructure.get(index))
+                .isInstanceOf(expectedException);
     }
 
     @DisplayName("at(index):")
@@ -44,13 +56,23 @@ class ReadableLinearStructureTest {
             """)
     @MethodSource("provideForAtMethod")
     void at(ReadableLinearStructure<Integer> linearStructure, int index, Object expected) {
-        if(isExceptionType(expected)) {
-            Assertions.assertThatThrownBy(() -> linearStructure.at(index)).isInstanceOf((Class<?>) expected);
-        } else {
-            Integer actual = linearStructure.at(index);
+        Integer actual = linearStructure.at(index);
 
-            Assertions.assertThat(actual).isEqualTo(expected);
-        }
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @DisplayName("at(index):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             index = {1}
+             => exception
+            """)
+    @MethodSource("provideForAtMethod_Exception")
+    void at_exception(ReadableLinearStructure<Integer> linearStructure,
+                      int index,
+                      Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> linearStructure.at(index))
+                .isInstanceOf(expectedException);
     }
 
     @DisplayName("getFirst():")
@@ -83,8 +105,9 @@ class ReadableLinearStructureTest {
              => expected {1}
             """)
     @MethodSource("provideForSizeMethod")
-    void size(ReadableLinearStructure<Integer> linearStructure, Integer expected,
-              Mutator<Integer, ReadableLinearStructure<Integer>> mutator) {
+    void size(ReadableLinearStructure<Integer> linearStructure,
+              Mutator<Integer, ReadableLinearStructure<Integer>> mutator,
+              Integer expected) {
         mutator.mutate(linearStructure);
 
         Integer actual = linearStructure.size();
@@ -98,8 +121,9 @@ class ReadableLinearStructureTest {
              => expected {1}
             """)
     @MethodSource("provideForEmptyMethod")
-    void isEmpty(ReadableLinearStructure<Integer> linearStructure, boolean expected,
-                 Mutator<Integer, ReadableLinearStructure<Integer>> mutator) {
+    void isEmpty(ReadableLinearStructure<Integer> linearStructure,
+                 Mutator<Integer, ReadableLinearStructure<Integer>> mutator,
+                 boolean expected) {
         mutator.mutate(linearStructure);
 
         boolean actual = linearStructure.isEmpty();
@@ -240,13 +264,41 @@ class ReadableLinearStructureTest {
     @DisplayName("cloneAndMap(mapper):")
     @ParameterizedTest(name = """
              origin is {0},
-             => expected is {1}
+             => expected is {2}
             """)
     @MethodSource("provideForCloneAndMap")
     void cloneAndMap(ReadableLinearStructure<Integer> origin,
-                     ReadableLinearStructure<Integer> expected,
-                     IndexBiFunction<Integer, Integer> mapper) {
+                     IndexBiFunction<Integer, Integer> mapper,
+                     ReadableLinearStructure<Integer> expected) {
         ReadableLinearStructure<Integer> actual = origin.cloneAndMap(mapper);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @DisplayName("cloneAndMap(mapper):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             change origin structure while map
+             => exception
+            """)
+    @MethodSource("provideForCloneAndMap_Exception")
+    void cloneAndMap_exception(ReadableLinearStructure<Integer> origin,
+                               IndexBiFunction<Integer, Integer> mapper,
+                               Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> origin.cloneAndMap(mapper))
+                .isInstanceOf(expectedException);
+    }
+
+    @DisplayName("cloneAndFilter(predicate):")
+    @ParameterizedTest(name = """
+             origin is {0},
+             => expected is {2}
+            """)
+    @MethodSource("provideForCloneAndFilter")
+    void cloneAndFilter(ReadableLinearStructure<Integer> origin,
+                        IndexBiPredicate<Integer> predicate,
+                        ReadableLinearStructure<Integer> expected) {
+        ReadableLinearStructure<Integer> actual = origin.cloneAndFilter(predicate);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
@@ -254,400 +306,837 @@ class ReadableLinearStructureTest {
     @DisplayName("cloneAndFilter(predicate):")
     @ParameterizedTest(name = """
              origin is {0},
-             => expected is {1}
+             change origin structure while filter
+             => exception
             """)
-    @MethodSource("provideForCloneAndFilter")
-    void cloneAndFilter(ReadableLinearStructure<Integer> origin,
-                        ReadableLinearStructure<Integer> expected,
-                        IndexBiPredicate<Integer> predicate) {
-        ReadableLinearStructure<Integer> actual = origin.cloneAndFilter(predicate);
+    @MethodSource("provideForCloneAndFilter_Exception")
+    void cloneAndFilter_exception(ReadableLinearStructure<Integer> origin,
+                                  IndexBiPredicate<Integer> predicate,
+                                  Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> origin.cloneAndFilter(predicate))
+                .isInstanceOf(expectedException);
+    }
+
+    @DisplayName("reduce(accumulator):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             => expected is {2}
+            """)
+    @MethodSource("provideForReduce")
+    void reduce(ReadableLinearStructure<Integer> linearStructure,
+                BinaryOperator<Integer> accumulator,
+                Integer expected) {
+        Integer actual = linearStructure.reduce(accumulator);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-
-    private static boolean isExceptionType(Object obj) {
-        return obj instanceof Class<?> && Throwable.class.isAssignableFrom((Class<?>)obj);
+    @DisplayName("reduce(accumulator):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             change origin structure while reduce
+             => exception
+            """)
+    @MethodSource("provideForReduce_Exception")
+    void reduce_exception(ReadableLinearStructure<Integer> linearStructure,
+                          BinaryOperator<Integer> accumulator,
+                          Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> linearStructure.reduce(accumulator))
+                .isInstanceOf(expectedException);
     }
+
+    @DisplayName("reduce(initValue, accumulator):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             initValue is {1}
+             => expected is {3}
+            """)
+    @MethodSource("provideForReduceWithInitValue")
+    void reduceWithInitValue(ReadableLinearStructure<Integer> linearStructure,
+                             Integer initValue,
+                             BinaryOperator<Integer> accumulator,
+                             Integer expected) {
+        Integer actual = linearStructure.reduce(initValue, accumulator);
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @DisplayName("reduce(initValue, accumulator):")
+    @ParameterizedTest(name = """
+             linearStructure is {0},
+             initValue is {1},
+             change origin structure while reduce
+             => exception
+            """)
+    @MethodSource("provideForReduceWithInitValue_Exception")
+    void reduceWithInitValue_exception(ReadableLinearStructure<Integer> linearStructure,
+                                       Integer initValue,
+                                       BinaryOperator<Integer> accumulator,
+                                       Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> linearStructure.reduce(initValue, accumulator))
+                .isInstanceOf(expectedException);
+    }
+
 
     private static <T> Stream<Fabric<T, ReadableLinearStructure<T>>> structureFabrics() {
         return Stream.of(
-                (size, data) -> DynamicArray.of(data),
-                (size, data) -> Stack.of(data),
-                (size, data) -> Queue.of(data),
-                (size, data) -> Deque.of(data),
-                (size, data) -> RingBuffer.of(data.length, data)
-        );
-    }
+                new Fabric<>() {
+                    @Override
+                    public ReadableLinearStructure<T> createWithSize(int size, T... data) {
+                        return DynamicArray.of(data);
+                    }
 
-    private static <T> Stream<ReadableLinearStructure<T>> structures(T... data) {
-        return structureFabrics().map(fabric -> (ReadableLinearStructure<T>) fabric.create(data));
-    }
+                    @Override
+                    public Class<?> getType() {
+                        return DynamicArray.class;
+                    }
+                },
+                new Fabric<>() {
+                    @Override
+                    public ReadableLinearStructure<T> createWithSize(int size, T... data) {
+                        return Stack.of(data);
+                    }
 
-    private static <T> Stream<StructAndMutator<T, ? extends ReadableLinearStructure<T>>> structuresWithMutators(
-            T[] data, int removedItemsNumber, T[] addedData) {
-        return Stream.of(
-                new StructAndMutator<>(
-                        DynamicArray.of(data),
-                        array -> {
-                            for(int i = 0; i < removedItemsNumber; i++) array.orderedRemove(0);
-                            for(T item : addedData) array.append(item);
-                        }
-                ),
-                new StructAndMutator<>(
-                        Stack.of(data),
-                        stack -> {
-                            for(int i = 0; i < removedItemsNumber; i++) stack.removeLast();
-                            for(T item : addedData) stack.putLast(item);
-                        }
-                ),
-                new StructAndMutator<>(
-                        Queue.of(data),
-                        queue -> {
-                            for(int i = 0; i < removedItemsNumber; i++) queue.removeFirst();
-                            for(T item : addedData) queue.putLast(item);
-                        }
-                ),
-                new StructAndMutator<>(
-                        Deque.of(data),
-                        deque -> {
-                            for(int i = 0; i < removedItemsNumber; i++) deque.removeFirst();
-                            for(T item : addedData) deque.putLast(item);
-                        }
-                ),
-                new StructAndMutator<>(
-                        RingBuffer.of(data.length, data),
-                        buffer -> {
-                            for(int i = 0; i < removedItemsNumber; i++) buffer.removeFirst();
-                            for(T item : addedData) buffer.putLastOrReplace(item);
-                        }
-                )
+                    @Override
+                    public Class<?> getType() {
+                        return Stack.class;
+                    }
+                },
+                new Fabric<>() {
+                    @Override
+                    public ReadableLinearStructure<T> createWithSize(int size, T... data) {
+                        return Queue.of(data);
+                    }
+
+                    @Override
+                    public Class<?> getType() {
+                        return Queue.class;
+                    }
+                },
+                new Fabric<>() {
+                    @Override
+                    public ReadableLinearStructure<T> createWithSize(int size, T... data) {
+                        return Deque.of(data);
+                    }
+
+                    @Override
+                    public Class<?> getType() {
+                        return Deque.class;
+                    }
+                },
+                new Fabric<>() {
+                    @Override
+                    public ReadableLinearStructure<T> createWithSize(int size, T... data) {
+                        return RingBuffer.of(size, data);
+                    }
+
+                    @Override
+                    public Class<?> getType() {
+                        return RingBuffer.class;
+                    }
+                }
         );
     }
 
     private static Stream<Arguments> provideForGetMethod() {
-        return Stream.of(
-                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
-                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, 10, IndexOutOfBoundsException.class)),
-                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, 11, IndexOutOfBoundsException.class)),
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(1000)
+                    .addArgs(0).expectedValue(1000)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(0).expectedValue(10)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(9).expectedValue(100)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(5).expectedValue(60)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, null, 70, 80, 90, 100)
+                    .addArgs(5).expectedValue(null)
+                .build();
+    }
 
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 0, 10)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 9, 100)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 5, 60)),
-                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 5, null)),
+    private static Stream<Arguments> provideForGetMethod_Exception() {
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(null, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(-1)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct(null, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(10)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct(null, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(11)
+                    .expectedException(IndexOutOfBoundsException.class)
 
-                structures().map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
-                structures().map(struct -> Arguments.of(struct, 0, IndexOutOfBoundsException.class)),
-                structures().map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class)),
+                .newTest()
+                    .originStruct()
+                    .addArgs(-1)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct()
+                    .addArgs(0)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct()
+                    .addArgs(1)
+                    .expectedException(IndexOutOfBoundsException.class)
 
-                structures(1000).map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
-                structures(1000).map(struct -> Arguments.of(struct, 0, 1000)),
-                structures(1000).map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class))
-        ).flatMap(stream -> stream);
+                .newTest()
+                    .originStruct(1000)
+                    .addArgs(-1)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct(1000)
+                    .addArgs(1)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .build();
     }
 
     private static Stream<Arguments> provideForAtMethod() {
-        return Stream.of(
-                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, -11, IndexOutOfBoundsException.class)),
-                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, 10, IndexOutOfBoundsException.class)),
-                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, 11, IndexOutOfBoundsException.class)),
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(0).expectedValue(10)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(9).expectedValue(100)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(5).expectedValue(60)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, null, 70, 80, 90, 100)
+                    .addArgs(5).expectedValue(null)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-1).expectedValue(100)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-10).expectedValue(10)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-5).expectedValue(60)
+                .newTest()
+                    .originStruct(1000)
+                    .addArgs(-1).expectedValue(1000)
+                .newTest()
+                    .originStruct(1000)
+                    .addArgs(0).expectedValue(1000)
+                .build();
+    }
 
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 0, 10)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 9, 100)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 5, 60)),
-                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 5, null)),
-                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -1, 100)),
-                structures(10, 20, 30, 40, 50, null, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -10, 10)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -5, 60)),
+    private static Stream<Arguments> provideForAtMethod_Exception() {
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(null, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(-11)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct(null, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(10)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct(null, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(11)
+                    .expectedException(IndexOutOfBoundsException.class)
 
-                structures().map(struct -> Arguments.of(struct, -1, IndexOutOfBoundsException.class)),
-                structures().map(struct -> Arguments.of(struct, 0, IndexOutOfBoundsException.class)),
-                structures().map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class)),
+                .newTest()
+                    .originStruct()
+                    .addArgs(-1)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct()
+                    .addArgs(0)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .newTest()
+                    .originStruct()
+                    .addArgs(1)
+                    .expectedException(IndexOutOfBoundsException.class)
 
-                structures(1000).map(struct -> Arguments.of(struct, -1, 1000)),
-                structures(1000).map(struct -> Arguments.of(struct, 0, 1000)),
-                structures(1000).map(struct -> Arguments.of(struct, 1, IndexOutOfBoundsException.class))
-        ).flatMap(stream -> stream);
+                .newTest()
+                    .originStruct(1000)
+                    .addArgs(1)
+                    .expectedException(IndexOutOfBoundsException.class)
+                .build();
     }
 
     private static Stream<Arguments> provideForGetFirstMethod() {
-        return Stream.of(
-                structures().
-                        map(struct -> Arguments.of(struct, null)),
-                structures(1000).
-                        map(struct -> Arguments.of(struct, 1000)),
-                structures(null, 1, 2, 3, 4, null, 6 ,7 , null, 9).
-                        map(struct -> Arguments.of(struct, null)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 10))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .expectedValue(null)
+                .newTest()
+                    .originStruct(1000)
+                    .expectedValue(1000)
+                .newTest()
+                    .originStruct(null, 1, 2, 3, 4, null, 6 ,7 , null, 9)
+                    .expectedValue(null)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .expectedValue(10)
+                .build();
     }
 
     private static Stream<Arguments> provideForGetLastMethod() {
-        return Stream.of(
-                structures().
-                        map(struct -> Arguments.of(struct, null)),
-                structures(1000).
-                        map(struct -> Arguments.of(struct, 1000)),
-                structures(0, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, null)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 100))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .expectedValue(null)
+                .newTest()
+                    .originStruct(1000)
+                    .expectedValue(1000)
+                .newTest()
+                    .originStruct(0, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .expectedValue(null)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .expectedValue(100)
+                .build();
     }
 
     private static Stream<Arguments> provideForSizeMethod() {
-        Mutator<Integer, ReadableLinearStructure<Integer>> mutator = struct -> {};
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 0, mutator)),
-                structures(1000).map(struct -> Arguments.of(struct, 1, mutator)),
-                structures(0, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, 10, mutator)),
-                structuresWithMutators(new Integer[]{0, 1, 2, 3, 4, null, 6, 7, null, null},
-                        7,
-                        new Integer[] {100, 100, 100, 100}).
-                        map(structAndMutator -> Arguments.of(structAndMutator.struct(), 7, structAndMutator.mutator()))
-        ).flatMap(stream -> stream);
+        Mutator<Integer, ReadableLinearStructure<Integer>> doNothing = struct -> {};
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct().addArgs(doNothing).expectedValue(0)
+                .newTest()
+                    .originStruct(1000).addArgs(doNothing).expectedValue(1)
+                .newTest()
+                    .originStruct(0, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(doNothing).expectedValue(10)
+                .build();
     }
 
     private static Stream<Arguments> provideForEmptyMethod() {
-        Mutator<Integer, ReadableLinearStructure<Integer>> mutator = struct -> {};
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, true, mutator)),
-                structures(1000).map(struct -> Arguments.of(struct, false, mutator)),
-                structures(0, 1, 2, 3, 4, null, 6 ,7 , null, null).
-                        map(struct -> Arguments.of(struct, false, mutator)),
-                structuresWithMutators(new Integer[]{0, 1, 2, 3, 4, null, 6, 7, null, null},
-                        7,
-                        new Integer[] {100, 100, 100, 100}).
-                        map(structAndMutator -> Arguments.of(structAndMutator.struct(), false, structAndMutator.mutator()))
-        ).flatMap(stream -> stream);
+        Mutator<Integer, ReadableLinearStructure<Integer>> doNothing = struct -> {};
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct().addArgs(doNothing).expectedValue(true)
+                .newTest()
+                    .originStruct(1000).addArgs(doNothing).expectedValue(false)
+                .newTest()
+                    .originStruct(0, 1, 2, 3, 4, null, 6 ,7 , null, null)
+                    .addArgs(doNothing).expectedValue(false)
+                .build();
     }
 
     private static Stream<Arguments> provideForInBoundMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 0, false)),
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest().originStruct().addArgs(0).expectedValue(false)
 
-                structures(100).map(struct -> Arguments.of(struct, 0, true)),
-                structures(100).map(struct -> Arguments.of(struct, 1, false)),
-                structures(100).map(struct -> Arguments.of(struct, -1, false)),
+                .newTest().originStruct(100).addArgs(0).expectedValue(true)
+                .newTest().originStruct(100).addArgs(1).expectedValue(false)
+                .newTest().originStruct(100).addArgs(-1).expectedValue(false)
 
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -1, false)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 10, false)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 11, false)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 0, true)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 9, true)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 5, true))
-        ).flatMap(stream -> stream);
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-1).expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(10).expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(11).expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(0).expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(9).expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(5).expectedValue(true)
+                .build();
     }
 
     private static Stream<Arguments> provideForInBoundByModuloMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 0, false)),
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest().originStruct().addArgs(0).expectedValue(false)
 
-                structures(100).map(struct -> Arguments.of(struct, 0, true)),
-                structures(100).map(struct -> Arguments.of(struct, 1, false)),
-                structures(100).map(struct -> Arguments.of(struct, -1, true)),
+                .newTest().originStruct(100).addArgs(0).expectedValue(true)
+                .newTest().originStruct(100).addArgs(1).expectedValue(false)
+                .newTest().originStruct(100).addArgs(-1).expectedValue(true)
 
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -1, true)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -10, true)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -5, true)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, -11, false)),
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-1).expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-10).expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-5).expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(-11).expectedValue(false)
 
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 10, false)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 11, false)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 0, true)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 9, true)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 5, true))
-        ).flatMap(stream -> stream);
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(10).expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(11).expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(0).expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(9).expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(5).expectedValue(true)
+                .build();
     }
 
     private static Stream<Arguments> provideForLinearSearchMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 1000, -1)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 1000, -1)),
-                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, 40, 3)),
-                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, null, 3))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs(1000)
+                    .expectedValue(-1)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(1000)
+                    .expectedValue(-1)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 50, 40, 30, 20, 10)
+                    .addArgs(40)
+                    .expectedValue(3)
+                .newTest()
+                    .originStruct(10, 20, 30, null, 50, 50, null, 30, 20, 10)
+                    .addArgs(new Integer[]{null})
+                    .expectedValue(3)
+                .build();
     }
 
     private static Stream<Arguments> provideForLinearSearchWithPredicateMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 1000, -1)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 1000, -1)),
-                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, 40, 3)),
-                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, null, 3))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs(1000)
+                    .expectedValue(-1)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(1000)
+                    .expectedValue(-1)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 50, 40, 30, 20, 10)
+                    .addArgs(40)
+                    .expectedValue(3)
+                .newTest()
+                    .originStruct(10, 20, 30, null, 50, 50, null, 30, 20, 10)
+                    .addArgs(new Integer[]{null})
+                    .expectedValue(3)
+                .build();
     }
 
     private static Stream<Arguments> provideForLinearSearchLastMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 1000, -1)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 1000, -1)),
-                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, 40, 6)),
-                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, null, 6))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs(1000)
+                    .expectedValue(-1)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(1000)
+                    .expectedValue(-1)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 50, 40, 30, 20, 10)
+                    .addArgs(40)
+                    .expectedValue(6)
+                .newTest()
+                    .originStruct(10, 20, 30, null, 50, 50, null, 30, 20, 10)
+                    .addArgs(new Integer[]{null})
+                    .expectedValue(6)
+                .build();
     }
 
     private static Stream<Arguments> provideForContainsMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 1000, false)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 1000, false)),
-                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, 40, true)),
-                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, null, true))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs(1000)
+                    .expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(1000)
+                    .expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 50, 40, 30, 20, 10)
+                    .addArgs(40)
+                    .expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, null, 50, 50, null, 30, 20, 10)
+                    .addArgs(new Integer[]{null})
+                    .expectedValue(true)
+                .build();
     }
 
     private static Stream<Arguments> provideForContainsWithPredicateMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 1000, false)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 1000, false)),
-                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, 40, true)),
-                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, null, true))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs(1000)
+                    .expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(1000)
+                    .expectedValue(false)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 50, 40, 30, 20, 10)
+                    .addArgs(40)
+                    .expectedValue(true)
+                .newTest()
+                    .originStruct(10, 20, 30, null, 50, 50, null, 30, 20, 10)
+                    .addArgs(new Integer[]{null})
+                    .expectedValue(true)
+                .build();
     }
 
     private static Stream<Arguments> provideForFrequencyMethod() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, 1000, 0)),
-                structures(10, 20, 30, 40, 50, 60, 70, 80, 90, 100).
-                        map(struct -> Arguments.of(struct, 1000, 0)),
-                structures(10, 20, 30, 40, 50, 50, 40, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, 40, 2)),
-                structures(10, 20, 30, null, 50, 50, null, 30, 20, 10).
-                        map(struct -> Arguments.of(struct, null, 2))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs(1000)
+                    .expectedValue(0)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs(1000)
+                    .expectedValue(0)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 50, 40, 30, 20, 10)
+                    .addArgs(40)
+                    .expectedValue(2)
+                .newTest()
+                    .originStruct(10, 20, 30, null, 50, 50, null, 30, 20, 10)
+                    .addArgs(new Integer[]{null})
+                    .expectedValue(2)
+                .build();
     }
 
     private static Stream<Arguments> provideForEachWithIndex() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, List.of())),
-                structures(10).map(struct -> Arguments.of(struct, List.of(Pair.of(10, 0)))),
-                structures(new Integer[]{null}).map(struct -> Arguments.of(struct, List.of(Pair.of(null, 0)))),
-                structures(null, 10, 20, 30, 40, null, 60 ,70 , null, null, 100, 110, 120, 130, 140)
-                        .map(struct -> Arguments.of(struct, List.of(
-                                Pair.of(null, 0), Pair.of(10, 1), Pair.of(20, 2), Pair.of(30, 3), Pair.of(40, 4),
-                                Pair.of(null, 5), Pair.of(60, 6), Pair.of(70, 7), Pair.of(null, 8), Pair.of(null, 9),
-                                Pair.of(100, 10), Pair.of(110, 11), Pair.of(120, 12), Pair.of(130, 13), Pair.of(140, 14)
-                        )))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .expectedList()
+                .newTest()
+                    .originStruct(new Integer[]{null})
+                    .expectedList(Pair.of(null, 0))
+                .newTest()
+                    .originStruct(10)
+                    .expectedList(Pair.of(10, 0))
+                .newTest()
+                    .originStruct(null, 10, 20, 30, 40, null, 60 ,70 , null, null, 100, 110, 120, 130, 140)
+                    .expectedList(
+                            Pair.of(null, 0), Pair.of(10, 1), Pair.of(20, 2), Pair.of(30, 3), Pair.of(40, 4),
+                            Pair.of(null, 5), Pair.of(60, 6), Pair.of(70, 7), Pair.of(null, 8), Pair.of(null, 9),
+                            Pair.of(100, 10), Pair.of(110, 11), Pair.of(120, 12), Pair.of(130, 13), Pair.of(140, 14)
+                    )
+                .build();
     }
 
     private static Stream<Arguments> provideForToArray() {
-        return Stream.of(
-                structures().map(struct -> Arguments.of(struct, new Integer[0])),
-                structures(new Integer[]{null}).map(struct -> Arguments.of(struct,new Integer[]{null})),
-                structures(100).map(struct -> Arguments.of(struct,new Integer[]{100})),
-                structures(0,10).map(struct -> Arguments.of(struct,new Integer[]{0,10})),
-                structures(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150)
-                        .map(struct -> Arguments.of(struct,new Integer[]{0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150}))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .expectedArray()
+                .newTest()
+                    .originStruct(new Integer[]{null})
+                    .expectedArray(new Integer[]{null})
+                .newTest()
+                    .originStruct(100)
+                    .expectedArray(100)
+                .newTest()
+                    .originStruct(0,10)
+                    .expectedArray(0,10)
+                .newTest()
+                    .originStruct(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150)
+                    .expectedArray(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150)
+                .build();
     }
 
     private static Stream<Arguments> provideForCloneAndMap() {
-        return Stream.of(
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(),
-                        fabric.create(),
-                        (IndexBiFunction<Integer, Integer>) (item, index) -> item
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(new Integer[]{null}),
-                        fabric.create(new Integer[]{null}),
-                        (IndexBiFunction<Integer, Integer>) (item, index) -> item
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(1),
-                        fabric.create(10),
-                        (IndexBiFunction<Integer, Integer>) (item, index) -> item * 10
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
-                        fabric.create(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150),
-                        (IndexBiFunction<Integer, Integer>) (item, index) -> item * 10
-                ))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .expectedStruct()
+                    .addArgs((IndexBiFunction<Integer, Integer>) (item, index) -> item)
+                .newTest()
+                    .originStruct(new Integer[]{null})
+                    .expectedStruct(new Integer[]{null})
+                    .addArgs((IndexBiFunction<Integer, Integer>) (item, index) -> item)
+                .newTest()
+                    .originStruct(1)
+                    .expectedStruct(10)
+                    .addArgs((IndexBiFunction<Integer, Integer>) (item, index) -> item * 10)
+                .newTest()
+                    .originStruct(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
+                    .expectedStruct(0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150)
+                    .addArgs((IndexBiFunction<Integer, Integer>) (item, index) -> item * 10)
+                .build();
+    }
+
+    private static Stream<Arguments> provideForCloneAndMap_Exception() {
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(1,2,3,4,5,6,7,8,9,10)
+                    .addArgsFor(
+                            DynamicArray.class,
+                            (DynamicArray<Integer> array) -> List.of((IndexBiFunction<Integer, Integer>) (item, index) -> {
+                                    array.clear();
+                                    array.trimToSize();
+                                    return item;
+                            })
+                    )
+                    .addArgsFor(
+                            Stack.class,
+                            (Stack<Integer> stack) -> List.of((IndexBiFunction<Integer, Integer>) (item, index) -> {
+                                stack.clear();
+                                stack.trimToSize();
+                                return item;
+                            })
+                    )
+                    .addArgsFor(
+                            Queue.class,
+                            (Queue<Integer> queue) -> List.of((IndexBiFunction<Integer, Integer>) (item, index) -> {
+                                queue.clear();
+                                queue.trimToSize();
+                                return item;
+                            })
+                    )
+                    .addArgsFor(
+                            Deque.class,
+                            (Deque<Integer> deque) -> List.of((IndexBiFunction<Integer, Integer>) (item, index) -> {
+                                deque.clear();
+                                deque.trimToSize();
+                                return item;
+                            })
+                    )
+                    .addArgsFor(
+                            RingBuffer.class,
+                            (RingBuffer<Integer> buffer) -> List.of((IndexBiFunction<Integer, Integer>) (item, index) -> {
+                                buffer.clear();
+                                return item;
+                            })
+                    )
+                    .expectedValue(ConcurrentModificationException.class)
+                .build();
     }
 
     private static Stream<Arguments> provideForCloneAndFilter() {
-        return Stream.of(
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(),
-                        fabric.create(),
-                        (IndexBiPredicate<Integer>) (item, index) -> item != null
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(new Integer[]{null}),
-                        fabric.create(new Integer[]{null}),
-                        (IndexBiPredicate<Integer>) (item, index) -> item == null
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(new Integer[]{null}),
-                        fabric.create(),
-                        (IndexBiPredicate<Integer>) (item, index) -> item != null
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(1),
-                        fabric.create(1),
-                        (IndexBiPredicate<Integer>) (item, index) -> item == 1
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(1),
-                        fabric.create(),
-                        (IndexBiPredicate<Integer>) (item, index) -> item != 1
-                )),
-                structureFabrics().map(fabric -> Arguments.of(
-                        fabric.create(1,2,3,null,5,6,7,8,9,10,11,12,13,14,null,16,17,18,19,null),
-                        fabric.create(11,12,13,14,16,17,18,19),
-                        (IndexBiPredicate<Integer>) (item, index) -> item != null && item > 10
-                ))
-        ).flatMap(stream -> stream);
+        return ArgumentsBuilder.of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .expectedStruct()
+                    .addArgs((IndexBiPredicate<Integer>) (item, index) -> item != null)
+                .newTest()
+                    .originStruct(new Integer[]{null})
+                    .expectedStruct(new Integer[]{null})
+                    .addArgs((IndexBiPredicate<Integer>) (item, index) -> item == null)
+                .newTest()
+                    .originStruct(new Integer[]{null})
+                    .expectedStruct()
+                    .addArgs((IndexBiPredicate<Integer>) (item, index) -> item != null)
+                .newTest()
+                    .originStruct(1)
+                    .expectedStruct(1)
+                    .addArgs((IndexBiPredicate<Integer>) (item, index) -> item == 1)
+                .newTest()
+                    .originStruct(1)
+                    .expectedStruct()
+                    .addArgs((IndexBiPredicate<Integer>) (item, index) -> item != 1)
+                .newTest()
+                    .originStruct(1,2,3,null,5,6,7,8,9,10,11,12,13,14,null,16,17,18,19,null)
+                    .expectedStruct(11,12,13,14,16,17,18,19)
+                    .addArgs((IndexBiPredicate<Integer>) (item, index) -> item != null && item > 10)
+                .build();
+    }
+
+    private static Stream<Arguments> provideForCloneAndFilter_Exception() {
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(1,2,3,4,5,6,7,8,9,10)
+                    .addArgsFor(
+                            DynamicArray.class,
+                            (DynamicArray<Integer> array) -> List.of((IndexBiPredicate<Integer>) (item, index) -> {
+                                array.clear();
+                                array.trimToSize();
+                                return false;
+                            })
+                    )
+                    .addArgsFor(
+                            Stack.class,
+                            (Stack<Integer> stack) -> List.of((IndexBiPredicate<Integer>) (item, index) -> {
+                                stack.clear();
+                                stack.trimToSize();
+                                return false;
+                            })
+                    )
+                    .addArgsFor(
+                            Queue.class,
+                            (Queue<Integer> queue) -> List.of((IndexBiPredicate<Integer>) (item, index) -> {
+                                queue.clear();
+                                queue.trimToSize();
+                                return false;
+                            })
+                    )
+                    .addArgsFor(
+                            Deque.class,
+                            (Deque<Integer> deque) -> List.of((IndexBiPredicate<Integer>) (item, index) -> {
+                                deque.clear();
+                                deque.trimToSize();
+                                return false;
+                            })
+                    )
+                    .addArgsFor(
+                            RingBuffer.class,
+                            (RingBuffer<Integer> buffer) -> List.of((IndexBiPredicate<Integer>) (item, index) -> {
+                                buffer.clear();
+                                return false;
+                            })
+                    )
+                    .expectedValue(ConcurrentModificationException.class)
+                .build();
+    }
+
+    private static Stream<Arguments> provideForReduce() {
+        return ArgumentsBuilder.of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs((BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(null)
+                .newTest()
+                    .originStruct(1)
+                    .addArgs((BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(1)
+                .newTest()
+                    .originStruct(1,2)
+                    .addArgs((BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(3)
+                .newTest()
+                    .originStruct(1,2,3,4,5,6,7,8,9,10)
+                    .addArgs((BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(55)
+                .build();
+    }
+
+    private static Stream<Arguments> provideForReduce_Exception() {
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(1,2,3,4,5,6,7,8,9,10)
+                    .addArgsFor(
+                            DynamicArray.class,
+                            (DynamicArray<Integer> array) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                array.clear();
+                                array.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            Stack.class,
+                            (Stack<Integer> stack) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                stack.clear();
+                                stack.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            Queue.class,
+                            (Queue<Integer> queue) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                queue.clear();
+                                queue.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            Deque.class,
+                            (Deque<Integer> deque) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                deque.clear();
+                                deque.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            RingBuffer.class,
+                            (RingBuffer<Integer> buffer) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                buffer.clear();
+                                return a + b;
+                            })
+                    )
+                    .expectedValue(ConcurrentModificationException.class)
+                .build();
+    }
+
+    private static Stream<Arguments> provideForReduceWithInitValue() {
+        return ArgumentsBuilder.of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs(100, (BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(100)
+                .newTest()
+                    .originStruct(1)
+                    .addArgs(100, (BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(101)
+                .newTest()
+                    .originStruct(1,2)
+                    .addArgs(100, (BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(103)
+                .newTest()
+                    .originStruct(1,2,3,4,5,6,7,8,9,10)
+                    .addArgs(100, (BinaryOperator<Integer>) Integer::sum)
+                    .expectedValue(155)
+                .build();
+    }
+
+    private static Stream<Arguments> provideForReduceWithInitValue_Exception() {
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct(1,2,3,4,5,6,7,8,9,10)
+                    .addArgs(100)
+                    .addArgsFor(
+                            DynamicArray.class,
+                            (DynamicArray<Integer> array) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                array.clear();
+                                array.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            Stack.class,
+                            (Stack<Integer> stack) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                stack.clear();
+                                stack.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            Queue.class,
+                            (Queue<Integer> queue) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                queue.clear();
+                                queue.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            Deque.class,
+                            (Deque<Integer> deque) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                deque.clear();
+                                deque.trimToSize();
+                                return a + b;
+                            })
+                    )
+                    .addArgsFor(
+                            RingBuffer.class,
+                            (RingBuffer<Integer> buffer) -> List.of((BinaryOperator<Integer>) (a, b) -> {
+                                buffer.clear();
+                                return a + b;
+                            })
+                    )
+                    .expectedValue(ConcurrentModificationException.class)
+                .build();
     }
 }

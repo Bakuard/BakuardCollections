@@ -555,10 +555,18 @@ class DynamicArrayTest {
     }
 
     private static Stream<Arguments> provideForAppendAll() {
-        Fabric<Integer, DynamicArray<Integer>> fabric = (size, data) -> {
-            DynamicArray<Integer> result = new DynamicArray<>();
-            for(Integer value : data) result.append(value);
-            return result;
+        Fabric<Integer, DynamicArray<Integer>> fabric = new Fabric<>() {
+            @Override
+            public DynamicArray<Integer> createWithSize(int size, Integer... data) {
+                DynamicArray<Integer> result = new DynamicArray<>();
+                for(Integer value : data) result.append(value);
+                return result;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return DynamicArray.class;
+            }
         };
 
         return Stream.of(
@@ -595,7 +603,17 @@ class DynamicArrayTest {
     }
 
     private static Stream<Arguments> provideForAppendAll_iterable() {
-        Fabric<Integer, List<Integer>> fabric = (size, data) -> new ArrayList<>(Arrays.asList(data));
+        Fabric<Integer, List<Integer>> fabric = new Fabric<Integer, List<Integer>>() {
+            @Override
+            public List<Integer> createWithSize(int size, Integer... data) {
+                return new ArrayList<>(Arrays.asList(data));
+            }
+
+            @Override
+            public Class<?> getType() {
+                return DynamicArray.class;
+            }
+        };
 
         return Stream.of(
                 Arguments.of(new DynamicArray<>(), fabric.create(), new DynamicArray<>()),

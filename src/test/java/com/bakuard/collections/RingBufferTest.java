@@ -373,10 +373,18 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrSkip(value);
-            return buffer;
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.putLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(
@@ -404,10 +412,18 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrSkip(value);
-            return buffer;
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.putLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(
@@ -588,10 +604,18 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForPutLastOrSkip() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrReplace(value);
-            return buffer;
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.putLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(
@@ -688,10 +712,18 @@ public class RingBufferTest {
     }
 
     private static Stream<Arguments> provideForPutAllOnLastOrSkip_array() {
-        Fabric<Integer, RingBuffer<Integer>> fabric = (size, data) -> {
-            RingBuffer<Integer> buffer = new RingBuffer<>(size);
-            for(Integer value : data) buffer.putLastOrSkip(value);
-            return buffer;
+        Fabric<Integer, RingBuffer<Integer>> fabric = new Fabric<>() {
+            @Override
+            public RingBuffer<Integer> createWithSize(int size, Integer... data) {
+                RingBuffer<Integer> buffer = new RingBuffer<>(size);
+                for (Integer value : data) buffer.putLastOrSkip(value);
+                return buffer;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return RingBuffer.class;
+            }
         };
 
         return Stream.of(

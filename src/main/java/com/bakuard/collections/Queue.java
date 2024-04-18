@@ -8,6 +8,7 @@ import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -301,6 +302,45 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         for(int i = 0; i < size; ++i) {
             T item = unsafeGet(i);
             if(predicate.test(item, i)) result.putLast(item);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        T result = null;
+        if(size > 0) {
+            result = unsafeGet(0);
+            for(int i = 1; i < size; ++i) {
+                result = accumulator.apply(result, unsafeGet(i));
+                if(EXPECTED_COUNT_MOD != actualModCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(T initValue, BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        T result = initValue;
+        for(int i = 0; i < size; ++i) {
+            result = accumulator.apply(result, unsafeGet(i));
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

@@ -7,6 +7,7 @@ import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
@@ -478,7 +479,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     public boolean trimToSize() {
         ++actualModCount;
 
-        boolean isTrim = size < values.length;
+        boolean isTrim = size < values.length && values.length >= MIN_CAPACITY;
 
         if(isTrim) values = Arrays.copyOf(values, size);
 
@@ -512,6 +513,43 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         DynamicArray<T> result = new DynamicArray<>();
         for(int i = 0; i < size; ++i) {
             if(predicate.test(values[i], i)) result.append(values[i]);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        T result = null;
+        if(size > 0) {
+            result = values[0];
+            for(int i = 1; i < size; ++i) {
+                result = accumulator.apply(result, values[i]);
+                if(EXPECTED_COUNT_MOD != actualModCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(T initValue, BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        T result = initValue;
+        for(int i = 0; i < size; ++i) {
+            result = accumulator.apply(result, values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

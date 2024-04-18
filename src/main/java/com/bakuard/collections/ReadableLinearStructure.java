@@ -7,6 +7,7 @@ import com.bakuard.collections.function.IndexBiPredicate;
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -169,6 +170,52 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
     public ReadableLinearStructure<T> cloneAndFilter(IndexBiPredicate<T> predicate);
 
     /**
+     * Сводит все элементы этой структуры данных в один элемент и возвращает его. Каждый элемент
+     * последовательно объединяются с результатом сведения всех предыдущих элементов.
+     * Сведение элементов начинается с элемента {@link #getFirst()} в направлении
+     * элемента {@link #getLast()}. Если структура данных пуста - возвращает null.
+     * @param accumulator функция для сведения всех элементов в один элемент.
+     * @throws ConcurrentModificationException при попытке изменить структуру данных из accumulator.
+     */
+    public default T reduce(BinaryOperator<T> accumulator) {
+        T result = null;
+
+        IndexedIterator<T> iterator = iterator();
+        if(iterator.hasNext()) {
+            result = iterator.next();
+            while(iterator.hasNext()) {
+                T item = iterator.next();
+                result = accumulator.apply(result, item);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Сводит все элементы этой структуры данных в один элемент и возвращает его. Каждый элемент
+     * последовательно объединяются с результатом сведения всех предыдущих элементов. Если
+     * структура данных пуста - возвращает null.<br/><br/>
+     * Поведение данного метода семантически эквивалентно следующему коду:<br/>
+     * <pre><code>
+     *     T result = initValue;
+     *     for (T item : thisLinearStructure)
+     *         result = accumulator.apply(result, item);
+     *     return result;
+     * </code></pre>
+     * @param initValue начальное значение.
+     * @param accumulator функция для сведения всех элементов в один элемент.
+     * @throws ConcurrentModificationException при попытке изменить структуру данных из accumulator.
+     */
+    public default T reduce(T initValue, BinaryOperator<T> accumulator) {
+        T result = initValue;
+        for(T item : this) {
+            result = accumulator.apply(result, item);
+        }
+        return result;
+    }
+
+    /**
      * Создает и возвращает новый статический массив содержащий все элементы этой структуры данных
      * в том же порядке.
      */
@@ -191,5 +238,12 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
      * элементов также принимает их индексы.
      * @throws ConcurrentModificationException при попытке изменить структуру данных из action.
      */
-    public void forEach(IndexBiConsumer<? super T> action);
+    public default void forEach(IndexBiConsumer<? super T> action) {
+        IndexedIterator<T> iterator = iterator();
+        while(iterator.hasNext()) {
+            T item = iterator.next();
+            int itemIndex = iterator.recentIndex();
+            action.accept(item, itemIndex);
+        }
+    }
 }

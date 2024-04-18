@@ -658,7 +658,7 @@ public final class Bits implements Comparable<Bits> {
         return result;
     }
 
-    public int hasCodeIgnoreSize() {
+    public int hashCodeIgnoreSize() {
         int result = 17;
         result = result * 31 + Arrays.hashCode(words);
         return result;

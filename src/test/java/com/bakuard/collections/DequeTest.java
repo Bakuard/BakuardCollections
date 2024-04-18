@@ -224,10 +224,18 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, Deque<Integer>> fabric = (size, data) -> {
-            Deque<Integer> deque = new Deque<>();
-            for(Integer value : data) deque.putLast(value);
-            return deque;
+        Fabric<Integer, Deque<Integer>> fabric = new Fabric<>() {
+            @Override
+            public Deque<Integer> createWithSize(int size, Integer... data) {
+                Deque<Integer> deque = new Deque<>();
+                for (Integer value : data) deque.putLast(value);
+                return deque;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return Deque.class;
+            }
         };
 
         return Stream.of(
@@ -247,10 +255,18 @@ public class DequeTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, Deque<Integer>> fabric = (size, data) -> {
-            Deque<Integer> deque = new Deque<>();
-            for(Integer value : data) deque.putLast(value);
-            return deque;
+        Fabric<Integer, Deque<Integer>> fabric = new Fabric<>() {
+            @Override
+            public Deque<Integer> createWithSize(int size, Integer... data) {
+                Deque<Integer> deque = new Deque<>();
+                for (Integer value : data) deque.putLast(value);
+                return deque;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return Deque.class;
+            }
         };
 
         return Stream.of(

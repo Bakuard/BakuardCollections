@@ -274,10 +274,18 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForOf1() {
-        Fabric<Integer, Queue<Integer>> fabric = (size, data) -> {
-            Queue<Integer> queue = new Queue<>();
-            for(Integer value : data) queue.putLast(value);
-            return queue;
+        Fabric<Integer, Queue<Integer>> fabric = new Fabric<>() {
+            @Override
+            public Queue<Integer> createWithSize(int size, Integer... data) {
+                Queue<Integer> queue = new Queue<>();
+                for (Integer value : data) queue.putLast(value);
+                return queue;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return Queue.class;
+            }
         };
 
         return Stream.of(
@@ -297,10 +305,18 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForOf2() {
-        Fabric<Integer, Queue<Integer>> fabric = (size, data) -> {
-            Queue<Integer> queue = new Queue<>();
-            for(Integer value : data) queue.putLast(value);
-            return queue;
+        Fabric<Integer, Queue<Integer>> fabric = new Fabric<>() {
+            @Override
+            public Queue<Integer> createWithSize(int size, Integer... data) {
+                Queue<Integer> queue = new Queue<>();
+                for (Integer value : data) queue.putLast(value);
+                return queue;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return Queue.class;
+            }
         };
 
         return Stream.of(
@@ -394,10 +410,18 @@ public class QueueTest {
     }
 
     private static Stream<Arguments> provideForPutAllOnLastData() {
-        Fabric<Integer, Queue<Integer>> fabric = (size, data) -> {
-            Queue<Integer> queue = new Queue<>();
-            for(Integer value : data) queue.putLast(value);
-            return queue;
+        Fabric<Integer, Queue<Integer>> fabric = new Fabric<>() {
+            @Override
+            public Queue<Integer> createWithSize(int size, Integer... data) {
+                Queue<Integer> queue = new Queue<>();
+                for (Integer value : data) queue.putLast(value);
+                return queue;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return Queue.class;
+            }
         };
 
         return Stream.of(
