@@ -17,6 +17,7 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 class ReadableLinearStructureTest {
@@ -192,6 +193,20 @@ class ReadableLinearStructureTest {
     @MethodSource("provideForLinearSearchLastMethod")
     void linearSearchLast(ReadableLinearStructure<Integer> linearStructure, Integer value, int expected) {
         int actual = linearStructure.linearSearchLast(v -> Objects.equals(v, value));
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @DisplayName("linearSearchObj(predicate):")
+    @ParameterizedTest(name = """
+             linearStructure is {0}
+             => expected {2}
+            """)
+    @MethodSource("provideForLinearSearchObjMethod")
+    void linearSearchObj(ReadableLinearStructure<Integer> linearStructure,
+                         Predicate<Integer> predicate,
+                         Integer expected) {
+        Integer actual = linearStructure.linearSearchObj(predicate);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
@@ -752,6 +767,27 @@ class ReadableLinearStructureTest {
                     .originStruct(10, 20, 30, null, 50, 50, null, 30, 20, 10)
                     .addArgs(new Integer[]{null})
                     .expectedValue(6)
+                .build();
+    }
+
+    private static Stream<Arguments> provideForLinearSearchObjMethod() {
+        return ArgumentsBuilder.<Integer>of(structureFabrics())
+                .newTest()
+                    .originStruct()
+                    .addArgs((Predicate<Integer>) integer -> Objects.equals(integer, 400))
+                    .expectedValue(null)
+                .newTest()
+                    .originStruct(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+                    .addArgs((Predicate<Integer>) integer -> Objects.equals(integer, 400))
+                    .expectedValue(null)
+                .newTest()
+                    .originStruct(10, 20, 30, 400, 50, 50, 40, 30, 20, 10)
+                    .addArgs((Predicate<Integer>) integer -> Objects.equals(integer, 400))
+                    .expectedValue(400)
+                .newTest()
+                    .originStruct(10, 20, null, 400, 50, 50, null, 30, 20, 10)
+                    .addArgs((Predicate<Integer>) integer -> Objects.equals(integer, 400))
+                    .expectedValue(400)
                 .build();
     }
 
