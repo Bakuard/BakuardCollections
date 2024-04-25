@@ -603,14 +603,14 @@ class BitsTest {
         Assertions.assertThat(origin).isEqualTo(expected);
     }
 
-    @DisplayName("growTo(index):")
+    @DisplayName("growToIndex(index):")
     @ParameterizedTest(name = """
              origin is {0},
              index is {1}
              => exception
             """)
     @MethodSource("provideForCheckingIndexForNegative_ExceptionCase")
-    void growTo_exception(Bits origin, int index) {
+    void growToIndex_exception(Bits origin, int index) {
         Bits expected = new Bits(origin);
 
         SoftAssertions assertions = new SoftAssertions();

@@ -145,6 +145,21 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     }
 
     /**
+     * Заменяет каждый элемент в массиве результатом вызова для него функции mapper.
+     * @param mapper функция обратного вызова заменяющая каждый элемент массива.
+     * @throws ConcurrentModificationException при попытке изменить массив из mapper.
+     */
+    public void replaceAll(IndexBiFunction<T, T> mapper) {
+        final int EXPECTED_COUNT_MOD = ++actualModCount;
+
+        for(int i = 0; i < size; ++i) {
+            T newItem = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) throw new ConcurrentModificationException();
+            values[i] = newItem;
+        }
+    }
+
+    /**
      * Увеличивает длину массива на единицу и затем записывает элемент в конец массива.
      * @param value добавляемое значение.
      */

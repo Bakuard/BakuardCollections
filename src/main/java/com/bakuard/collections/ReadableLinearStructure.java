@@ -125,6 +125,19 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
     }
 
     /**
+     * Возвращает первый встретившейся элемент соответствующий заданному предикату.
+     * Выполняет линейный поиск начиная с элемента {@link #getFirst()} в направлении
+     * элемента {@link #getLast()}. Если нет элемента соответствующего заданному предикату -
+     * возвращает null.
+     * @param predicate условие, которому должен соответствовать искомый элемент.
+     * @return первый встретившейся элемент соответствующий предикату или null.
+     */
+    public default T linearSearchObj(Predicate<T> predicate) {
+        int index = linearSearch(predicate);
+        return index == -1 ? null : get(index);
+    }
+
+    /**
      * Проверяет - содержит ли структура данных элемент с заданным значением. Если это верно - возвращает
      * true, иначе - false.
      * @param value значение искомого элемента.
