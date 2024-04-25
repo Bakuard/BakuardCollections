@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
 import com.bakuard.collections.exception.NegativeSizeException;
+import com.bakuard.collections.function.IndexBiFunction;
 import com.bakuard.collections.testUtil.ClosedRange;
 import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
@@ -127,6 +128,20 @@ class DynamicArrayTest {
         assertions.assertThat(origin).isEqualTo(expected);
         assertions.assertThat(actualReturnedValue).isEqualTo(expectedReturnedValue);
         assertions.assertAll();
+    }
+
+    @DisplayName("replaceAll(mapper):")
+    @ParameterizedTest(name = """
+             origin is {0}
+             => expected is {2}
+            """)
+    @MethodSource("provideForReplaceAll")
+    public void replaceAll(DynamicArray<Integer> origin,
+                           IndexBiFunction<Integer, Integer> mapper,
+                           DynamicArray<Integer> expected) {
+        origin.replaceAll(mapper);
+
+        Assertions.assertThat(origin).isEqualTo(expected);
     }
 
     @DisplayName("append(value):")
@@ -531,6 +546,21 @@ class DynamicArrayTest {
                         DynamicArray.of(0,1,2,7,12,55,60,101,121,317,560,666,917),
                         5, null, 55,
                         DynamicArray.of(0,1,2,7,12,null,60,101,121,317,560,666,917)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForReplaceAll() {
+        IndexBiFunction<Integer, Integer> mapper = (item, index) -> item * 10;
+
+        return Stream.of(
+                Arguments.of(DynamicArray.of(), mapper, DynamicArray.of()),
+                Arguments.of(DynamicArray.of(100), mapper, DynamicArray.of(1000)),
+                Arguments.of(DynamicArray.of(0,1), mapper, DynamicArray.of(0,10)),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9),
+                        mapper,
+                        DynamicArray.of(0,10,20,30,40,50,60,70,80,90)
                 )
         );
     }
