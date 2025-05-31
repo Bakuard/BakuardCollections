@@ -14,6 +14,8 @@ import java.util.function.Predicate;
 
 /**
  * Реализация динамической очереди с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque {
 

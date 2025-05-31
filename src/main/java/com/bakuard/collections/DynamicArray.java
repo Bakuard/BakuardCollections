@@ -15,6 +15,8 @@ import java.util.random.RandomGenerator;
 
 /**
  * Реализация динамического массива с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
