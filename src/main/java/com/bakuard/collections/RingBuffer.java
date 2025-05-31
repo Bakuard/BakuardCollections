@@ -17,6 +17,8 @@ import java.util.function.Predicate;
 
 /**
  * Реализация циклического буфера с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public final class RingBuffer<T> implements ReadableLinearStructure<T> {
 

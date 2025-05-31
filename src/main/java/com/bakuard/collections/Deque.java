@@ -8,6 +8,8 @@ import java.util.NoSuchElementException;
 
 /**
  * Реализация динамической двусторонней очереди с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public final class Deque<T> extends Queue<T> {
 

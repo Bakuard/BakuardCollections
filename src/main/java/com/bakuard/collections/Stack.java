@@ -11,6 +11,8 @@ import java.util.function.Predicate;
 
 /**
  * Реализация динамического стека с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public final class Stack<T> implements ReadableLinearStructure<T> {
 
