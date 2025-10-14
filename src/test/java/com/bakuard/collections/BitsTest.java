@@ -1,6 +1,6 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.testUtil.BitsMutator;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
@@ -11,7 +11,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -83,24 +82,17 @@ class BitsTest {
         Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> bits.get(index));
     }
 
-    @Test
-    @DisplayName("""
-            set(index):
-             index is correct
-             => get(index) must return true
+    @DisplayName("set(index):")
+    @ParameterizedTest(name = """
+             bits is {0},
+             index is {1}
+             => expected bits {2}
             """)
-    void set() {
-        Bits bits = new Bits(1000);
-        Set<Integer> indexes = Set.of(0, 200, 317, 999);
+    @MethodSource("provideForSet")
+    void set(Bits origin, int index, Bits expected) {
+        origin.set(index);
 
-        indexes.forEach(bits::set);
-
-        SoftAssertions assertions = new SoftAssertions();
-        for(int i = 0; i < bits.size(); i++) {
-            boolean expect = indexes.contains(i);
-            assertions.assertThat(bits.get(i)).as("expect %b for index %d", expect, i).isEqualTo(expect);
-        }
-        assertions.assertAll();
+        Assertions.assertThat(origin).isEqualTo(expected);
     }
 
     @DisplayName("set(index):")
@@ -199,24 +191,17 @@ class BitsTest {
         }
     }
 
-    @Test
-    @DisplayName("""
-            clear(index):
-             index is correct
-             => get(index) must return false
+    @DisplayName("clear(index):")
+    @ParameterizedTest(name = """
+             bits is {0},
+             index is {1}
+             => expected bits {2}
             """)
-    void clear() {
-        Bits bits = Bits.filled(1000);
-        Set<Integer> indexes = Set.of(0, 200, 317, 999);
+    @MethodSource("provideForClear")
+    void clear(Bits origin, int index, Bits expected) {
+        origin.clear(index);
 
-        indexes.forEach(bits::clear);
-
-        SoftAssertions assertions = new SoftAssertions();
-        for(int i = 0; i < bits.size(); i++) {
-            boolean expect = !indexes.contains(i);
-            assertions.assertThat(bits.get(i)).as("expect %b for index %d", expect, i).isEqualTo(expect);
-        }
-        assertions.assertAll();
+        Assertions.assertThat(origin).isEqualTo(expected);
     }
 
     @DisplayName("clear(index):")
@@ -300,6 +285,30 @@ class BitsTest {
         origin.clearAll();
 
         Assertions.assertThat(origin).isEqualTo(expected);
+    }
+
+    @DisplayName("flip(index):")
+    @ParameterizedTest(name = """
+             bits is {0},
+             index is {1}
+             => expected bits {2}
+            """)
+    @MethodSource("provideForFlip")
+    void flip(Bits origin, int index, Bits expected) {
+        origin.flip(index);
+
+        Assertions.assertThat(origin).isEqualTo(expected);
+    }
+
+    @DisplayName("flip(index):")
+    @ParameterizedTest(name = """
+             bits is {0},
+             index is {1}
+             => exception
+            """)
+    @MethodSource("provideForMethodWithSingleIndexParam_ExceptionCases")
+    void flip_exception(Bits bits, int index) {
+        Assertions.assertThatIndexOutOfBoundsException().isThrownBy(() -> bits.flip(index));
     }
 
     @DisplayName("and(other):")
@@ -594,14 +603,14 @@ class BitsTest {
         Assertions.assertThat(origin).isEqualTo(expected);
     }
 
-    @DisplayName("growTo(index):")
+    @DisplayName("growToIndex(index):")
     @ParameterizedTest(name = """
              origin is {0},
              index is {1}
              => exception
             """)
     @MethodSource("provideForCheckingIndexForNegative_ExceptionCase")
-    void growTo_exception(Bits origin, int index) {
+    void growToIndex_exception(Bits origin, int index) {
         Bits expected = new Bits(origin);
 
         SoftAssertions assertions = new SoftAssertions();
@@ -1075,6 +1084,70 @@ class BitsTest {
         );
     }
 
+    private static Stream<Arguments> provideForSet() {
+        return Stream.of(
+                Arguments.of(new Bits(1), 0, Bits.filled(1)),
+                Arguments.of(Bits.filled(1), 0, Bits.filled(1)),
+                Arguments.of(
+                        Bits.of(10, 1,2,3,4,5,6,7,8,9),
+                        0,
+                        Bits.filled(10)
+                ),
+                Arguments.of(
+                        Bits.filled(10),
+                        0,
+                        Bits.filled(10)
+                ),
+                Arguments.of(
+                        Bits.of(10, 0,1,2,3,4,5,6,7,8),
+                        9,
+                        Bits.filled(10)
+                ),
+                Arguments.of(
+                        Bits.filled(10),
+                        9,
+                        Bits.filled(10)
+                ),
+                Arguments.of(
+                        Bits.of(10, 0,1,2,3,4,6,7,8,9),
+                        5,
+                        Bits.filled(10)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForClear() {
+        return Stream.of(
+                Arguments.of(new Bits(1), 0, new Bits(1)),
+                Arguments.of(Bits.filled(1), 0, new Bits(1)),
+                Arguments.of(
+                        Bits.filled(10),
+                        0,
+                        Bits.of(10, 1,2,3,4,5,6,7,8,9)
+                ),
+                Arguments.of(
+                        Bits.of(10, 1,2,3,4,5,6,7,8,9),
+                        0,
+                        Bits.of(10, 1,2,3,4,5,6,7,8,9)
+                ),
+                Arguments.of(
+                        Bits.filled(10),
+                        9,
+                        Bits.of(10, 0,1,2,3,4,5,6,7,8)
+                ),
+                Arguments.of(
+                        Bits.of(10, 0,1,2,3,4,5,6,7,8),
+                        9,
+                        Bits.of(10, 0,1,2,3,4,5,6,7,8)
+                ),
+                Arguments.of(
+                        Bits.filled(10),
+                        5,
+                        Bits.of(10, 0,1,2,3,4,6,7,8,9)
+                )
+        );
+    }
+
     private static Stream<Arguments> provideForSetRange() {
         Bits twoWords1 = new Bits(128);
         Bits twoWords2 = new Bits(128);
@@ -1182,6 +1255,43 @@ class BitsTest {
                 Arguments.of(Bits.filled(1), new Bits(1)),
                 Arguments.of(Bits.filled(34), new Bits(34)),
                 Arguments.of(Bits.filled(1000), new Bits(1000))
+        );
+    }
+
+    private static Stream<Arguments> provideForFlip() {
+        return Stream.of(
+                Arguments.of(new Bits(1), 0, Bits.filled(1)),
+                Arguments.of(Bits.filled(1), 0, new Bits(1)),
+                Arguments.of(
+                        Bits.filled(10),
+                        0,
+                        Bits.of(10, 1,2,3,4,5,6,7,8,9)
+                ),
+                Arguments.of(
+                        Bits.of(10, 1,2,3,4,5,6,7,8,9),
+                        0,
+                        Bits.filled(10)
+                ),
+                Arguments.of(
+                        Bits.filled(10),
+                        9,
+                        Bits.of(10, 0,1,2,3,4,5,6,7,8)
+                ),
+                Arguments.of(
+                        Bits.of(10, 0,1,2,3,4,5,6,7,8),
+                        9,
+                        Bits.filled(10)
+                ),
+                Arguments.of(
+                        Bits.filled(10),
+                        5,
+                        Bits.of(10, 0,1,2,3,4,6,7,8,9)
+                ),
+                Arguments.of(
+                        Bits.of(10, 0,1,2,3,4,6,7,8,9),
+                        5,
+                        Bits.filled(10)
+                )
         );
     }
 

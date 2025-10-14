@@ -1,6 +1,7 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.NegativeSizeException;
+import com.bakuard.collections.function.IndexBiFunction;
 import com.bakuard.collections.testUtil.ClosedRange;
 import com.bakuard.collections.testUtil.Fabric;
 import com.bakuard.collections.testUtil.Mutator;
@@ -129,15 +130,29 @@ class DynamicArrayTest {
         assertions.assertAll();
     }
 
+    @DisplayName("replaceAll(mapper):")
+    @ParameterizedTest(name = """
+             origin is {0}
+             => expected is {2}
+            """)
+    @MethodSource("provideForReplaceAll")
+    public void replaceAll(DynamicArray<Integer> origin,
+                           IndexBiFunction<Integer, Integer> mapper,
+                           DynamicArray<Integer> expected) {
+        origin.replaceAll(mapper);
+
+        Assertions.assertThat(origin).isEqualTo(expected);
+    }
+
     @DisplayName("append(value):")
     @ParameterizedTest(name = """
              origin is {0},
              value is {1},
              => expected is {2}
             """)
-    @MethodSource("provideForAppend")
-    public void append(DynamicArray<Integer> origin, Integer value, DynamicArray<Integer> expected) {
-        origin.append(value);
+    @MethodSource("provideForAddLast")
+    public void addLast(DynamicArray<Integer> origin, Integer value, DynamicArray<Integer> expected) {
+        origin.addLast(value);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
@@ -148,9 +163,9 @@ class DynamicArrayTest {
              data is {1},
              => expected is {2}
             """)
-    @MethodSource("provideForAppendAll")
-    public void appendAll(DynamicArray<Integer> origin, Integer[] data, DynamicArray<Integer> expected) {
-        origin.appendAll(data);
+    @MethodSource("provideForAddAllOnLast")
+    public void addAllOnLast_Array(DynamicArray<Integer> origin, Integer[] data, DynamicArray<Integer> expected) {
+        origin.addAllOnLast(data);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
@@ -161,9 +176,9 @@ class DynamicArrayTest {
              iterable is {1},
              => expected is {2}
             """)
-    @MethodSource("provideForAppendAll_iterable")
-    public void appendAll_Iterable(DynamicArray<Integer> origin, Iterable<Integer> iterable, DynamicArray<Integer> expected) {
-        origin.appendAll(iterable);
+    @MethodSource("provideForAddAllOnLast_iterable")
+    public void addAllOnLast_Iterable(DynamicArray<Integer> origin, Iterable<Integer> iterable, DynamicArray<Integer> expected) {
+        origin.addAllOnLast(iterable);
 
         Assertions.assertThat(origin).isEqualTo(expected);
     }
@@ -535,7 +550,22 @@ class DynamicArrayTest {
         );
     }
 
-    private static Stream<Arguments> provideForAppend() {
+    private static Stream<Arguments> provideForReplaceAll() {
+        IndexBiFunction<Integer, Integer> mapper = (item, index) -> item * 10;
+
+        return Stream.of(
+                Arguments.of(DynamicArray.of(), mapper, DynamicArray.of()),
+                Arguments.of(DynamicArray.of(100), mapper, DynamicArray.of(1000)),
+                Arguments.of(DynamicArray.of(0,1), mapper, DynamicArray.of(0,10)),
+                Arguments.of(
+                        DynamicArray.of(0,1,2,3,4,5,6,7,8,9),
+                        mapper,
+                        DynamicArray.of(0,10,20,30,40,50,60,70,80,90)
+                )
+        );
+    }
+
+    private static Stream<Arguments> provideForAddLast() {
         return Stream.of(
                 Arguments.of(new DynamicArray<>(), null, DynamicArray.of(new Integer[]{null})),
                 Arguments.of(new DynamicArray<>(), 100, DynamicArray.of(100)),
@@ -554,11 +584,19 @@ class DynamicArrayTest {
         );
     }
 
-    private static Stream<Arguments> provideForAppendAll() {
-        Fabric<Integer, DynamicArray<Integer>> fabric = (size, data) -> {
-            DynamicArray<Integer> result = new DynamicArray<>();
-            for(Integer value : data) result.append(value);
-            return result;
+    private static Stream<Arguments> provideForAddAllOnLast() {
+        Fabric<Integer, DynamicArray<Integer>> fabric = new Fabric<>() {
+            @Override
+            public DynamicArray<Integer> createWithSize(int size, Integer... data) {
+                DynamicArray<Integer> result = new DynamicArray<>();
+                for(Integer value : data) result.addLast(value);
+                return result;
+            }
+
+            @Override
+            public Class<?> getType() {
+                return DynamicArray.class;
+            }
         };
 
         return Stream.of(
@@ -594,8 +632,18 @@ class DynamicArrayTest {
         );
     }
 
-    private static Stream<Arguments> provideForAppendAll_iterable() {
-        Fabric<Integer, List<Integer>> fabric = (size, data) -> new ArrayList<>(Arrays.asList(data));
+    private static Stream<Arguments> provideForAddAllOnLast_iterable() {
+        Fabric<Integer, List<Integer>> fabric = new Fabric<Integer, List<Integer>>() {
+            @Override
+            public List<Integer> createWithSize(int size, Integer... data) {
+                return new ArrayList<>(Arrays.asList(data));
+            }
+
+            @Override
+            public Class<?> getType() {
+                return DynamicArray.class;
+            }
+        };
 
         return Stream.of(
                 Arguments.of(new DynamicArray<>(), fabric.create(), new DynamicArray<>()),
@@ -1129,7 +1177,7 @@ class DynamicArrayTest {
     private static Stream<Arguments> provideForEquals() {
         DynamicArray<Integer> arrayWithBigEntrySize = new DynamicArray<>(1000);
         for(int i = 0; i < 1000; i++) arrayWithBigEntrySize.quickRemove(0);
-        arrayWithBigEntrySize.appendAll(10,20,30,40,50,60,70,80,90,100);
+        arrayWithBigEntrySize.addAllOnLast(10,20,30,40,50,60,70,80,90,100);
 
         return Stream.of(
                 Arguments.of(

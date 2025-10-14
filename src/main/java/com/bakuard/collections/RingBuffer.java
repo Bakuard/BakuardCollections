@@ -1,20 +1,24 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.MaxSizeExceededException;
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.MaxSizeExceededException;
+import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
  * Реализация циклического буфера с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public final class RingBuffer<T> implements ReadableLinearStructure<T> {
 
@@ -41,7 +45,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
         }
 
         RingBuffer<T> result = new RingBuffer<>(maxSize);
-        result.putAllOnLastOrSkip(data);
+        result.addAllOnLastOrSkip(data);
         return result;
     }
 
@@ -80,7 +84,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     @SuppressWarnings("unchecked")
     public RingBuffer(Iterable<T> iterable) {
         DynamicArray<T> tempBuffer = new DynamicArray<>();
-        tempBuffer.appendAll(iterable);
+        tempBuffer.addAllOnLast(iterable);
 
         values = (T[]) new Object[tempBuffer.size()];
         tempBuffer.forEach((item, index) -> values[index] = item);
@@ -113,7 +117,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
      * или {@link #hasAvailableSpace()}.
      * @param value добавляемый элемент.
      */
-    public T putLastOrReplace(T value) {
+    public T addLastOrReplace(T value) {
         ++actualModCount;
 
         T rewritingValue = null;
@@ -143,14 +147,14 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param iterable структура данных, все элементы которой добавляются в текущий циклический буфер.
      * @return все перезаписанные элементы.
      */
-    public DynamicArray<T> putAllOnLastOrReplace(Iterable<T> iterable) {
+    public DynamicArray<T> addAllOnLastOrReplace(Iterable<T> iterable) {
         ++actualModCount;
 
         DynamicArray<T> rewritingValues = new DynamicArray<>();
         for(T value : iterable) {
             boolean valueWasRewriting = !hasAvailableSpace();
-            T rewritingValue = putLastOrReplace(value);
-            if(valueWasRewriting) rewritingValues.append(rewritingValue);
+            T rewritingValue = addLastOrReplace(value);
+            if(valueWasRewriting) rewritingValues.addLast(rewritingValue);
         }
 
         return rewritingValues;
@@ -169,14 +173,14 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param data массив, все элементы которого добавляются в текущий циклический буфер.
      * @return все перезаписанные элементы.
      */
-    public DynamicArray<T> putAllOnLastOrReplace(T... data) {
+    public DynamicArray<T> addAllOnLastOrReplace(T... data) {
         ++actualModCount;
 
         DynamicArray<T> rewritingValues = new DynamicArray<>();
         for(T value : data) {
             boolean valueWasRewriting = !hasAvailableSpace();
-            T rewritingValue = putLastOrReplace(value);
-            if(valueWasRewriting) rewritingValues.append(rewritingValue);
+            T rewritingValue = addLastOrReplace(value);
+            if(valueWasRewriting) rewritingValues.addLast(rewritingValue);
         }
 
         return rewritingValues;
@@ -190,7 +194,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
      * @param value добавляемый элемент.
      * @return true - если удалось добавить элемент, иначе - false.
      */
-    public boolean putLastOrSkip(T value) {
+    public boolean addLastOrSkip(T value) {
         ++actualModCount;
 
         boolean canBeAdded = hasAvailableSpace();
@@ -201,18 +205,18 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     /**
      * Пробует добавить в конец циклического буфера все элементы возвращаемые итератором. Порядок добавления элементов
      * соответствует порядку их возвращения итератором. Для каждого добавляемого элемента выполняется порядок
-     * действий описанный для метода {@link #putLastOrSkip(Object)}. Возвращает кол-во добавленных элементов.
+     * действий описанный для метода {@link #addLastOrSkip(Object)}. Возвращает кол-во добавленных элементов.
      * @param iterable структура данных, все элементы которого добавляются в текущий циклический буфер.
      * @return кол-во добавленных элементов.
      */
-    public int putAllOnLastOrSkip(Iterable<T> iterable) {
+    public int addAllOnLastOrSkip(Iterable<T> iterable) {
         ++actualModCount;
 
         int addedValuesNumber = 0;
         boolean wasAdded = true;
         Iterator<T> iterator = iterable.iterator();
         while(wasAdded && iterator.hasNext()) {
-            wasAdded = putLastOrSkip(iterator.next());
+            wasAdded = addLastOrSkip(iterator.next());
             if(wasAdded) ++addedValuesNumber;
         }
 
@@ -222,11 +226,11 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     /**
      * Пробует добавить в конец циклического буфера все элементы массива data. Порядок добавления элементов
      * соответствует порядку их следования в массиве. Для каждого добавляемого элемента выполняется порядок
-     * действий описанный для метода {@link #putLastOrSkip(Object)}. Возвращает кол-во добавленных элементов.
+     * действий описанный для метода {@link #addLastOrSkip(Object)}. Возвращает кол-во добавленных элементов.
      * @param data массив, все элементы которого добавляются в текущий циклический буфер.
      * @return кол-во добавленных элементов.
      */
-    public int putAllOnLastOrSkip(T... data) {
+    public int addAllOnLastOrSkip(T... data) {
         ++actualModCount;
 
         final int addedValuesNumber = Math.min(values.length - currentSize, data.length);
@@ -243,7 +247,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
      * Добавляет элемент в конец циклического буфера. Если в циклическом буфере нет свободного места для добавления
      * этого элемента ({@link #hasAvailableSpace()} равен false), то выбрасывает исключение.
      * @param value добавляемый элемент.
-     * @throws com.bakuard.collections.exceptions.MaxSizeExceededException если в циклическом буфере нет свободного
+     * @throws com.bakuard.collections.exception.MaxSizeExceededException если в циклическом буфере нет свободного
      *                                                                     места для добавления этого элемента.
      */
     public void tryPutLast(T value) {
@@ -459,6 +463,66 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public RingBuffer<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        RingBuffer<T> result = new RingBuffer<>(maxSize());
+        for(int i = 0, j = 0; i < currentSize; ++i) {
+            T item = unsafeGet(i);
+            if(predicate.test(item, i)) {
+                result.values[j++] = item;
+                ++result.currentSize;
+            }
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        T result = null;
+        if(size > 0) {
+            result = unsafeGet(0);
+            for(int i = 1; i < size; ++i) {
+                result = accumulator.apply(result, unsafeGet(i));
+                if(EXPECTED_COUNT_MOD != actualModCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(T initValue, BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        T result = initValue;
+        for(int i = 0; i < size; ++i) {
+            result = accumulator.apply(result, unsafeGet(i));
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public T[] toArray(Class<T> itemType) {
@@ -536,7 +600,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
     }
 
 
-    T unsafeGet(int index) {
+    private T unsafeGet(int index) {
         return values[(firstItemIndex + index) % values.length];
     }
 

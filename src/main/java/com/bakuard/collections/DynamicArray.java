@@ -1,12 +1,13 @@
 package com.bakuard.collections;
 
-import com.bakuard.collections.exceptions.NegativeSizeException;
+import com.bakuard.collections.exception.NegativeSizeException;
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
 import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
@@ -14,6 +15,8 @@ import java.util.random.RandomGenerator;
 
 /**
  * Реализация динамического массива с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
@@ -29,7 +32,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         DynamicArray<T> result = new DynamicArray<>();
-        result.appendAll(data);
+        result.addAllOnLast(data);
         return result;
     }
 
@@ -76,7 +79,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      */
     public DynamicArray(Iterable<T> iterable) {
         this();
-        appendAll(iterable);
+        addAllOnLast(iterable);
     }
 
     /**
@@ -124,10 +127,45 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     }
 
     /**
+     * Записывает элемент в ячейку с указанным индексом и возвращает элемент, который находился в этой
+     * ячейке до вызова этого метода. Если index >= {@link #size()}, то увеличивает размер массива до index + 1,
+     * затем записывает указанное значение по заданному индексу, а затем возвращает null.
+     * @param index индекс ячейки массива куда будет записан элемент.
+     * @param value добавляемое значение.
+     * @return элемент, который находился в массиве под указанным индексом до вызова этого метода.
+     * @throws IndexOutOfBoundsException если index < 0.
+     */
+    public T replaceWithGrow(int index, T value) {
+        ++actualModCount;
+
+        assertNotNegativeIndex(index);
+        growToSizeOrDoNothing(index + 1);
+
+        T oldValue = values[index];
+        values[index] = value;
+        return oldValue;
+    }
+
+    /**
+     * Заменяет каждый элемент в массиве результатом вызова для него функции mapper.
+     * @param mapper функция обратного вызова заменяющая каждый элемент массива.
+     * @throws ConcurrentModificationException при попытке изменить массив из mapper.
+     */
+    public void replaceAll(IndexBiFunction<T, T> mapper) {
+        final int EXPECTED_COUNT_MOD = ++actualModCount;
+
+        for(int i = 0; i < size; ++i) {
+            T newItem = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) throw new ConcurrentModificationException();
+            values[i] = newItem;
+        }
+    }
+
+    /**
      * Увеличивает длину массива на единицу и затем записывает элемент в конец массива.
      * @param value добавляемое значение.
      */
-    public void append(T value) {
+    public void addLast(T value) {
         ++actualModCount;
 
         int lastIndex = size;
@@ -140,7 +178,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * Порядок, в котором элементы передаются методу, сохраняется.
      * @param data добавляемые элементы.
      */
-    public void appendAll(T... data) {
+    public void addAllOnLast(T... data) {
         ++actualModCount;
         if(data.length > 0) {
 
@@ -155,8 +193,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * Элементы добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которой добавляются в данный массив.
      */
-    public void appendAll(Iterable<T> iterable) {
-        for(T value : iterable) append(value);
+    public void addAllOnLast(Iterable<T> iterable) {
+        for(T value : iterable) addLast(value);
     }
 
     /**
@@ -336,7 +374,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param randomGenerator генератор случайных чисел.
      */
     public void shuffle(RandomGenerator randomGenerator) {
-        for(int i = 1; i < size; ++i) {
+        for(int i = 0; i < size; ++i) {
             int randomIndex = randomGenerator.nextInt(size - i) + i;
             swapAtUncheckedIndexes(i, randomIndex);
         }
@@ -348,6 +386,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * в них значений из старых.
      * @return длина массива.
      */
+    @Override
     public int size() {
         return size;
     }
@@ -355,6 +394,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     /**
      * Возвращает true если данный массив пуст, иначе - false.
      */
+    @Override
     public boolean isEmpty() {
         return size == 0;
     }
@@ -366,6 +406,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param value значение искомого элемента.
      * @return индекс первого встретившегося элемента с указанным значением.
      */
+    @Override
     public int linearSearch(T value) {
         return linearSearchInRange(value, 0, size);
     }
@@ -377,6 +418,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
      * @param predicate условие, которому должен соответствовать искомый элемент.
      * @return индекс первого встретившегося элемента соответствующего заданному предикату.
      */
+    @Override
     public int linearSearch(Predicate<T> predicate) {
         return linearSearchInRange(predicate, 0, size);
     }
@@ -404,6 +446,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     /**
      * Возвращает кол-во элементов соответствующих заданному предикату.
      */
+    @Override
     public int frequency(Predicate<T> predicate) {
         int result = 0;
         for(int i = 0; i < size; ++i) {
@@ -453,7 +496,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
     public boolean trimToSize() {
         ++actualModCount;
 
-        boolean isTrim = size < values.length;
+        boolean isTrim = size < values.length && size >= MIN_CAPACITY;
 
         if(isTrim) values = Arrays.copyOf(values, size);
 
@@ -470,6 +513,60 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
         DynamicArray<R> result = new DynamicArray<>(size);
         for(int i = 0; i < size; ++i) {
             result.values[i] = mapper.apply(values[i], i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public DynamicArray<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        DynamicArray<T> result = new DynamicArray<>();
+        for(int i = 0; i < size; ++i) {
+            if(predicate.test(values[i], i)) result.addLast(values[i]);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        T result = null;
+        if(size > 0) {
+            result = values[0];
+            for(int i = 1; i < size; ++i) {
+                result = accumulator.apply(result, values[i]);
+                if(EXPECTED_COUNT_MOD != actualModCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(T initValue, BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        T result = initValue;
+        for(int i = 0; i < size; ++i) {
+            result = accumulator.apply(result, values[i]);
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }

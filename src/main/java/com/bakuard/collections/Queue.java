@@ -2,16 +2,20 @@ package com.bakuard.collections;
 
 import com.bakuard.collections.function.IndexBiConsumer;
 import com.bakuard.collections.function.IndexBiFunction;
+import com.bakuard.collections.function.IndexBiPredicate;
 
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
  * Реализация динамической очереди с объектами произвольного типа.
+ * <br/><br/>
+ * Данный класс не является потокобезопасным.
  */
 public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque {
 
@@ -27,7 +31,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         if(data == null) throw new NullPointerException("data[] can not be null.");
 
         Queue<T> queue = new Queue<>();
-        queue.putAllOnLast(data);
+        queue.addAllOnLast(data);
         return queue;
     }
 
@@ -43,7 +47,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * Создает новую пустую очередь.
      */
     public Queue() {
-        this(MIN_CAPACITY, 0);
+        this(0);
     }
 
     /**
@@ -62,12 +66,13 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      */
     public Queue(Iterable<T> iterable) {
         this();
-        putAllOnLast(iterable);
+        addAllOnLast(iterable);
     }
 
     @SuppressWarnings("unchecked")
-    private Queue(int capacity, int size) {
-        this.values = (T[]) new Object[capacity];
+    private Queue(int size) {
+        int capacity = Math.max(calculateCapacity(size), MIN_CAPACITY);
+        this.values = (T[]) new Object[calculateCapacity(capacity)];
         this.lastItemIndex = size;
     }
 
@@ -76,7 +81,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * Добавляемый элемент может иметь значение null.
      * @param value добавляемый элемент.
      */
-    public void putLast(T value) {
+    public void addLast(T value) {
         ++actualModCount;
 
         int currentSize = size();
@@ -90,8 +95,8 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * добавляются в порядке их возвращения итератором.
      * @param iterable структура данных, все элементы которой добавляются в текущую очередь.
      */
-    public void putAllOnLast(Iterable<T> iterable) {
-        for(T value: iterable) putLast(value);
+    public void addAllOnLast(Iterable<T> iterable) {
+        for(T value: iterable) addLast(value);
     }
 
     /**
@@ -99,7 +104,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
      * их следования в массиве.
      * @param data массив, все элементы которого добавляются в текущую очередь.
      */
-    public void putAllOnLast(T... data) {
+    public void addAllOnLast(T... data) {
         ++actualModCount;
 
         int currentSize = size();
@@ -277,9 +282,67 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         final int EXPECTED_COUNT_MOD = actualModCount;
 
         int size = size();
-        Queue<R> result = new Queue<>(size, size);
+        Queue<R> result = new Queue<>(size);
         for(int i = 0; i < size; ++i) {
             result.values[i] = mapper.apply(unsafeGet(i), i);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Queue<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        Queue<T> result = new Queue<>();
+        for(int i = 0; i < size; ++i) {
+            T item = unsafeGet(i);
+            if(predicate.test(item, i)) result.addLast(item);
+            if(EXPECTED_COUNT_MOD != actualModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        T result = null;
+        if(size > 0) {
+            result = unsafeGet(0);
+            for(int i = 1; i < size; ++i) {
+                result = accumulator.apply(result, unsafeGet(i));
+                if(EXPECTED_COUNT_MOD != actualModCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T reduce(T initValue, BinaryOperator<T> accumulator) {
+        final int EXPECTED_COUNT_MOD = actualModCount;
+
+        int size = size();
+        T result = initValue;
+        for(int i = 0; i < size; ++i) {
+            result = accumulator.apply(result, unsafeGet(i));
             if(EXPECTED_COUNT_MOD != actualModCount) {
                 throw new ConcurrentModificationException();
             }
@@ -385,7 +448,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
         }
     }
 
-    private int calculateCapacity(int size) {
+    protected int calculateCapacity(int size) {
         return size + (size >>> 1);
     }
 

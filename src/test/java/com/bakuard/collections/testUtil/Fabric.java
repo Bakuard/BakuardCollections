@@ -1,6 +1,5 @@
 package com.bakuard.collections.testUtil;
 
-@FunctionalInterface
 public interface Fabric<T, S> {
 
     public default S create(T... data) {
@@ -8,4 +7,6 @@ public interface Fabric<T, S> {
     }
 
     public S createWithSize(int size, T... data);
+
+    public Class<?> getType();
 }
