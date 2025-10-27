@@ -13,6 +13,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+/**
+ * Вспомогательный класс для конвертации коллекций фреймворка Bakuard Collections в стандартные коллекции Java.
+ */
 public final class StandardCollections {
 
 	public static <T> ArrayList<T> toArrayList(Iterable<T> iterable) {
