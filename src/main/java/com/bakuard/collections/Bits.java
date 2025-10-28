@@ -6,17 +6,19 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * Расширяя {@link ReadableBits} добавляет следующие функции:<br/>
- * 1. Возможность напрямую менять состояние отдельных битов.</br>
- * 2. Операции над множеством битов - and, or, not и xor.<br/>
- * 3. Может менять свой размер путем явного вызова методов {@link #growToIndex(int)} и {@link #truncateToSize(int)}.
- * <br/><br/>
- * Данный класс не является потокобезопасным.
+ * <p>Расширяя {@link ReadableBits} добавляет следующие функции:</p>
+ * <ol>
+ *     <li>Возможность напрямую менять состояние отдельных битов.</li>
+ *     <li>Операции над множеством битов - and, or, not и xor.</li>
+ *     <li>Может менять свой размер путем явного вызова методов {@link #growToIndex(int)} и {@link #truncateToSize(int)}.</li>
+ * </ol>
+ *
+ * <p>Данный класс не является потокобезопасным.</p>
  */
 public final class Bits implements ReadableBits {
 
 	/**
-	 * Создает и возвращает новый объект Bits зарезервированный для хранения указанного кол-ва бит. Все биты
+	 * Создает и возвращает новый объект Bits, зарезервированный для хранения указанного кол-ва бит. Все биты
 	 * данного объекта будут установлены в единицу.
 	 * @param numberBits емкость создаваемого объекта Bits.
 	 */
@@ -27,13 +29,14 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Создает и возвращает новый объект Bits зарезервированный для хранения указанного кол-ва бит. Все биты индексы
-	 * которых указаны в массиве indexes, будут установлены в единицу. Значение остальных бит будет установленно в ноль.
+	 * Создает и возвращает новый объект Bits, зарезервированный для хранения указанного кол-ва бит. Все биты, индексы
+	 * которых указаны в массиве indexes, будут установлены в единицу. Значение остальных бит будет установлено в ноль.
 	 * @param numberBits емкость создаваемого объекта Bits.
-	 * @param indexes индексы бит устанавливаемых в единицу.
+	 * @param indexes индексы бит, устанавливаемых в единицу.
+	 * @throws NullPointerException если передаваемый массив indexes равен null.
 	 * @throws NegativeSizeException  если numberBits меньше нуля.
 	 * @throws IndexOutOfBoundsException если хотя бы для одного из индексов выполняется условие:
-	 *                                   index < 0 || index >= numberBits
+	 *                                   {@code index < 0 || index >= numberBits}
 	 */
 	public static Bits of(int numberBits, int... indexes) {
 		Bits result = new Bits(numberBits);
@@ -50,7 +53,7 @@ public final class Bits implements ReadableBits {
 	public Bits() {}
 
 	/**
-	 * Создает объект Bits зарезервированный для хранения указанного кол-ва бит. Значение любого бита в заданном
+	 * Создает объект Bits, зарезервированный для хранения указанного кол-ва бит. Значение любого бита в заданном
 	 * диапазоне, после вызова этого конструктора, будет равняться 0.
 	 * @param numberBits емкость создаваемого объекта Bits.
 	 * @throws NegativeSizeException если numberBits меньше нуля.
@@ -63,42 +66,45 @@ public final class Bits implements ReadableBits {
 	/**
 	 * Создает точную копию переданного объекта Bits.
 	 * @param other объект bits, для которого создается копия.
+	 * @throws NullPointerException если other равен null.
 	 */
 	public Bits(ReadableBits other) {
-		Bits bits = (Bits)other;
-		size = bits.size;
-		words = bits.words.clone();
+		copyFullStateFrom(other);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public boolean get(int index) throws IndexOutOfBoundsException {
+	public boolean get(int index) {
 		assertInHalfOpenInterval(index);
 		return unsafeGet(index);
 	}
 
 	/**
 	 * Устанавливает бит с указанным индексом в единицу.
-	 * @param index индекс бита устанавливаемого в единицу.
-	 * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}
+	 * @param index индекс бита, устанавливаемого в единицу.
+	 * @throws IndexOutOfBoundsException если не выполняется условие {@code index >= 0 && index < } {@link #size()}
 	 */
-	public void set(int index) throws IndexOutOfBoundsException {
+	public void set(int index) {
 		assertInHalfOpenInterval(index);
 		words[index >>> 6] |= 1L << index;
 	}
 
 	/**
-	 * Устанавливает значение для каждого бита, индекс которого указан в параметре indexes, в единицу. Если хотя
-	 * бы один из индексов не соответствует условию index >= 0 && index < {@link #size()}, выполнения метода
-	 * будет прервано и ни один из указанных бит не будет изменен. Если метод вызывается без аргументов - он не
-	 * вносит никаких изменений.
+	 * <p>Устанавливает значение для каждого бита, индекс которого указан в параметре indexes, в единицу.</p>
+	 *
+	 * <p>Если хотя бы один из индексов не соответствует условию {@code index >= 0 && index < } {@link #size()},
+	 * выполнения метода будет прервано и ни один из указанных бит не будет изменен.</p>
+	 *
+	 * <p>Если метод вызывается без аргументов - он не вносит никаких изменений.</p>
+	 *
 	 * @return ссылку на этот же объект.
-	 * @param indexes индексы бит устанавливаемых в единицу.
+	 * @param indexes индексы бит, устанавливаемых в единицу.
+	 * @throws NullPointerException если передаваемый массив indexes равен null.
 	 * @throws IndexOutOfBoundsException если для одного из указанных индексов не выполняется
-	 *                                   условие index >= 0 && index < {@link #size()}.
+	 *                                   условие {@code index >= 0 && index < } {@link #size()}
 	 */
-	public Bits setAll(int... indexes) throws IndexOutOfBoundsException {
+	public Bits setAll(int... indexes) {
 		for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
 		for(int i = 0; i < indexes.length; i++) {
 			int index = indexes[i];
@@ -108,18 +114,19 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Устанавливает все биты в диапазоне [fromIndex, toIndex) в единицу. В случае, если fromIndex == toIndex, метод
+	 * Устанавливает все биты в диапазоне [fromIndex, toIndex) в единицу. В случае если {@code fromIndex == toIndex}, метод
 	 * не делает никаких изменений.
-	 * @param fromIndex индекс задающий начало заполняемого диапазонна.
-	 * @param toIndex индекс задающий конец заполняемого диапазонна.
+	 * @param fromIndex индекс, задающий начало заполняемого диапазонна.
+	 * @param toIndex индекс, задающий конец заполняемого диапазонна.
 	 * @return ссылку на этот же объект.
-	 * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев: <br/>
-	 *                                   1. Если fromIndex > toIndex; <br/>
-	 *                                   2. Если fromIndex < 0; <br/>
-	 *                                   3. Если toIndex > {@link #size()}.
-	 *
+	 * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев:
+	 *                                   <ol>
+	 *                                       <li>Если {@code fromIndex > toIndex}</li>
+	 *                                       <li>Если {@code fromIndex < 0}</li>
+	 *                                       <li>Если {@code toIndex > } {@link #size()}</li>
+	 *                                   </ol>
 	 */
-	public Bits setRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
+	public Bits setRange(int fromIndex, int toIndex) {
 		if(fromIndex > toIndex || fromIndex < 0 || toIndex > size) {
 			throw new IndexOutOfBoundsException("Incorrect interval [fromIndex=" + fromIndex +
 					", toIndex=" + toIndex + ')');
@@ -145,25 +152,29 @@ public final class Bits implements ReadableBits {
 
 	/**
 	 * Устанавливает бит с указанным индексом в ноль.
-	 * @param index индекс бита устанавливаемого в ноль.
-	 * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}.
+	 * @param index индекс бита, устанавливаемого в ноль.
+	 * @throws IndexOutOfBoundsException если не выполняется условие {@code index >= 0 && index < } {@link #size()}
 	 */
-	public void clear(int index) throws IndexOutOfBoundsException {
+	public void clear(int index) {
 		assertInHalfOpenInterval(index);
 		words[index >>> 6] &= ~(1L << index);
 	}
 
 	/**
-	 * Уста наливает значение для каждого бита, индекс которого указан в параметре indexes, в ноль. Если хотя бы
-	 * один из индексов не соответствует условию index >= 0 && index < {@link #size()}, выполнения метода будет
-	 * прервано и ни один из указанных бит не будет изменен. Если метод вызывается без аргументов - он не вносит
-	 * никаких изменений.
-	 * @param indexes индексы бит устанавливаемых в ноль.
+	 * <p>Устанавливает значение для каждого бита, индекс которого указан в параметре indexes, в ноль.</p>
+	 *
+	 * <p>Если хотя бы один из индексов не соответствует условию {@code index >= 0 && index < } {@link #size()},
+	 * выполнения метода будет прервано и ни один из указанных бит не будет изменен.</p>
+	 *
+	 * <p>Если метод вызывается без аргументов - он не вносит никаких изменений.</p>
+	 *
+	 * @param indexes индексы бит, устанавливаемых в ноль.
 	 * @return ссылку на этот же объект.
+	 * @throws NullPointerException если передаваемый массив indexes равен null.
 	 * @throws IndexOutOfBoundsException если для одного из переданных индексов не выполняется
-	 *                                   условие index >= 0 && index < {@link #size()}.
+	 *                                   условие {@code index >= 0 && index < } {@link #size()}
 	 */
-	public Bits clearAll(int... indexes) throws IndexOutOfBoundsException {
+	public Bits clearAll(int... indexes) {
 		for(int i = 0; i < indexes.length; i++) assertInHalfOpenInterval(indexes[i]);
 		for(int i = 0; i < indexes.length; i++) {
 			int index = indexes[i];
@@ -173,17 +184,19 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Устанавливает все биты в диапазоне [fromIndex, toIndex) в ноль. В случае, если fromIndex == toIndex, метод
+	 * Устанавливает все биты в диапазоне [fromIndex, toIndex) в ноль. В случае если {@code fromIndex == toIndex}, метод
 	 * не делает никаких изменений.
-	 * @param fromIndex индекс задающий начало заполняемого диапазонна.
-	 * @param toIndex индекс задающий конец заполняемого диапазонно.
+	 * @param fromIndex индекс, задающий начало заполняемого диапазонна.
+	 * @param toIndex индекс, задающий конец заполняемого диапазонна.
 	 * @return ссылку на этот же объект.
-	 * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев: <br/>
-	 *                                   1. Если fromIndex > toIndex; <br/>
-	 *                                   2. Если fromIndex < 0; <br/>
-	 *                                   3. Если toIndex > {@link #size()}.
+	 * @throws IndexOutOfBoundsException генерируется в одном из следующих случаев:
+	 *                                   <ol>
+	 *                                       <li>Если {@code fromIndex > toIndex}</li>
+	 *                                       <li>Если {@code fromIndex < 0}</li>
+	 *                                       <li>Если {@code toIndex > } {@link #size()}</li>
+	 *                                   </ol>
 	 */
-	public Bits clearRange(int fromIndex, int toIndex) throws IndexOutOfBoundsException {
+	public Bits clearRange(int fromIndex, int toIndex) {
 		if(fromIndex > toIndex || fromIndex < 0 || toIndex > size) {
 			throw new IndexOutOfBoundsException("Incorrect interval [fromIndex=" + fromIndex +
 					", toIndex=" + toIndex + ')');
@@ -207,21 +220,26 @@ public final class Bits implements ReadableBits {
 	/**
 	 * Инвертирует бит под указанным индексом.
 	 * @param index индекс инвертируемого бита.
-	 * @throws IndexOutOfBoundsException если не выполняется условие index >= 0 && index < {@link #size()}.
+	 * @throws IndexOutOfBoundsException если не выполняется условие {@code index >= 0 && index < } {@link #size()}
 	 */
-	public void flip(int index) throws IndexOutOfBoundsException {
+	public void flip(int index) {
 		assertInHalfOpenInterval(index);
 		words[index >>> 6] ^= (1L << index);
 	}
 
 	/**
-	 * Выполняет операцию пересечения двух множеств. Метод записывает результат операции в объект Bits, у которого
-	 * был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда выступает объект,
-	 * у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве аргумента. Если
-	 * операнды имеют разный размер, то операция выполняется таким образом, как будто недостающие биты более
-	 * короткого операнда заполнены нулями.
+	 * <p>Выполняет операцию пересечения двух множеств.</p>
+	 *
+	 * <p>Метод записывает результат операции в объект Bits, у которого был вызван данный метод, и возвращает ссылку на
+	 * этот же объект. В качестве первого операнда выступает объект, у которого вызывается данный метод,
+	 * а второго операнда - объект, передаваемый в качестве аргумента.</p>
+	 *
+	 * <p>Если операнды имеют разный размер ({@link #size()}), то операция выполняется таким образом, как будто недостающие
+	 * биты более короткого операнда заполнены нулями.</p>
+	 *
 	 * @param other второй операнд операции пересечения множеств.
 	 * @return объект, у которого был вызван данный метод.
+	 * @throws NullPointerException если other равен null
 	 */
 	public Bits and(ReadableBits other) {
 		Bits otherBits = (Bits)other;
@@ -232,14 +250,19 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Выполняет операцию объединения двух множеств. Метод записывает результат операции в объект Bits, у которого
-	 * был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда выступает объект,
-	 * у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве аргумента. Если размер
-	 * объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его размер увеличивается до
-	 * размера other. Если размер передаваемого объекта меньше, то операция выполняется таким образом, как будто
-	 * недостающие биты второго операнда заполнены нулями.
+	 * <p>Выполняет операцию объединения двух множеств.</p>
+	 *
+	 * <p>Метод записывает результат операции в объект Bits, у которого был вызван данный метод, и возвращает ссылку
+	 * на этот же объект. В качестве первого операнда выступает объект, у которого вызывается данный метод,
+	 * а второго операнда - объект, передаваемый в качестве аргумента.</p>
+	 *
+	 * <p>Если размер объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его размер увеличивается
+	 * до размера other. Если же размер other меньше, то операция выполняется таким образом, как будто недостающие биты
+	 * объекта other заполнены нулями.</p>
+	 *
 	 * @param other второй операнд операции объединения множеств.
 	 * @return объект, у которого был вызван данный метод.
+	 * @throws NullPointerException если other равен null.
 	 */
 	public Bits or(ReadableBits other) {
 		Bits otherBits = (Bits)other;
@@ -250,14 +273,19 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Выполняет операцию симметричной разности двух множеств. Метод записывает результат операции в объект Bits,
-	 * у которого был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда
-	 * выступает объект, у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве
-	 * аргумента. Если размер объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его
-	 * размер увеличивается до размера other. Если размер передаваемого объекта меньше, то операция выполняется
-	 * таким образом, как будто недостающие биты второго операнда заполнены нулями.
+	 * <p>Выполняет операцию симметричной разности двух множеств.</p>
+	 *
+	 * <p>Метод записывает результат операции в объект Bits, у которого был вызван данный метод, и возвращает ссылку
+	 * на этот же объект. В качестве первого операнда выступает объект, у которого вызывается данный метод,
+	 * а второго операнда - объект, передаваемый в качестве аргумента.</p>
+	 *
+	 * <p>Если размер объекта (см. {@link #size()}), у которого вызван метод, меньше чем other, то его размер увеличивается
+	 * до размера other. Если же размер other меньше, то операция выполняется таким образом, как будто недостающие биты
+	 * объекта other заполнены нулями.</p>
+	 *
 	 * @param other второй операнд для операции xor.
 	 * @return объект, у которого был вызван данный метод.
+	 * @throws NullPointerException если other равен null.
 	 */
 	public Bits xor(ReadableBits other) {
 		Bits otherBits = (Bits)other;
@@ -268,13 +296,18 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Выполняет операцию вычитания двух множеств. Метод записывает результат операции в объект Bits,
-	 * у которого был вызван данный метод и возвращает ссылку на этот же объект. В качестве первого операнда
-	 * выступает объект, у которого вызывается данный метод, а второго операнда - объект передаваемый в качестве
-	 * аргумента. Если операнды имеют разный размер, то операция выполняется таким образом, как будто недостающие
-	 * биты более короткого операнда заполнены нулями.
+	 * <p>Выполняет операцию вычитания двух множеств.</p>
+	 *
+	 * <p>Метод записывает результат операции в объект Bits, у которого был вызван данный метод, и возвращает ссылку на
+	 * этот же объект. В качестве первого операнда выступает объект, у которого вызывается данный метод,
+	 * а второго операнда - объект, передаваемый в качестве аргумента.</p>
+	 *
+	 * <p>Если операнды имеют разный размер, то операция выполняется таким образом, как будто недостающие биты более
+	 * короткого операнда заполнены нулями.</p>
+	 *
 	 * @param other второй операнд для операции разности множеств.
 	 * @return объект, у которого был вызван данный метод.
+	 * @throws NullPointerException если other равен null.
 	 */
 	public Bits andNot(ReadableBits other) {
 		Bits otherBits = (Bits)other;
@@ -284,8 +317,11 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Выполняет операцию дополнения множества. Метод записывает результат операции в объект Bits, у которого
-	 * был вызван данный метод и возвращает ссылку на этот же объект.
+	 * <p>Выполняет операцию дополнения множества.</p>
+	 *
+	 * <p>Метод записывает результат операции в объект Bits, у которого
+	 * был вызван данный метод, и возвращает ссылку на этот же объект.</p>
+	 *
 	 * @return объект, у которого был вызван данный метод.
 	 */
 	public Bits not() {
@@ -297,48 +333,54 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Перезаписывает состояние текущего объекта копируя состояние переданного объекта src. Метод возвращает
+	 * Перезаписывает состояние текущего объекта, копируя состояние переданного объекта src. Метод возвращает
 	 * ссылку на тот же объект, у которого он был вызван.
 	 * @param src объект Bits, состояние которого копируется.
 	 * @return объект, у которого был вызван данный метод.
+	 * @throws NullPointerException если src равен null.
 	 */
 	public Bits copyFullStateFrom(ReadableBits src) {
 		Bits srcBits = (Bits) src;
-		if(words.length != srcBits.words.length) words = srcBits.words.clone();
-		else System.arraycopy(srcBits.words, 0, words, 0, srcBits.words.length);
 		size = srcBits.size;
+		words = srcBits.words.clone();
 		return this;
 	}
 
 	/**
-	 * Копирует заданный диапазон бит из объекта src в текущий объект. Копируемая область задается индексом
-	 * самого первого её бита и кол-вом копируемых бит. Область целевого объекта Bits, которая будет заменена
-	 * копируемым диапазонном бит, задается индексом самого первого бита этой области, а её размер равен кол-ву
-	 * копируемых бит. Метод возвращает кол-во бит, которые были перезаписаны у целевого объекта.<br/><br/>
-	 * Особые случаи:<br/>
-	 * 1. Если length равен нулю - метод не вносит никаких изменений.<br/>
-	 * 2. Если length больше чем максимальный возможный размер копируемой области (с учетом srcPos), то
-	 * в качестве размера копируемой области будет взято максимальное доступное значение. В таком случае,
-	 * область вставки целевого объекта будет иметь тот же размер, что и копируемая область.<br/>
-	 * 3. Если копируемая область не помещается целиком в заменяемую область вставки целевого объекта, то все
-	 * биты для которых не хватило места будут отброшены.
+	 * <p>Копирует заданный диапазон бит из объекта src в текущий объект.</p>
 	 *
-	 * @param src     объект Bits из которого копируется заданный диапазон бит.
-	 * @param srcPos  индекс задающий начало копируемого диапазона из объекта src.
-	 * @param destPos индекс задающий начало заменяемого диапазона в текущем объекте.
+	 * <p>Копируемая область задается индексом самого первого её бита и кол-вом копируемых бит. Область целевого объекта
+	 * Bits, которая будет заменена на копируемый диапазон бит, задается индексом самого первого бита этой области,
+	 * а её размер равен кол-ву копируемых бит.</p>
+	 *
+	 * <p><i>Особые случаи:</i></p>
+	 * <ol>
+	 *     <li>Если length равен нулю - метод не вносит никаких изменений.</li>
+	 *     <li>Если length больше чем максимальный возможный размер копируемой области (с учетом srcPos), то
+	 *     в качестве размера копируемой области будет взято максимальное доступное значение. В таком случае
+	 *     область вставки целевого объекта будет иметь тот же размер, что и копируемая область.</li>
+	 *     <li>Если копируемая область не помещается целиком в заменяемую область вставки целевого объекта, то все
+	 *     биты, для которых не хватило места, будут отброшены.</li>
+	 * </ol>
+	 *
+	 * <p>Метод возвращает кол-во бит, которые были перезаписаны у целевого объекта.</p>
+	 *
+	 * @param src     объект Bits, из которого копируется заданный диапазон бит.
+	 * @param srcPos  индекс, задающий начало копируемого диапазона из объекта src.
+	 * @param destPos индекс, задающий начало заменяемого диапазона в текущем объекте.
 	 * @param length  кол-во копируемых бит.
-	 * @return кол-во перезаписанных бит у объекта вызвавшего данный метод (целевого объекта).
+	 * @return кол-во перезаписанных бит у объекта, вызвавшего данный метод (целевого объекта).
 	 * @throws NullPointerException      если src имеет значение null.
-	 * @throws IndexOutOfBoundsException если выполняется хотя бы одно из следующих условий:<br/>
-	 *                                   1. srcPos < 0 <br/>
-	 *                                   2. srcPos >= src.{@link #size()} <br/>
-	 *                                   3. destPos < 0 <br/>
-	 *                                   4. destPos >= this.{@link #size()} <br/>
-	 *                                   5. length < 0
+	 * @throws IndexOutOfBoundsException если выполняется хотя бы одно из следующих условий:
+	 *                                   <ol>
+	 *                                       <li>{@code srcPos < 0}</li>
+	 *                                       <li>{@code srcPos >= src.}{@link #size()}</li>
+	 *                                       <li>{@code destPos < 0}</li>
+	 *                                       <li>{@code destPos >= this.}{@link #size()}</li>
+	 *                                       <li>{@code length < 0}</li>
+	 *                                   </ol>
 	 */
 	public int copyRangeFrom(ReadableBits src, int srcPos, int destPos, int length) {
-		Objects.requireNonNull(src, "src can not be null.");
-
 		Bits srcBits = (Bits)src;
 
 		if(srcPos < 0 || destPos < 0 || srcPos >= srcBits.size() || destPos >= size() || length < 0) {
@@ -381,9 +423,11 @@ public final class Bits implements ReadableBits {
 	}
 
 	/**
-	 * Увеличивает емкость текущего объекта Bits таким образом, чтобы индекс самого старшего бита был равен index.
-	 * Если index >= 0 и при этом меньше {@link #size()}, то метод ничего не делает.
-	 * Все старшие биты добавленные в результате вызова этого метода будут установленны в 0.
+	 * <p>Увеличивает емкость текущего объекта Bits таким образом, чтобы индекс самого старшего бита был равен index.
+	 * Все старшие биты, добавленные в результате вызова этого метода, будут установлены в 0.</p>
+	 *
+	 * <p>Если {@code index >= 0 && index < } {@link #size()}, то метод ничего не делает.</p>
+	 *
 	 * @param index индекс бита, до которого нужно увеличить емкость текущего объекта Bits.
 	 * @return ссылку на этот же объект Bits.
 	 * @throws IndexOutOfBoundsException если index меньше нуля.
@@ -547,7 +591,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * Два объекта Bits считаются одинаковыми если их размеры (значения возвращаемые методом {@link #size()})
 	 * равны и значения всех бит попарно равны.
-	 * @param other объект типа Bits с которым производится сравнение.
+	 * @param other объект типа Bits, с которым производится сравнение.
 	 * @return true - если объекты равны, false - в противном случае.
 	 */
 	@Override
@@ -631,6 +675,9 @@ public final class Bits implements ReadableBits {
 		return result;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public int hashCodeIgnoreSize() {
 		int result = 17;
 		result = result * 31 + Arrays.hashCode(words);

@@ -619,7 +619,7 @@ class BitsTest {
         assertions.assertAll();
     }
 
-    @DisplayName("truncateTo(index):")
+    @DisplayName("truncateToSize(index):")
     @ParameterizedTest(name = """
              origin is {0},
              index is {1}
@@ -627,7 +627,7 @@ class BitsTest {
                 expectedHighBits is {3}
             """)
     @MethodSource("provideForTruncateTo")
-    void truncateTo(Bits origin, int index, Bits expected, Bits expectedHighBits) {
+    void truncateToSize(Bits origin, int index, Bits expected, Bits expectedHighBits) {
         origin.truncateToSize(index);
 
         SoftAssertions assertions = new SoftAssertions();
@@ -636,14 +636,14 @@ class BitsTest {
         assertions.assertAll();
     }
 
-    @DisplayName("truncateTo(index):")
+    @DisplayName("truncateToSize(index):")
     @ParameterizedTest(name = """
              origin is {0},
              index is {1}
              => exception
             """)
     @MethodSource("provideForCheckingIndexForNegative_ExceptionCase")
-    void truncateTo_exception(Bits origin, int index) {
+    void truncateToSize_exception(Bits origin, int index) {
         Bits expected = new Bits(origin);
 
         SoftAssertions assertions = new SoftAssertions();

@@ -6,10 +6,10 @@ package com.bakuard.collections.function;
 @FunctionalInterface
 public interface IndexBiPredicate<T> {
 
-    /**
-     * Проверяет, соответствует ли указанный элемент под указанным индексом некоторому условию.
-     * @param item проверяемый элемент.
-     * @param index индекс проверяемого элемента.
-     */
-    public boolean test(T item, int index);
+	/**
+	 * Проверяет, соответствует ли указанный элемент под указанным индексом некоторому условию.
+	 * @param item проверяемый элемент.
+	 * @param index индекс проверяемого элемента.
+	 */
+	public boolean test(T item, int index);
 }
