@@ -6,22 +6,22 @@ package com.bakuard.collections.exception;
  */
 public class MaxSizeExceededException extends RuntimeException {
 
-    public MaxSizeExceededException() {
-    }
+	public MaxSizeExceededException() {
+	}
 
-    public MaxSizeExceededException(String message) {
-        super(message);
-    }
+	public MaxSizeExceededException(String message) {
+		super(message);
+	}
 
-    public MaxSizeExceededException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	public MaxSizeExceededException(String message, Throwable cause) {
+		super(message, cause);
+	}
 
-    public MaxSizeExceededException(Throwable cause) {
-        super(cause);
-    }
+	public MaxSizeExceededException(Throwable cause) {
+		super(cause);
+	}
 
-    public MaxSizeExceededException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
+	public MaxSizeExceededException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
+	}
 }

@@ -6,10 +6,10 @@ package com.bakuard.collections.function;
 @FunctionalInterface
 public interface IndexBiConsumer<T> {
 
-    /**
-     * Обрабатывает указанный элемент под указанным индексом.
-     * @param item обрабатываемый элемент.
-     * @param index индекс обрабатываемого элемента.
-     */
-    void accept(T item, int index);
+	/**
+	 * Обрабатывает указанный элемент под указанным индексом.
+	 * @param item обрабатываемый элемент.
+	 * @param index индекс обрабатываемого элемента.
+	 */
+	void accept(T item, int index);
 }

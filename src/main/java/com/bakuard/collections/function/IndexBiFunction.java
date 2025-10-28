@@ -7,10 +7,10 @@ package com.bakuard.collections.function;
 @FunctionalInterface
 public interface IndexBiFunction<T, R> {
 
-    /**
-     * Применяет данную функцию к элементу и его индексу и возвращает результат.
-     * @param item элемент линейной структуры данных.
-     * @param index индекс элемента в линейной структуре данных.
-     */
-    public R apply(T item, int index);
+	/**
+	 * Применяет данную функцию к элементу и его индексу и возвращает результат.
+	 * @param item элемент линейной структуры данных.
+	 * @param index индекс элемента в линейной структуре данных.
+	 */
+	public R apply(T item, int index);
 }
