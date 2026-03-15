@@ -189,7 +189,7 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
 	 * @throws ConcurrentModificationException при попытке изменить структуру данных из mapper.
 	 * @throws NullPointerException если mapper равен null.
 	 */
-	public <R> ReadableLinearStructure<R> cloneAndMap(IndexBiFunction<T, R> mapper);
+	public <R> ReadableLinearStructure<R> mappedCopy(IndexBiFunction<T, R> mapper);
 
 	/**
 	 * Создает и возвращает новую структуру данных того же самого типа. Возвращаемая структура
@@ -198,7 +198,7 @@ public interface ReadableLinearStructure<T> extends Iterable<T> {
 	 * @throws ConcurrentModificationException при попытке изменить структуру данных из predicate.
 	 * @throws NullPointerException если predicate равен null.
 	 */
-	public ReadableLinearStructure<T> cloneAndFilter(IndexBiPredicate<T> predicate);
+	public ReadableLinearStructure<T> filteredCopy(IndexBiPredicate<T> predicate);
 
 	/**
 	 * <p>Сводит все элементы этой структуры данных в один элемент и возвращает его.</p>

@@ -2,6 +2,7 @@ package com.bakuard.collections;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -70,6 +71,10 @@ public final class StandardCollections {
 
 	public static <T> SortedSet<T> toImmutableSortedSet(Iterable<T> iterable, Comparator<T> comparator) {
 		return Collections.unmodifiableSortedSet(toTreeSet(iterable, comparator));
+	}
+
+	public static BitSet toBitSet(ReadableBits bits) {
+		return BitSet.valueOf(bits.toArray());
 	}
 
 

@@ -107,6 +107,11 @@ public sealed interface ReadableBits extends Comparable<ReadableBits> permits Bi
 	public boolean inBound(int index);
 
 	/**
+	 * Создает и возращает массив long, представляющий текущее множество бит.
+	 */
+	public long[] toArray();
+
+	/**
 	 * Данный метод сравнивает два объекта Bits, как целые беззнаковые числа без учета их размеров ({@link #size()}).
 	 * @param other объект типа Bits, с которым производится сравнение.
 	 * @return true - если логические значения объектов Bits равны, false - в противном случае.

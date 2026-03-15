@@ -69,12 +69,15 @@ public final class Bits implements ReadableBits {
 	 * @throws NullPointerException если other равен null.
 	 */
 	public Bits(ReadableBits other) {
-		copyFullStateFrom(other);
+		Bits srcBits = (Bits) other;
+		size = srcBits.size;
+		words = srcBits.words.clone();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean get(int index) {
 		assertInHalfOpenInterval(index);
 		return unsafeGet(index);
@@ -341,8 +344,9 @@ public final class Bits implements ReadableBits {
 	 */
 	public Bits copyFullStateFrom(ReadableBits src) {
 		Bits srcBits = (Bits) src;
+		if(words.length != srcBits.words.length) words = srcBits.words.clone();
+		else System.arraycopy(srcBits.words, 0, words, 0, srcBits.words.length);
 		size = srcBits.size;
-		words = srcBits.words.clone();
 		return this;
 	}
 
@@ -468,6 +472,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int cardinality() {
 		int countBits = 0;
 		for(int i = 0; i < words.length; ++i) countBits += Long.bitCount(words[i]);
@@ -477,6 +482,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int getHighBitIndex() {
 		int index = -1;
 		for(int i = words.length - 1; i >= 0 && index == -1; --i) {
@@ -490,6 +496,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean isClear() {
 		boolean result = true;
 		for(int i = 0; i < words.length && result; i++) {
@@ -501,6 +508,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int size() {
 		return size;
 	}
@@ -508,6 +516,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int nextSetBit(int fromIndex) {
 		assertNotNegativeIndex(fromIndex);
 
@@ -530,6 +539,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int nextClearBit(int fromIndex) {
 		assertNotNegativeIndex(fromIndex);
 
@@ -553,6 +563,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean contains(ReadableBits other) {
 		Bits otherBits = (Bits)other;
 
@@ -571,6 +582,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean intersect(ReadableBits other) {
 		Bits otherBits = (Bits)other;
 
@@ -584,8 +596,17 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean inBound(int index) {
 		return index >= 0 && index < size;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public long[] toArray() {
+		return words.clone();
 	}
 
 	/**
@@ -611,6 +632,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean equalsIgnoreSize(Object other) {
 		if (this == other) return true;
 		if (other == null || getClass() != other.getClass()) return false;
@@ -678,6 +700,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int hashCodeIgnoreSize() {
 		int result = 17;
 		result = result * 31 + Arrays.hashCode(words);
@@ -695,6 +718,7 @@ public final class Bits implements ReadableBits {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String toBinaryString() {
 		StringBuilder result = new StringBuilder();
 

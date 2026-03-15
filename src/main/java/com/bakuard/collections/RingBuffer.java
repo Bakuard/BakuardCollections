@@ -453,7 +453,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <R> RingBuffer<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+	public <R> RingBuffer<R> mappedCopy(IndexBiFunction<T, R> mapper) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		RingBuffer<R> result = new RingBuffer<>(maxSize());
@@ -471,7 +471,7 @@ public final class RingBuffer<T> implements ReadableLinearStructure<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RingBuffer<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+	public RingBuffer<T> filteredCopy(IndexBiPredicate<T> predicate) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		RingBuffer<T> result = new RingBuffer<>(maxSize());

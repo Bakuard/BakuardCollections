@@ -281,11 +281,11 @@ class ReadableLinearStructureTest {
              origin is {0},
              => expected is {2}
             """)
-    @MethodSource("provideForCloneAndMap")
-    void cloneAndMap(ReadableLinearStructure<Integer> origin,
-                     IndexBiFunction<Integer, Integer> mapper,
-                     ReadableLinearStructure<Integer> expected) {
-        ReadableLinearStructure<Integer> actual = origin.cloneAndMap(mapper);
+    @MethodSource("provideForMappedCopy")
+    void mappedCopy(ReadableLinearStructure<Integer> origin,
+					IndexBiFunction<Integer, Integer> mapper,
+					ReadableLinearStructure<Integer> expected) {
+        ReadableLinearStructure<Integer> actual = origin.mappedCopy(mapper);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
@@ -296,11 +296,11 @@ class ReadableLinearStructureTest {
              change origin structure while map
              => exception
             """)
-    @MethodSource("provideForCloneAndMap_Exception")
-    void cloneAndMap_exception(ReadableLinearStructure<Integer> origin,
-                               IndexBiFunction<Integer, Integer> mapper,
-                               Class<? extends Throwable> expectedException) {
-        Assertions.assertThatThrownBy(() -> origin.cloneAndMap(mapper))
+    @MethodSource("provideForMappedCopy_Exception")
+    void mappedCopy_exception(ReadableLinearStructure<Integer> origin,
+							  IndexBiFunction<Integer, Integer> mapper,
+							  Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> origin.mappedCopy(mapper))
                 .isInstanceOf(expectedException);
     }
 
@@ -309,11 +309,11 @@ class ReadableLinearStructureTest {
              origin is {0},
              => expected is {2}
             """)
-    @MethodSource("provideForCloneAndFilter")
-    void cloneAndFilter(ReadableLinearStructure<Integer> origin,
-                        IndexBiPredicate<Integer> predicate,
-                        ReadableLinearStructure<Integer> expected) {
-        ReadableLinearStructure<Integer> actual = origin.cloneAndFilter(predicate);
+    @MethodSource("provideForFilteredCopy")
+    void filteredCopy(ReadableLinearStructure<Integer> origin,
+					  IndexBiPredicate<Integer> predicate,
+					  ReadableLinearStructure<Integer> expected) {
+        ReadableLinearStructure<Integer> actual = origin.filteredCopy(predicate);
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
@@ -324,11 +324,11 @@ class ReadableLinearStructureTest {
              change origin structure while filter
              => exception
             """)
-    @MethodSource("provideForCloneAndFilter_Exception")
-    void cloneAndFilter_exception(ReadableLinearStructure<Integer> origin,
-                                  IndexBiPredicate<Integer> predicate,
-                                  Class<? extends Throwable> expectedException) {
-        Assertions.assertThatThrownBy(() -> origin.cloneAndFilter(predicate))
+    @MethodSource("provideForFilteredCopy_Exception")
+    void filteredCopy_exception(ReadableLinearStructure<Integer> origin,
+								IndexBiPredicate<Integer> predicate,
+								Class<? extends Throwable> expectedException) {
+        Assertions.assertThatThrownBy(() -> origin.filteredCopy(predicate))
                 .isInstanceOf(expectedException);
     }
 
@@ -895,7 +895,7 @@ class ReadableLinearStructureTest {
                 .build();
     }
 
-    private static Stream<Arguments> provideForCloneAndMap() {
+    private static Stream<Arguments> provideForMappedCopy() {
         return ArgumentsBuilder.of(structureFabrics())
                 .newTest()
                     .originStruct()
@@ -916,7 +916,7 @@ class ReadableLinearStructureTest {
                 .build();
     }
 
-    private static Stream<Arguments> provideForCloneAndMap_Exception() {
+    private static Stream<Arguments> provideForMappedCopy_Exception() {
         return ArgumentsBuilder.<Integer>of(structureFabrics())
                 .newTest()
                     .originStruct(1,2,3,4,5,6,7,8,9,10)
@@ -963,7 +963,7 @@ class ReadableLinearStructureTest {
                 .build();
     }
 
-    private static Stream<Arguments> provideForCloneAndFilter() {
+    private static Stream<Arguments> provideForFilteredCopy() {
         return ArgumentsBuilder.of(structureFabrics())
                 .newTest()
                     .originStruct()
@@ -992,7 +992,7 @@ class ReadableLinearStructureTest {
                 .build();
     }
 
-    private static Stream<Arguments> provideForCloneAndFilter_Exception() {
+    private static Stream<Arguments> provideForFilteredCopy_Exception() {
         return ArgumentsBuilder.<Integer>of(structureFabrics())
                 .newTest()
                     .originStruct(1,2,3,4,5,6,7,8,9,10)

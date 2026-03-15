@@ -525,7 +525,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <R> DynamicArray<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+	public <R> DynamicArray<R> mappedCopy(IndexBiFunction<T, R> mapper) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		DynamicArray<R> result = new DynamicArray<>(size);
@@ -542,7 +542,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public DynamicArray<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+	public DynamicArray<T> filteredCopy(IndexBiPredicate<T> predicate) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		DynamicArray<T> result = new DynamicArray<>();

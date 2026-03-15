@@ -274,7 +274,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <R> Queue<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+	public <R> Queue<R> mappedCopy(IndexBiFunction<T, R> mapper) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		int size = size();
@@ -292,7 +292,7 @@ public sealed class Queue<T> implements ReadableLinearStructure<T> permits Deque
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Queue<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+	public Queue<T> filteredCopy(IndexBiPredicate<T> predicate) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		int size = size();

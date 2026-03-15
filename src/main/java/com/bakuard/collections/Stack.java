@@ -189,9 +189,9 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <R> Stack<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+	public <R> Stack<R> mappedCopy(IndexBiFunction<T, R> mapper) {
 		Stack<R> result = new Stack<>();
-		result.array = array.cloneAndMap(mapper);
+		result.array = array.mappedCopy(mapper);
 		return result;
 	}
 
@@ -199,9 +199,9 @@ public final class Stack<T> implements ReadableLinearStructure<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Stack<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+	public Stack<T> filteredCopy(IndexBiPredicate<T> predicate) {
 		Stack<T> result = new Stack<>();
-		result.array = array.cloneAndFilter(predicate);
+		result.array = array.filteredCopy(predicate);
 		return result;
 	}
 

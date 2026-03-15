@@ -157,7 +157,7 @@ public final class Deque<T> extends Queue<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <R> Deque<R> cloneAndMap(IndexBiFunction<T, R> mapper) {
+	public <R> Deque<R> mappedCopy(IndexBiFunction<T, R> mapper) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		int size = size();
@@ -175,7 +175,7 @@ public final class Deque<T> extends Queue<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Deque<T> cloneAndFilter(IndexBiPredicate<T> predicate) {
+	public Deque<T> filteredCopy(IndexBiPredicate<T> predicate) {
 		final int EXPECTED_COUNT_MOD = actualModCount;
 
 		int size = size();
