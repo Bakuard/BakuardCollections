@@ -141,6 +141,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
 		assertNotNegativeIndex(index);
 		growToSizeOrDoNothing(index + 1);
+		if(index + 1 > size) size = index + 1;
 
 		T oldValue = values[index];
 		values[index] = value;
@@ -170,9 +171,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 	public void addLast(T value) {
 		++actualModCount;
 
-		int lastIndex = size;
 		growToSizeOrDoNothing(size + 1);
-		values[lastIndex] = value;
+		values[size++] = value;
 	}
 
 	/**
@@ -183,11 +183,11 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 	 */
 	public void addAllOnLast(T... data) {
 		++actualModCount;
-		if(data.length > 0) {
 
-			int lastIndex = size;
-			growToSizeOrDoNothing(size + data.length);
-			System.arraycopy(data, 0, this.values, lastIndex, data.length);
+		if(data.length > 0) {
+			int oldSize = size;
+			growToSizeOrDoNothing(size += data.length);
+			System.arraycopy(data, 0, this.values, oldSize, data.length);
 		}
 	}
 
@@ -214,7 +214,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 		++actualModCount;
 
 		int oldSize = size;
-		growToSizeOrDoNothing(size + 1);
+		growToSizeOrDoNothing(++size);
 		if(index < oldSize) {
 			System.arraycopy(values, index, values, index + 1, oldSize - index);
 		}
@@ -480,6 +480,7 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 
 		assertNotNegativeSize(newSize);
 		growToSizeOrDoNothing(newSize);
+		if(newSize > size) size = newSize;
 		return this;
 	}
 
@@ -496,8 +497,10 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 	public DynamicArray<T> growToIndex(int index) {
 		++actualModCount;
 
+		int newSize = index + 1;
 		assertNotNegativeIndex(index);
-		growToSizeOrDoNothing(index + 1);
+		growToSizeOrDoNothing(newSize);
+		if(newSize > size) size = newSize;
 		return this;
 	}
 
@@ -737,12 +740,8 @@ public final class DynamicArray<T> implements ReadableLinearStructure<T> {
 	}
 
 	private void growToSizeOrDoNothing(int newSize) {
-		if(newSize > size) {
-			size = newSize;
-			if(newSize > values.length) {
-				values = Arrays.copyOf(values, calculateCapacity(newSize));
-			}
-		}
+		if(newSize > values.length)
+			values = Arrays.copyOf(values, calculateCapacity(newSize));
 	}
 
 	private T orderedRemoveAtUncheckedIndex(int index) {
